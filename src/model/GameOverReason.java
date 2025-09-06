@@ -1,0 +1,9 @@
+package model;
+
+public enum GameOverReason {
+    NONE,
+    EXCESSIVE_PACKET_LOSS,
+    TIME_LIMIT_EXCEEDED,
+    NETWORK_DISCONNECTED,
+    EXCESSIVE_SYSTEM_FAILURES
+}
