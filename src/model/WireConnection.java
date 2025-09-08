@@ -888,15 +888,13 @@ public class WireConnection {
         }
 
         // Get all path points for the wire (including bends)
-        List<Point2D> pathPoints = getPathPoints(true); // Use smooth curves for more accurate check
+        // Use rigid path to get actual wire segments, not interpolated curves
+        List<Point2D> pathPoints = getPathPoints(false); // Use rigid path for accurate collision detection
         
         // Check each system for intersection
         for (System system : systems) {
-            // Skip the systems that this wire connects
-            if (system == sourcePort.getParentSystem() ||
-                    system == destinationPort.getParentSystem()) {
-                continue;
-            }
+            // Check ALL systems, including source and destination systems
+            // A wire can pass over its own source/destination system if it has bends
 
             java.awt.geom.Rectangle2D systemBounds = system.getBounds();
 
@@ -907,7 +905,10 @@ public class WireConnection {
                 
                 // Check if this segment intersects with system bounds
                 if (lineIntersectsRectangle(segmentStart, segmentEnd, systemBounds)) {
-                    
+                    // Debug: Print collision detection details
+                    java.lang.System.out.println("DEBUG: Wire " + id.substring(0,8) + " segment intersects with " + 
+                        system.getClass().getSimpleName() + " at (" + segmentStart.getX() + "," + segmentStart.getY() + 
+                        ") to (" + segmentEnd.getX() + "," + segmentEnd.getY() + ")");
                     return true;
                 }
             }
@@ -918,7 +919,7 @@ public class WireConnection {
 
     /**
      * Checks if a line segment intersects with a rectangle.
-     * Uses a simpler and more reliable algorithm.
+     * Uses a more robust algorithm that handles edge cases better.
      */
     private boolean lineIntersectsRectangle(Point2D lineStart, Point2D lineEnd,
                                             java.awt.geom.Rectangle2D rect) {
@@ -938,6 +939,16 @@ public class WireConnection {
         if (pointInRectangle(x1, y1, rectX, rectY, rectWidth, rectHeight) ||
             pointInRectangle(x2, y2, rectX, rectY, rectWidth, rectHeight)) {
             return true;
+        }
+
+        // Check if line segment is completely outside rectangle
+        double minX = Math.min(x1, x2);
+        double maxX = Math.max(x1, x2);
+        double minY = Math.min(y1, y2);
+        double maxY = Math.max(y1, y2);
+
+        if (maxX < rectX || minX > rectRight || maxY < rectY || minY > rectBottom) {
+            return false;
         }
 
         // Check intersection with each edge of the rectangle

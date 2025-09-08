@@ -64,7 +64,7 @@ public class GameState {
         this.isLevelComplete = false;
         this.levelTimer = 0.0;
         this.lostPacketsCount = 0;
-        this.coins = 10;
+        this.coins = 20;
         this.showSystemIndicators = true; // Indicators are always ON
         // Default settings
         this.gameSettings.put("offWireLossThreshold", 20.0);
@@ -78,7 +78,7 @@ public class GameState {
         this.remainingWireLength = level.getInitialWireLength();
         this.temporalProgress = 0.0;
         this.packetLoss = 0.0;
-        this.coins = 10;
+        this.coins = 20;
         this.lostPacketsCount = 0;
         this.showSystemIndicators = true;
         this.lastGameOverReason = GameOverReason.NONE;
@@ -532,7 +532,7 @@ public class GameState {
         this.remainingWireLength = level.getInitialWireLength();
         this.temporalProgress = 0.0;
         this.packetLoss = 0.0;
-        this.coins = 10;
+        this.coins = 20;
         this.activePackets.clear();
         this.levelTimer = 0.0;
         this.isPaused = false;

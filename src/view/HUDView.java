@@ -62,7 +62,7 @@ public class HUDView {
         root.setMouseTransparent(true);
 
         // Game statistics
-        coinsLabel = createStatLabel("Coins: 10");
+        coinsLabel = createStatLabel("Coins: 20");
         wireLengthLabel = createStatLabel("Wire Length: 0");
         packetLossLabel = createStatLabel("Packets (safe: 0  lost: 0)");
         temporalProgressLabel = createStatLabel("Time: 0s");

@@ -674,7 +674,7 @@ public class GameController {
             // Preserve coins from previous levels - don't reset them, but ensure minimum of 10
             int currentCoins = gameState.getCoins();
             if (currentCoins == 0) {
-                currentCoins = 10; // Set initial coins to 10 if starting fresh
+                currentCoins = 20; // Set initial coins to 20 if starting fresh
             }
 
             gameState.setCurrentLevel(level);
@@ -1140,7 +1140,7 @@ public class GameController {
         GameLevel level = new GameLevel();
         level.setLevelId("level1");
         level.setName("Enhanced Foundation");
-        level.setInitialWireLength(6000.0); // Increased for more complex network
+        level.setInitialWireLength(8000.0); // Increased for more complex network
         level.setDuration(90.0); // Standard duration
 
         // Create 2 reference systems
