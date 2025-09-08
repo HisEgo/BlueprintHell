@@ -133,20 +133,20 @@ public class InputHandler {
      */
     public void handleKeyPress(KeyEvent event) {
         KeyCode code = event.getCode();
-        java.lang.System.out.println("DEBUG: handleKeyPress called with key: " + code.getName());
+        
 
         // Handle space key for viewport panning
         if (code == KeyCode.SPACE) {
             isSpacePressed = true;
-            java.lang.System.out.println("DEBUG: Space key pressed, setting isSpacePressed = true");
+            
             return; // Don't process as a regular key binding
         }
 
         String action = reverseKeyBindings.get(code);
-        java.lang.System.out.println("DEBUG: Action for key " + code.getName() + ": " + action);
+        
 
         if (action == null) {
-            java.lang.System.out.println("DEBUG: No binding found for key " + code.getName());
+            
             return; // No binding for this key
         }
 
@@ -183,7 +183,7 @@ public class InputHandler {
                 selectedWire = null;
                 firstSelectedWireForMerge = null;
                 selectedBendIndex = -1;
-                java.lang.System.out.println("Wire merge mode: " + (isWireMergeMode ? "ON - Click two wires to merge them" : "OFF"));
+                
                 break;
             case "system_movement_mode":
                 // Toggle system movement mode (requires Scroll of Sisyphus)
@@ -199,12 +199,12 @@ public class InputHandler {
                     selectedBendIndex = -1;
                     java.lang.System.out.println("System movement mode: " + (isSystemMovementMode ? "ON - Click and drag systems to move them" : "OFF"));
                 } else {
-                    java.lang.System.out.println("System movement requires Scroll of Sisyphus ability");
+                    
                 }
                 break;
             case "toggle_indicators":
                 // System indicators are always ON - no toggle needed
-                java.lang.System.out.println("System indicators are always visible");
+                
                 break;
             case "shop_toggle":
                 // Toggle shop
@@ -215,8 +215,8 @@ public class InputHandler {
                 handlePauseOrMenu();
                 break;
             case "start_simulation":
-                // Simulation auto-starts when all systems are connected - no manual start needed
-                java.lang.System.out.println("Simulation starts automatically when all systems are connected");
+                // Simulation is now started via Run button in UI
+                
                 break;
             case "escape":
                 // Exit current mode
@@ -230,11 +230,11 @@ public class InputHandler {
                 } else if (isWireMergeMode) {
                     isWireMergeMode = false;
                     firstSelectedWireForMerge = null;
-                    java.lang.System.out.println("Wire merge mode cancelled");
+                    
                 } else if (isSystemMovementMode) {
                     isSystemMovementMode = false;
                     selectedSystem = null;
-                    java.lang.System.out.println("System movement mode cancelled");
+                    
                 } else if (gameController.isSimulationMode()) {
                     // Return to editing mode from simulation
                     gameController.enterEditingMode();
@@ -244,9 +244,9 @@ public class InputHandler {
                 // Toggle smooth wire curves - only allowed in editing mode
                 if (gameController.isEditingMode()) {
                     gameController.toggleSmoothWires();
-                    java.lang.System.out.println("Smooth wire curves toggled: " + (gameController.isSmoothWires() ? "ON" : "OFF"));
+                    
                 } else {
-                    java.lang.System.out.println("Cannot change wire curve mode during simulation. Return to editing mode first.");
+                    
                 }
                 break;
         }
@@ -286,14 +286,14 @@ public class InputHandler {
     public void handleMousePress(MouseEvent event) {
         if (gameController == null) return;
 
-        java.lang.System.out.println("Mouse press at: " + event.getX() + ", " + event.getY() + " with button: " + event.getButton());
+        
 
         if (event.getButton() == MouseButton.PRIMARY) {
             if (gameController.isEditingMode()) {
                 if (isWiringMode) {
                     handleWiringMousePress(event);
                 } else if (isBendCreationMode) {
-                    java.lang.System.out.println("DEBUG: Mouse press in bend creation mode - processing bend creation");
+                    
                     handleBendCreationMousePress(event);
                 } else if (isWireMergeMode) {
                     handleWireMergeMousePress(event);
@@ -303,14 +303,14 @@ public class InputHandler {
                     // Check if clicking on a port to start wiring
                     Port port = findPortAtPosition(event.getX(), event.getY());
                     if (port != null) {
-                        java.lang.System.out.println("Port found at mouse position: " + port.getShape() + " " + (port.isInput() ? "input" : "output") + " at " + port.getPosition());
+                        
                         // Start wiring from this port
                         selectedPort = port;
                         isWiringMode = true;
-                        java.lang.System.out.println("Started wiring from port - drag to another port to connect");
+                        
                         showWirePreview(event);
                     } else {
-                        java.lang.System.out.println("No port found at mouse position");
+                        
                         handleRegularMousePress(event);
                     }
                 }
@@ -343,7 +343,7 @@ public class InputHandler {
                 );
 
                 if (!success) {
-                    java.lang.System.out.println("Cannot move bend to this position (basic constraint violation)");
+                    
                 }
             } else if (isSystemMovementMode && selectedSystem != null) {
                 // Move system
@@ -353,7 +353,7 @@ public class InputHandler {
                 );
 
                 if (!success) {
-                    java.lang.System.out.println("Cannot move system to this position (wire constraints or collision)");
+                    
                 }
             }
         }
@@ -375,7 +375,7 @@ public class InputHandler {
                 selectedPort = null;
                 isWiringMode = false;
                 clearWirePreview();
-                java.lang.System.out.println("Wiring completed");
+                
             } else if (isBendCreationMode) {
                 // Clear bend selection
                 selectedWire = null;
@@ -383,7 +383,7 @@ public class InputHandler {
             } else if (isSystemMovementMode) {
                 // Clear system selection
                 selectedSystem = null;
-                java.lang.System.out.println("System movement completed");
+                
             } else if (isWireMergeMode) {
                 // Wire merge mode is handled in press, nothing needed on release
             }
@@ -403,21 +403,21 @@ public class InputHandler {
             if (direction > 0) {
                 // Move forward in time
                 newProgress = Math.min(currentProgress + timeStep, levelDuration);
-                java.lang.System.out.println("Temporal Navigation: Forward to " + String.format("%.1f", newProgress) + "s");
+                
             } else {
                 // Move backward in time
                 newProgress = Math.max(0.0, currentProgress - timeStep);
-                java.lang.System.out.println("Temporal Navigation: Backward to " + String.format("%.1f", newProgress) + "s");
+                
             }
 
             // Only update if time actually changed
             if (Math.abs(newProgress - currentProgress) > 0.01) {
                 // Update packet positions and temporal progress
                 gameController.updatePacketPositionsForTime(newProgress);
-                java.lang.System.out.println("Time changed from " + String.format("%.1f", currentProgress) + "s to " + String.format("%.1f", newProgress) + "s");
+                
             }
         } else if (gameController != null && gameController.isEditingMode()) {
-            java.lang.System.out.println("Temporal navigation only available in simulation mode. Press R to start simulation.");
+            
         }
     }
 
@@ -519,16 +519,14 @@ public class InputHandler {
     private void handleBendCreationMousePress(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
-        java.lang.System.out.println("DEBUG: Bend creation click - Screen coordinates: (" + event.getX() + ", " + event.getY() + ")");
-        java.lang.System.out.println("DEBUG: Bend creation click - World coordinates: (" + worldClickPos.getX() + ", " + worldClickPos.getY() + ")");
-        java.lang.System.out.println("DEBUG: Viewport info - Scale: " + gameController.getGameView().getViewportScale() + ", Offset: " + gameController.getGameView().getViewportOffset());
+        
 
         // First, check if clicking on an existing bend for movement
         WireConnection wireWithBend = findWireWithBendAtPosition(worldClickPos);
         if (wireWithBend != null) {
             selectedWire = wireWithBend;
             selectedBendIndex = findBendIndexAtPosition(wireWithBend, worldClickPos);
-            java.lang.System.out.println("DEBUG: Selected bend " + selectedBendIndex + " for movement");
+            
             return;
         }
 
@@ -536,7 +534,7 @@ public class InputHandler {
         WireConnection wireAtPosition = findWireAtPosition(worldClickPos);
 
         if (wireAtPosition != null) {
-            java.lang.System.out.println("DEBUG: Found wire for bend creation: " + wireAtPosition.getId());
+            
             // Try to add a bend to this wire
             // Get smooth curve setting to calculate wire length correctly
             boolean useSmoothCurves = true; // Default to smooth curves
@@ -556,12 +554,12 @@ public class InputHandler {
                 if (gameController.getSoundManager() != null) {
                     gameController.getSoundManager().playWireConnectSound();
                 }
-                java.lang.System.out.println("DEBUG: Bend added successfully! Cost: 1 coin");
+                
             } else {
-                java.lang.System.out.println("DEBUG: Failed to add bend. Check coin balance or system collision.");
+                
             }
         } else {
-            java.lang.System.out.println("DEBUG: No wire found at click position.");
+            
         }
     }
 
@@ -612,7 +610,7 @@ public class InputHandler {
      */
     private void handleRegularMousePress(MouseEvent event) {
         // Handle system selection, menu clicks, etc.
-        java.lang.System.out.println("Regular mouse press at: " + event.getX() + ", " + event.getY());
+        
     }
 
     /**
@@ -621,7 +619,7 @@ public class InputHandler {
     private void handleRightClickWireRemoval(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
-        java.lang.System.out.println("Right-click wire removal: screen (" + event.getX() + ", " + event.getY() + ") -> world (" + worldClickPos.getX() + ", " + worldClickPos.getY() + ")");
+        
 
         // Find wire at world position
         WireConnection wireToRemove = findWireAtPosition(worldClickPos);
@@ -633,17 +631,17 @@ public class InputHandler {
             );
 
             if (success) {
-                java.lang.System.out.println("Wire removed successfully! Length restored: " + wireToRemove.getTotalLength());
+                
 
                 // Play wire removal sound if available
                 if (gameController.getSoundManager() != null) {
                     gameController.getSoundManager().playWireConnectSound(); // Reuse wire connect sound
                 }
             } else {
-                java.lang.System.out.println("Failed to remove wire.");
+                
             }
         } else {
-            java.lang.System.out.println("No wire found at click position for removal.");
+            
         }
     }
 
@@ -653,7 +651,7 @@ public class InputHandler {
     private void handleWireMergeMousePress(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
-        java.lang.System.out.println("Wire merge click: screen (" + event.getX() + ", " + event.getY() + ") -> world (" + worldClickPos.getX() + ", " + worldClickPos.getY() + ")");
+        
 
         // Find wire at world position
         WireConnection wireAtPosition = findWireAtPosition(worldClickPos);
@@ -662,7 +660,7 @@ public class InputHandler {
             if (firstSelectedWireForMerge == null) {
                 // Select first wire
                 firstSelectedWireForMerge = wireAtPosition;
-                java.lang.System.out.println("First wire selected for merging. Click another wire to merge them.");
+                
             } else if (firstSelectedWireForMerge != wireAtPosition) {
                 // Try to merge the two selected wires
                 boolean success = gameController.getWiringController().mergeWireConnections(
@@ -670,25 +668,24 @@ public class InputHandler {
                 );
 
                 if (success) {
-                    java.lang.System.out.println("Wires merged successfully!");
-
+                    
                     // Play wire connect sound if available
                     if (gameController.getSoundManager() != null) {
                         gameController.getSoundManager().playWireConnectSound();
                     }
                 } else {
-                    java.lang.System.out.println("Failed to merge wires. Check if they share a common connection point.");
+                    
                 }
 
                 // Reset selection
                 firstSelectedWireForMerge = null;
             } else {
                 // Clicked the same wire twice - deselect
-                java.lang.System.out.println("Same wire clicked - selection cleared.");
+                
                 firstSelectedWireForMerge = null;
             }
         } else {
-            java.lang.System.out.println("No wire found at click position for merging.");
+            
         }
     }
 
@@ -697,22 +694,22 @@ public class InputHandler {
      */
     private Port findPortAtPosition(double x, double y) {
         if (gameController == null || gameController.getGameState() == null) {
-            java.lang.System.out.println("  findPortAtPosition: gameController or gameState is null");
+            
             return null;
         }
 
         // Convert screen coordinates to world coordinates using the viewport transformation
         Point2D worldPosition = gameController.getGameView().screenToWorld(x, y);
-        java.lang.System.out.println("  findPortAtPosition: screen (" + x + ", " + y + ") -> world (" + worldPosition.getX() + ", " + worldPosition.getY() + ")");
+        
 
         // Check all systems for ports at the given position
         for (System system : gameController.getGameState().getSystems()) {
-            java.lang.System.out.println("    Checking system: " + system.getClass().getSimpleName() + " at " + system.getPosition());
+            
 
             // Check input ports
             for (Port port : system.getInputPorts()) {
                 if (isPositionNearPort(worldPosition, port)) {
-                    java.lang.System.out.println("      Found input port: " + port.getShape() + " at " + port.getPosition());
+                    
                     return port;
                 }
             }
@@ -720,13 +717,13 @@ public class InputHandler {
             // Check output ports
             for (Port port : system.getOutputPorts()) {
                 if (isPositionNearPort(worldPosition, port)) {
-                    java.lang.System.out.println("      Found output port: " + port.getShape() + " at " + port.getPosition());
+                    
                     return port;
                 }
             }
         }
 
-        java.lang.System.out.println("  findPortAtPosition: no port found at world position (" + worldPosition.getX() + ", " + worldPosition.getY() + ")");
+        
         return null;
     }
 
@@ -743,12 +740,10 @@ public class InputHandler {
      * Creates a wire connection between two ports.
      */
     private void createWireConnection(Port port1, Port port2) {
-        java.lang.System.out.println("InputHandler.createWireConnection called with ports:");
-        java.lang.System.out.println("  Port1: " + port1.getShape() + " " + (port1.isInput() ? "input" : "output") + " at " + port1.getPosition());
-        java.lang.System.out.println("  Port2: " + port2.getShape() + " " + (port2.isInput() ? "input" : "output") + " at " + port2.getPosition());
+        
 
         if (gameController == null || port1 == null || port2 == null) {
-            java.lang.System.out.println("  FAILED: gameController or ports are null");
+            
             return;
         }
 
@@ -756,14 +751,14 @@ public class InputHandler {
         if (!canCreateConnection(port1, port2)) {
             String reason = lastConnectionFailureReason;
             if (reason == null || reason.isEmpty()) reason = "Invalid connection";
-            java.lang.System.out.println("Connection rejected: " + reason);
+            
             if (gameController.getGameView() != null) {
                 gameController.getGameView().showToast("Connection rejected: " + reason, javafx.scene.paint.Color.ORANGE);
             }
             return;
         }
 
-        java.lang.System.out.println("  Connection validation passed, proceeding with creation...");
+        
 
         // Calculate wire length needed
         Point2D pos1 = port1.getPosition();
@@ -775,13 +770,11 @@ public class InputHandler {
         double gameStateRemaining = gameState.getRemainingWireLength();
         double levelRemaining = gameState.getCurrentLevel() != null ? gameState.getCurrentLevel().getRemainingWireLength() : 0.0;
 
-        java.lang.System.out.println("DEBUG: Wire length check - Need: " + String.format("%.1f", wireLength) +
-                ", GameState has: " + String.format("%.1f", gameStateRemaining) +
-                ", Level calc: " + String.format("%.1f", levelRemaining));
+        
 
         if (wireLength > gameStateRemaining) {
             String msg = "Not enough wire length (need " + String.format("%.1f", wireLength) + ", have " + String.format("%.1f", gameStateRemaining) + ")";
-            java.lang.System.out.println("Connection rejected: " + msg);
+            
             if (gameController.getGameView() != null) {
                 gameController.getGameView().showToast("Connection rejected: " + msg, javafx.scene.paint.Color.ORANGE);
             }
@@ -790,16 +783,11 @@ public class InputHandler {
 
         // Create wire connection with proper length
         WireConnection connection = new WireConnection(port1, port2, wireLength);
-        java.lang.System.out.println("  WireConnection object created with ID: " + connection.getId());
-        java.lang.System.out.println("  Path points: " + connection.getPathPoints().size() + " points");
-        for (int i = 0; i < connection.getPathPoints().size(); i++) {
-            Point2D point = connection.getPathPoints().get(i);
-            java.lang.System.out.println("    Point " + i + ": (" + point.getX() + ", " + point.getY() + ")");
-        }
+        
 
         // Add to game state
         gameState.addWireConnection(connection);
-        java.lang.System.out.println("  Wire connection added to game state. Total connections: " + gameState.getWireConnections().size());
+        
 
         // Update port connection status
         port1.setConnected(true);
@@ -812,8 +800,7 @@ public class InputHandler {
         // Deduct wire length from available budget
         gameState.setRemainingWireLength(gameState.getRemainingWireLength() - wireLength);
 
-        java.lang.System.out.println("Wire connection created: length=" + String.format("%.1f", wireLength) +
-                ", remaining=" + String.format("%.1f", gameState.getRemainingWireLength()));
+        
 
         // Play connection sound
         if (gameController.getSoundManager() != null) {
@@ -822,13 +809,13 @@ public class InputHandler {
     }
 
     private boolean canCreateConnection(Port port1, Port port2) {
-        java.lang.System.out.println("  Validating connection in InputHandler...");
+        
         lastConnectionFailureReason = null;
 
         // Check if ports are from the same system
         if (port1.getParentSystem() == port2.getParentSystem()) {
             lastConnectionFailureReason = "Ports from the same system";
-            java.lang.System.out.println("    FAILED: Ports from the same system");
+            
             return false;
         }
 
@@ -838,14 +825,14 @@ public class InputHandler {
         if (port1.isInput() == port2.isInput()) {
             String portTypes = port1.isInput() ? "both input" : "both output";
             lastConnectionFailureReason = portTypes + " ports (must be input-to-output)";
-            java.lang.System.out.println("    FAILED: " + portTypes + " ports (must be input-to-output)");
+            
             return false;
         }
 
         // Check if connection already exists
         if (gameController.getGameState().hasWireConnection(port1, port2)) {
             lastConnectionFailureReason = "Connection already exists";
-            java.lang.System.out.println("    FAILED: Connection already exists");
+            
             return false;
         }
 
@@ -853,11 +840,11 @@ public class InputHandler {
         if (port1.isConnected() || port2.isConnected()) {
             String connectedPort = port1.isConnected() ? "first" : "second";
             lastConnectionFailureReason = connectedPort + " port already connected";
-            java.lang.System.out.println("    FAILED: " + connectedPort + " port already connected");
+            
             return false;
         }
 
-        java.lang.System.out.println("    Connection validation passed in InputHandler");
+        
         return true;
     }
 

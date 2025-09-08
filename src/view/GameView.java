@@ -36,6 +36,13 @@ public class GameView {
     private boolean wirePreviewValid = false;
     private boolean showWirePreview = false;
 
+    // Run button simulation (drawn on canvas instead of UI component)
+    private boolean isRunButtonVisible = true;
+    private double runButtonX = 0;
+    private double runButtonY = 10;
+    private double runButtonWidth = 120;
+    private double runButtonHeight = 40;
+
     public GameView(GameController gameController) {
         this.gameController = gameController;
         initializeUI();
@@ -65,13 +72,13 @@ public class GameView {
         root.setStyle("-fx-background-color: #0a0a0a;");
     }
 
+
     /**
      * Sets up input event handlers to connect with the InputHandler.
      */
     private void setupInputHandlers() {
         // Set up keyboard event handlers on the root pane
         root.setOnKeyPressed(event -> {
-            java.lang.System.out.println("DEBUG: GameView - Key pressed: " + event.getCode().getName());
             gameController.getInputHandler().handleKeyPress(event);
 
             // Handle viewport-specific keys
@@ -79,7 +86,6 @@ public class GameView {
         });
 
         root.setOnKeyReleased(event -> {
-            java.lang.System.out.println("DEBUG: GameView - Key released: " + event.getCode().getName());
             gameController.getInputHandler().handleKeyRelease(event);
         });
 
@@ -88,6 +94,12 @@ public class GameView {
             // Initialize mouse position for panning
             lastMouseX = event.getX();
             lastMouseY = event.getY();
+
+            // Check if Run button was clicked
+            if (isRunButtonClicked(event.getX(), event.getY())) {
+                handleRunButtonClick();
+                return;
+            }
 
             gameController.getInputHandler().handleMousePress(event);
         });
@@ -419,6 +431,12 @@ public class GameView {
 
         // Draw control instructions (always in screen space)
         drawControlInstructions();
+
+        // Draw Run button (always in screen space)
+        drawRunButton();
+
+        // Draw error message if any
+        drawErrorMessage();
     }
 
     /**
@@ -841,17 +859,13 @@ public class GameView {
     private void drawWireConnections() {
         if (currentLevel == null) return;
 
-        java.lang.System.out.println("Drawing wire connections - Total connections: " + currentLevel.getWireConnections().size());
+        
 
         for (WireConnection connection : currentLevel.getWireConnections()) {
             if (connection.isActive()) {
-                java.lang.System.out.println("Drawing active wire connection: " + connection.getId() +
-                        ", Path points: " + connection.getPathPoints().size() +
-                        ", Source port shape: " + connection.getSourcePort().getShape() +
-                        ", Destination port shape: " + connection.getDestinationPort().getShape());
                 drawWireConnection(connection);
             } else {
-                java.lang.System.out.println("Skipping inactive wire connection: " + connection.getId());
+                
             }
         }
     }
@@ -877,15 +891,26 @@ public class GameView {
         Color glowColor = Color.LIGHTCYAN;
         double wireWidth = 2.0;
 
-        // Add hover highlighting
-        if (connection == hoveredWire) {
+        // Check if wire passes over systems - if so, make it red
+        boolean passesOverSystems = false;
+        if (gameController != null && gameController.getGameState() != null && currentLevel != null) {
+            passesOverSystems = connection.passesOverSystems(currentLevel.getSystems());
+            
+        }
+        
+        if (passesOverSystems) {
+            wireColor = Color.RED;
+            glowColor = Color.LIGHTCORAL;
+            // Keep normal thickness
+        } else if (connection == hoveredWire) {
+            // Add hover highlighting only if not problematic
             wireColor = Color.YELLOW;
             glowColor = Color.ORANGE;
             wireWidth = 3.0; // Make hovered wire thicker
         }
 
-        if (hasPacket) {
-            // Active wire with packets - make it glow and pulse
+        if (hasPacket && !passesOverSystems) {
+            // Active wire with packets - make it glow and pulse (only if not problematic)
             List<Packet> packets = connection.getPacketsOnWire();
             if (!packets.isEmpty()) {
                 // Color based on dominant packet type (first active packet)
@@ -921,8 +946,8 @@ public class GameView {
         gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
         gc.setLineJoin(javafx.scene.shape.StrokeLineJoin.ROUND);
 
-        // Draw glow effect for active wires
-        if (hasPacket) {
+        // Draw glow effect for active wires or problematic wires
+        if (hasPacket || passesOverSystems) {
             gc.setStroke(glowColor);
             gc.setLineWidth(wireWidth + 2);
             for (int i = 0; i < pathPoints.size() - 1; i++) {
@@ -1712,7 +1737,7 @@ public class GameView {
     public void requestFocus() {
         root.requestFocus();
         canvas.requestFocus();
-        java.lang.System.out.println("Focus requested - root: " + root.isFocused() + ", canvas: " + canvas.isFocused());
+        
     }
 
     /**
@@ -1749,7 +1774,7 @@ public class GameView {
     public void addPauseOverlay(javafx.scene.layout.Pane pauseOverlay) {
         if (!root.getChildren().contains(pauseOverlay)) {
             root.getChildren().add(pauseOverlay);
-            java.lang.System.out.println("Pause overlay added to GameView scene graph");
+            
         }
     }
 
@@ -1759,7 +1784,7 @@ public class GameView {
     public void addShopOverlay(javafx.scene.layout.Pane shopOverlay) {
         if (!root.getChildren().contains(shopOverlay)) {
             root.getChildren().add(shopOverlay);
-            java.lang.System.out.println("Shop overlay added to GameView scene graph");
+            
         }
     }
 
@@ -1779,12 +1804,7 @@ public class GameView {
             hudOverlay.setVisible(true);
 
             // Debug: Print HUD addition status
-            java.lang.System.out.println("HUD overlay added to GameView scene graph");
-            java.lang.System.out.println("HUD overlay visible: " + hudOverlay.isVisible());
-            java.lang.System.out.println("HUD overlay position: (" + hudOverlay.getLayoutX() + ", " + hudOverlay.getLayoutY() + ")");
-            java.lang.System.out.println("Total children in root: " + root.getChildren().size());
-            java.lang.System.out.println("HUD overlay in scene: " + (hudOverlay.getScene() != null));
-            java.lang.System.out.println("HUD overlay parent: " + (hudOverlay.getParent() != null));
+            
         }
     }
 
@@ -1794,7 +1814,7 @@ public class GameView {
      */
     public void addHUDIndicator(javafx.scene.control.Button hudIndicator) {
         // Method kept for compatibility but does nothing - HUD is always visible
-        java.lang.System.out.println("HUD indicator not needed - HUD is always visible");
+        
     }
 
     /**
@@ -1922,5 +1942,182 @@ public class GameView {
             gc.setFont(javafx.scene.text.Font.font("Arial", 12));
             gc.fillText(smoothWires ? "SMOOTH WIRES" : "RIGID WIRES", indicatorX + 10, indicatorY + 20);
         }
+    }
+
+    /**
+     * Draws the Run button on canvas.
+     */
+    private void drawRunButton() {
+        if (!gameController.isEditingMode()) {
+            isRunButtonVisible = false;
+            return;
+        }
+
+        isRunButtonVisible = true;
+
+        // Position button in top-right corner
+        if (canvas != null) {
+            double canvasWidth = canvas.getWidth();
+            runButtonX = canvasWidth - runButtonWidth - 20; // 20px margin from right edge
+        }
+
+        // Check if simulation can start
+        boolean canStart = canStartSimulation();
+        
+        // Draw button background
+        if (canStart) {
+            // Ready to start - green button
+            gc.setFill(Color.rgb(76, 175, 80)); // Green
+        } else {
+            // Not ready - red button
+            gc.setFill(Color.rgb(244, 67, 54)); // Red
+        }
+        
+        // Draw button rectangle with rounded corners effect
+        gc.fillRoundRect(runButtonX, runButtonY, runButtonWidth, runButtonHeight, 8, 8);
+        
+        // Draw button border
+        gc.setStroke(Color.rgb(255, 255, 255, 0.3));
+        gc.setLineWidth(1);
+        gc.strokeRoundRect(runButtonX, runButtonY, runButtonWidth, runButtonHeight, 8, 8);
+        
+        // Draw button text
+        gc.setFill(Color.WHITE);
+        gc.setFont(javafx.scene.text.Font.font("Arial", 14));
+        String buttonText = "START";
+        
+        // Center text in button
+        double textX = runButtonX + (runButtonWidth / 2) - 20; // Approximate centering for "START"
+        double textY = runButtonY + (runButtonHeight / 2) + 5; // Vertical centering
+        gc.fillText(buttonText, textX, textY);
+    }
+
+    /**
+     * Draws error message on screen if there is one.
+     */
+    private void drawErrorMessage() {
+        if (currentErrorMessage == null) return;
+
+        // Check if error message should still be displayed
+        errorMessageFrameCount++;
+        if (errorMessageFrameCount > ERROR_MESSAGE_DURATION_FRAMES) {
+            currentErrorMessage = null;
+            return;
+        }
+
+        // Position error message below the START button
+        double messageX = runButtonX;
+        double messageY = runButtonY + runButtonHeight + 20;
+
+        // Draw error message background
+        gc.setFill(Color.rgb(244, 67, 54, 0.9)); // Red background with transparency
+        double messageWidth = 300;
+        double messageHeight = 60;
+        gc.fillRoundRect(messageX - 50, messageY - 10, messageWidth, messageHeight, 8, 8);
+
+        // Draw error message border
+        gc.setStroke(Color.rgb(255, 255, 255, 0.5));
+        gc.setLineWidth(2);
+        gc.strokeRoundRect(messageX - 50, messageY - 10, messageWidth, messageHeight, 8, 8);
+
+        // Draw error message text
+        gc.setFill(Color.WHITE);
+        gc.setFont(javafx.scene.text.Font.font("Arial", 12));
+        
+        // Word wrap the message if it's too long
+        String[] words = currentErrorMessage.split(" ");
+        StringBuilder line1 = new StringBuilder();
+        StringBuilder line2 = new StringBuilder();
+        
+        boolean useSecondLine = false;
+        for (String word : words) {
+            if (line1.length() + word.length() > 35 && !useSecondLine) {
+                useSecondLine = true;
+            }
+            
+            if (useSecondLine) {
+                if (line2.length() > 0) line2.append(" ");
+                line2.append(word);
+            } else {
+                if (line1.length() > 0) line1.append(" ");
+                line1.append(word);
+            }
+        }
+        
+        gc.fillText(line1.toString(), messageX - 40, messageY + 10);
+        if (line2.length() > 0) {
+            gc.fillText(line2.toString(), messageX - 40, messageY + 30);
+        }
+    }
+
+    /**
+     * Handles Run button click with validation and error messages.
+     */
+    private void handleRunButtonClick() {
+        if (!gameController.isEditingMode()) {
+            return;
+        }
+
+        // Check all conditions and show appropriate error message
+        boolean allPortsConnected = gameController.getWiringController().areAllPortsConnected(gameController.getGameState());
+        boolean referenceSystemsReady = gameController.areReferenceSystemsReady();
+        boolean noWireCollisions = !gameController.doAnyWiresPassOverSystems();
+
+        if (!allPortsConnected) {
+            showSimulationError("All ports must be connected!");
+            return;
+        }
+
+        if (!referenceSystemsReady) {
+            showSimulationError("Reference systems not ready. Connect source to destination.");
+            return;
+        }
+
+        if (!noWireCollisions) {
+            showSimulationError("Some wires pass over systems. Move wires away from systems.");
+            return;
+        }
+
+        // All conditions met - start simulation
+        gameController.enterSimulationMode();
+    }
+
+    /**
+     * Checks if simulation can start based on all conditions.
+     */
+    private boolean canStartSimulation() {
+        if (!gameController.isEditingMode()) {
+            return false;
+        }
+
+        boolean allPortsConnected = gameController.getWiringController().areAllPortsConnected(gameController.getGameState());
+        boolean referenceSystemsReady = gameController.areReferenceSystemsReady();
+        boolean noWireCollisions = !gameController.doAnyWiresPassOverSystems();
+
+        return allPortsConnected && referenceSystemsReady && noWireCollisions;
+    }
+
+    // Error message display
+    private String currentErrorMessage = null;
+    private int errorMessageFrameCount = 0;
+    private static final int ERROR_MESSAGE_DURATION_FRAMES = 180; // 3 seconds at 60fps
+
+    /**
+     * Shows simulation error message to user on screen.
+     */
+    private void showSimulationError(String message) {
+        java.lang.System.out.println("SIMULATION ERROR: " + message);
+        currentErrorMessage = message;
+        errorMessageFrameCount = 0;
+    }
+
+    /**
+     * Checks if the given coordinates are within the Run button area.
+     */
+    private boolean isRunButtonClicked(double x, double y) {
+        if (!isRunButtonVisible) return false;
+        
+        return x >= runButtonX && x <= runButtonX + runButtonWidth &&
+               y >= runButtonY && y <= runButtonY + runButtonHeight;
     }
 }

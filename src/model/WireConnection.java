@@ -887,9 +887,9 @@ public class WireConnection {
             return false;
         }
 
-        Point2D sourcePos = sourcePort.getPosition();
-        Point2D destPos = destinationPort.getPosition();
-
+        // Get all path points for the wire (including bends)
+        List<Point2D> pathPoints = getPathPoints(true); // Use smooth curves for more accurate check
+        
         // Check each system for intersection
         for (System system : systems) {
             // Skip the systems that this wire connects
@@ -898,9 +898,18 @@ public class WireConnection {
                 continue;
             }
 
-            // Check if wire line intersects with system bounds
-            if (lineIntersectsRectangle(sourcePos, destPos, system.getBounds())) {
-                return true;
+            java.awt.geom.Rectangle2D systemBounds = system.getBounds();
+
+            // Check each segment of the wire path
+            for (int i = 0; i < pathPoints.size() - 1; i++) {
+                Point2D segmentStart = pathPoints.get(i);
+                Point2D segmentEnd = pathPoints.get(i + 1);
+                
+                // Check if this segment intersects with system bounds
+                if (lineIntersectsRectangle(segmentStart, segmentEnd, systemBounds)) {
+                    
+                    return true;
+                }
             }
         }
 
@@ -909,7 +918,7 @@ public class WireConnection {
 
     /**
      * Checks if a line segment intersects with a rectangle.
-     * Uses the Liang-Barsky line clipping algorithm.
+     * Uses a simpler and more reliable algorithm.
      */
     private boolean lineIntersectsRectangle(Point2D lineStart, Point2D lineEnd,
                                             java.awt.geom.Rectangle2D rect) {
@@ -918,73 +927,64 @@ public class WireConnection {
         double x2 = lineEnd.getX();
         double y2 = lineEnd.getY();
 
-        double xmin = rect.getX();
-        double ymin = rect.getY();
-        double xmax = rect.getX() + rect.getWidth();
-        double ymax = rect.getY() + rect.getHeight();
+        double rectX = rect.getX();
+        double rectY = rect.getY();
+        double rectWidth = rect.getWidth();
+        double rectHeight = rect.getHeight();
+        double rectRight = rectX + rectWidth;
+        double rectBottom = rectY + rectHeight;
 
-        // Calculate direction vector
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-
-        // Parameters for clipping
-        double p1 = -dx;
-        double p2 = dx;
-        double p3 = -dy;
-        double p4 = dy;
-
-        double q1 = x1 - xmin;
-        double q2 = xmax - x1;
-        double q3 = y1 - ymin;
-        double q4 = ymax - y1;
-
-        // Check if line is parallel to any boundary
-        if (Math.abs(dx) < 1e-10) {
-            // Vertical line
-            if (x1 < xmin || x1 > xmax) {
-                return false;
-            }
-            return !(y1 > ymax && y2 > ymax) && !(y1 < ymin && y2 < ymin);
+        // Check if either endpoint is inside the rectangle
+        if (pointInRectangle(x1, y1, rectX, rectY, rectWidth, rectHeight) ||
+            pointInRectangle(x2, y2, rectX, rectY, rectWidth, rectHeight)) {
+            return true;
         }
 
-        if (Math.abs(dy) < 1e-10) {
-            // Horizontal line
-            if (y1 < ymin || y1 > ymax) {
-                return false;
-            }
-            return !(x1 > xmax && x2 > xmax) && !(x1 < xmin && x2 < xmin);
+        // Check intersection with each edge of the rectangle
+        // Top edge
+        if (lineSegmentIntersection(x1, y1, x2, y2, rectX, rectY, rectRight, rectY)) {
+            return true;
+        }
+        // Bottom edge
+        if (lineSegmentIntersection(x1, y1, x2, y2, rectX, rectBottom, rectRight, rectBottom)) {
+            return true;
+        }
+        // Left edge
+        if (lineSegmentIntersection(x1, y1, x2, y2, rectX, rectY, rectX, rectBottom)) {
+            return true;
+        }
+        // Right edge
+        if (lineSegmentIntersection(x1, y1, x2, y2, rectRight, rectY, rectRight, rectBottom)) {
+            return true;
         }
 
-        // Calculate intersection parameters
-        double u1 = Double.NEGATIVE_INFINITY;
-        double u2 = Double.POSITIVE_INFINITY;
+        return false;
+    }
 
-        if (p1 != 0) {
-            double r1 = q1 / p1;
-            double r2 = q2 / p2;
-            if (p1 < 0) {
-                u1 = Math.max(u1, r1);
-                u2 = Math.min(u2, r2);
-            } else {
-                u1 = Math.max(u1, r2);
-                u2 = Math.min(u2, r1);
-            }
+    /**
+     * Checks if a point is inside a rectangle.
+     */
+    private boolean pointInRectangle(double px, double py, double rx, double ry, double rw, double rh) {
+        return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+    }
+
+    /**
+     * Checks if two line segments intersect.
+     */
+    private boolean lineSegmentIntersection(double x1, double y1, double x2, double y2,
+                                          double x3, double y3, double x4, double y4) {
+        double denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        
+        // Lines are parallel
+        if (Math.abs(denominator) < 1e-10) {
+            return false;
         }
 
-        if (p3 != 0) {
-            double r3 = q3 / p3;
-            double r4 = q4 / p4;
-            if (p3 < 0) {
-                u1 = Math.max(u1, r3);
-                u2 = Math.min(u2, r4);
-            } else {
-                u1 = Math.max(u1, r4);
-                u2 = Math.min(u2, r3);
-            }
-        }
+        double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+        double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
 
-        // Check if there's a valid intersection
-        return u1 <= u2 && u2 >= 0 && u1 <= 1;
+        // Check if intersection point is within both line segments
+        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     }
 
     /**

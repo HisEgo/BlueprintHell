@@ -143,7 +143,7 @@ public class GameController {
 
         // Ensure HUD is visible by default
         hudView.forceShowAndUpdate();
-        System.out.println("HUD initialized and forced to be visible");
+        
     }
 
     /**
@@ -239,13 +239,16 @@ public class GameController {
                     gameView.update();
                     hudView.update();
                     
-                    // Auto-start simulation when all indicators are on
+                    // Check simulation readiness but don't auto-start
+                    // User must manually press R to start simulation
                     if (isEditingMode) {
                         boolean allIndicatorsOn = areAllIndicatorsOn();
                         boolean refSystemsReady = areReferenceSystemsReady();
-                        if (allIndicatorsOn && refSystemsReady) {
-                            System.out.println("All system indicators are ON - Auto-starting simulation!");
-                            enterSimulationMode();
+                        boolean noWireCollisions = !doAnyWiresPassOverSystems();
+                        
+                        if (allIndicatorsOn && refSystemsReady && noWireCollisions) {
+                            // All conditions met - ready to start simulation
+                            // User can press R to start
                         }
                     }
                 });
@@ -420,7 +423,7 @@ public class GameController {
      * destination input are connected, rather than all of them. This aligns with the
      * connected-graph requirement without forcing full utilization of every port.
      */
-    private boolean areReferenceSystemsReady() {
+    public boolean areReferenceSystemsReady() {
         if (gameState.getCurrentLevel() == null) return false;
         GameLevel level = gameState.getCurrentLevel();
 
@@ -433,11 +436,11 @@ public class GameController {
 
         // Check for at least one connected output port across all reference systems
         boolean anyOutputConnected = false;
-        java.lang.System.out.println("DEBUG: Checking " + allReferenceSystems.size() + " reference systems for connected output ports");
+        
         for (model.ReferenceSystem refSys : allReferenceSystems) {
-            java.lang.System.out.println("DEBUG: Checking reference system " + refSys.getId() + " with " + refSys.getOutputPorts().size() + " output ports");
+            
             for (Port out : refSys.getOutputPorts()) {
-                java.lang.System.out.println("DEBUG: Reference output port " + out.getShape() + " connected: " + out.isConnected());
+                
                 if (out.isConnected()) {
                     anyOutputConnected = true;
                     break;
@@ -446,17 +449,17 @@ public class GameController {
             if (anyOutputConnected) break;
         }
         if (!anyOutputConnected) {
-            java.lang.System.out.println("DEBUG: Reference systems not ready - no reference system output ports connected");
+            
             return false;
         }
 
         // Check for at least one connected input port across all reference systems
         boolean anyInputConnected = false;
-        java.lang.System.out.println("DEBUG: Checking " + allReferenceSystems.size() + " reference systems for connected input ports");
+        
         for (model.ReferenceSystem refSys : allReferenceSystems) {
-            java.lang.System.out.println("DEBUG: Checking reference system " + refSys.getId() + " with " + refSys.getInputPorts().size() + " input ports");
+            
             for (Port inPort : refSys.getInputPorts()) {
-                java.lang.System.out.println("DEBUG: Reference input port " + inPort.getShape() + " connected: " + inPort.isConnected());
+                
                 if (inPort.isConnected()) {
                     anyInputConnected = true;
                     break;
@@ -465,11 +468,11 @@ public class GameController {
             if (anyInputConnected) break;
         }
         if (!anyInputConnected) {
-            java.lang.System.out.println("DEBUG: Reference systems not ready - no reference system input ports connected");
+            
             return false;
         }
 
-        java.lang.System.out.println("DEBUG: Reference systems are ready - packet injection can proceed");
+        
         return true;
     }
 
@@ -1854,20 +1857,29 @@ public class GameController {
     public void enterSimulationMode() {
         java.lang.System.out.println("DEBUG: Attempting to enter simulation mode...");
 
-        // Relaxed constraint: Only require that all ports on each system are connected
-        // This allows disconnected network components as long as each system has all its ports wired
+        // Check 1: All ports must be connected
         if (wiringController != null && !wiringController.areAllPortsConnected(gameState)) {
             int[] portCounts = wiringController.getPortConnectivityCounts(gameState);
             java.lang.System.out.println("Cannot start simulation: not all ports are connected (" +
                     portCounts[0] + "/" + portCounts[1] + " ports connected). All ports must be consumed.");
             java.lang.System.out.println("DEBUG: Port connectivity check failed - need to wire all ports first");
+            showSimulationStartError("All ports must be connected to start simulation.");
             return;
         }
 
-        // Additionally require reference systems to be ready (at least one source and one destination connected)
+        // Check 2: Reference systems must be ready
         if (!areReferenceSystemsReady()) {
             java.lang.System.out.println("Cannot start simulation: reference systems are not ready (connect a source and a destination)");
             java.lang.System.out.println("DEBUG: Reference systems check failed - need to connect source to destination");
+            showSimulationStartError("Reference systems not ready. Connect source to destination.");
+            return;
+        }
+
+        // Check 3: No wires should pass over systems
+        if (doAnyWiresPassOverSystems()) {
+            java.lang.System.out.println("Cannot start simulation: some wires pass over systems");
+            java.lang.System.out.println("DEBUG: Wire-system collision check failed - wires cannot pass over systems");
+            showSimulationStartError("Some wires pass over systems. Move wires away from systems.");
             return;
         }
 
@@ -2727,5 +2739,34 @@ public class GameController {
             }
         }
         return true; // Default to smooth curves
+    }
+
+    /**
+     * Checks if any wires pass over systems (excluding their connected endpoints).
+     */
+    public boolean doAnyWiresPassOverSystems() {
+        if (gameState == null || gameState.getCurrentLevel() == null) {
+            return false;
+        }
+
+        List<WireConnection> wireConnections = gameState.getWireConnections();
+        List<model.System> systems = gameState.getCurrentLevel().getSystems();
+
+        for (WireConnection wire : wireConnections) {
+            if (wire.isActive() && wire.passesOverSystems(systems)) {
+                java.lang.System.out.println("DEBUG: Wire " + wire.getId() + " passes over systems");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Shows an error message for simulation start failures.
+     */
+    private void showSimulationStartError(String message) {
+        // For now, just print to console. Later can be enhanced with UI dialog
+        java.lang.System.out.println("SIMULATION START ERROR: " + message);
+        // TODO: Show actual UI error dialog or notification
     }
 }

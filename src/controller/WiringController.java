@@ -15,34 +15,27 @@ public class WiringController {
      * Creates a wire connection between two ports.
      */
     public boolean createWireConnection(Port sourcePort, Port destinationPort, GameState gameState) {
-        java.lang.System.out.println("Creating wire connection between ports:");
-        java.lang.System.out.println("  Source port: " + sourcePort.getShape() + " at " + sourcePort.getPosition());
-        java.lang.System.out.println("  Destination port: " + destinationPort.getShape() + " at " + destinationPort.getPosition());
+        
 
         // Check if connection is valid
         if (!isValidConnection(sourcePort, destinationPort, gameState)) {
-            java.lang.System.out.println("  Connection validation failed");
+            
             return false;
         }
 
         // Calculate wire length
         double wireLength = calculateWireLength(sourcePort, destinationPort);
-        java.lang.System.out.println("  Calculated wire length: " + wireLength);
+        
 
         // Check if enough wire length is available
         if (wireLength > gameState.getRemainingWireLength()) {
-            java.lang.System.out.println("  Not enough wire length available. Required: " + wireLength + ", Available: " + gameState.getRemainingWireLength());
+            
             return false;
         }
 
         // Create wire connection
         WireConnection connection = new WireConnection(sourcePort, destinationPort, wireLength);
-        java.lang.System.out.println("  Wire connection created with ID: " + connection.getId());
-        java.lang.System.out.println("  Path points: " + connection.getPathPoints().size() + " points");
-        for (int i = 0; i < connection.getPathPoints().size(); i++) {
-            Point2D point = connection.getPathPoints().get(i);
-            java.lang.System.out.println("    Point " + i + ": (" + point.getX() + ", " + point.getY() + ")");
-        }
+        
 
         gameState.addWireConnection(connection);
 
@@ -57,7 +50,7 @@ public class WiringController {
         // Update remaining wire length
         gameState.setRemainingWireLength(gameState.getRemainingWireLength() - wireLength);
 
-        java.lang.System.out.println("  Wire connection created successfully!");
+        
         return true;
     }
 
@@ -65,46 +58,46 @@ public class WiringController {
      * Checks if a connection is valid.
      */
     private boolean isValidConnection(Port sourcePort, Port destinationPort, GameState gameState) {
-        java.lang.System.out.println("  Validating connection...");
+        
 
         // Check if ports are from the same system
         if (sourcePort.getParentSystem() == destinationPort.getParentSystem()) {
-            java.lang.System.out.println("    FAILED: Ports are from the same system");
+            
             return false;
         }
 
         // Port shape compatibility check - all shapes can now connect
         if (!sourcePort.getShape().isCompatibleWith(destinationPort.getShape())) {
-            java.lang.System.out.println("    FAILED: Port shapes are not compatible");
+            
             return false;
         }
 
         // Check if one is input and one is output (prevent output-to-output connections)
         if (sourcePort.isInput() == destinationPort.isInput()) {
-            java.lang.System.out.println("    FAILED: Both ports are " + (sourcePort.isInput() ? "input" : "output") + " ports");
+            
             return false;
         }
 
         // Check if connection already exists
         if (gameState.hasWireConnection(sourcePort, destinationPort)) {
-            java.lang.System.out.println("    FAILED: Connection already exists");
+            
             return false;
         }
 
         // Check if EITHER port is already connected (prevent multiple connections per port)
         if (sourcePort.isConnected() || destinationPort.isConnected()) {
-            java.lang.System.out.println("    FAILED: One or both ports are already connected");
+            
             return false;
         }
 
         // Check if wire would pass over any systems (Phase 2 requirement)
         WireConnection tempConnection = new WireConnection(sourcePort, destinationPort);
         if (tempConnection.passesOverSystems(gameState.getCurrentLevel().getSystems())) {
-            java.lang.System.out.println("    FAILED: Wire would pass over systems");
+            
             return false;
         }
 
-        java.lang.System.out.println("    Connection validation passed");
+        
         return true;
     }
 
@@ -163,30 +156,30 @@ public class WiringController {
     public boolean areAllPortsConnected(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         if (systems.isEmpty()) {
-            java.lang.System.out.println("DEBUG: areAllPortsConnected - no systems found");
+            
             return false;
         }
 
-        java.lang.System.out.println("DEBUG: areAllPortsConnected - checking " + systems.size() + " systems");
+        
         for (model.System system : systems) {
             // Skip systems that don't have any ports (like HUD display elements)
             List<Port> allPorts = system.getAllPorts();
             if (allPorts.isEmpty()) {
-                java.lang.System.out.println("DEBUG: System " + system.getClass().getSimpleName() + " has no ports, skipping");
+                
                 continue;
             }
 
-            java.lang.System.out.println("DEBUG: System " + system.getClass().getSimpleName() + " has " + allPorts.size() + " ports");
+            
             for (Port port : allPorts) {
-                java.lang.System.out.println("DEBUG: Port " + port.getShape() + " " + (port.isInput() ? "input" : "output") + " connected: " + port.isConnected());
+                
                 if (!port.isConnected()) {
-                    java.lang.System.out.println("DEBUG: Found unconnected port " + port.getShape() + " " + (port.isInput() ? "input" : "output"));
+                    
                     return false; // Found an unconnected port
                 }
             }
         }
 
-        java.lang.System.out.println("DEBUG: All ports are connected!");
+        
         return true; // All ports are connected
     }
 
@@ -479,8 +472,18 @@ public class WiringController {
 
 
 
-        // Get the total length of the wire including bends
-        double wireLength = connection.getTotalLength();
+        // Get current curve setting
+        boolean useSmoothCurves = true; // Default to smooth curves
+        Object setting = gameState.getGameSettings().get("smoothWireCurves");
+        if (setting instanceof Boolean) {
+            useSmoothCurves = (Boolean) setting;
+        }
+
+        // Get the total length of the wire including bends (using current curve setting)
+        double wireLength = connection.getTotalLength(useSmoothCurves);
+        double storedWireLength = connection.getWireLength(); // Original stored length
+        
+        
 
         // Disconnect the ports
         Port sourcePort = connection.getSourcePort();
@@ -504,9 +507,12 @@ public class WiringController {
         // Remove the connection from the game state
         gameState.removeWireConnection(connection);
 
-        // Restore the wire length to available pool
+        // Restore the wire length to available pool (use the actual calculated length with current curve mode)
         double currentLength = gameState.getRemainingWireLength();
-        gameState.setRemainingWireLength(currentLength + wireLength);
+        double lengthToRestore = wireLength; // Use calculated length to match what was actually consumed
+        gameState.setRemainingWireLength(currentLength + lengthToRestore);
+        
+        
 
         // Deactivate the connection
         connection.setActive(false);
@@ -732,9 +738,12 @@ public class WiringController {
         double totalUsed = 0.0;
         for (WireConnection connection : gameState.getWireConnections()) {
             if (connection.isActive()) {
-                totalUsed += connection.getTotalLength(useSmoothCurves);
+                double connectionLength = connection.getTotalLength(useSmoothCurves);
+                totalUsed += connectionLength;
+                
             }
         }
+        
         return totalUsed;
     }
 

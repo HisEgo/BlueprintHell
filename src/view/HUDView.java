@@ -36,10 +36,7 @@ public class HUDView {
         initializeUI();
 
         // Debug: Print HUD creation status
-        java.lang.System.out.println("HUD: Created and initialized - always visible");
-        java.lang.System.out.println("HUD: shouldDisplay = " + shouldDisplay());
-        java.lang.System.out.println("HUD: root.visible = " + root.isVisible());
-        java.lang.System.out.println("HUD: Position = (" + root.getLayoutX() + ", " + root.getLayoutY() + ")");
+        
     }
 
     private void initializeUI() {
@@ -108,11 +105,7 @@ public class HUDView {
     public void update() {
         // HUD is always visible and always updates
 
-        // Debug: Print update status and scene information
-        java.lang.System.out.println("HUD: Updating display");
-        java.lang.System.out.println("HUD: Scene info - inScene: " + (root.getScene() != null) +
-                ", parent: " + (root.getParent() != null) +
-                ", bounds: " + root.getBoundsInLocal());
+        // Update HUD labels
 
         // Update basic stats
         coinsLabel.setText("Coins: " + gameController.getGameState().getCoins());
@@ -212,7 +205,7 @@ public class HUDView {
         // HUD is always visible, just ensure root is visible and force layout update
         root.setVisible(true);
         root.requestLayout();
-        java.lang.System.out.println("HUD: Always visible - layout updated");
+        
     }
 
     /**
