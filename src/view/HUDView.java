@@ -65,7 +65,7 @@ public class HUDView {
         root.setMouseTransparent(true);
 
         // Game statistics
-        coinsLabel = createStatLabel("Coins: 0");
+        coinsLabel = createStatLabel("Coins: 10");
         wireLengthLabel = createStatLabel("Wire Length: 0");
         packetLossLabel = createStatLabel("Packets (safe: 0  lost: 0)");
         temporalProgressLabel = createStatLabel("Time: 0s");
@@ -119,7 +119,15 @@ public class HUDView {
 
         // Enhanced wire length display showing both remaining and used wire
         double remainingWire = gameController.getGameState().getRemainingWireLength();
-        double totalUsedWire = gameController.getWiringController().getTotalWireLengthUsed(gameController.getGameState());
+        
+        // Get smooth curve setting to calculate wire length correctly
+        boolean useSmoothCurves = true; // Default to smooth curves
+        Object setting = gameController.getGameState().getGameSettings().get("smoothWireCurves");
+        if (setting instanceof Boolean) {
+            useSmoothCurves = (Boolean) setting;
+        }
+        
+        double totalUsedWire = gameController.getWiringController().getTotalWireLengthUsed(gameController.getGameState(), useSmoothCurves);
 
         // Show both remaining and total used wire length
         wireLengthLabel.setText(String.format("Wire: %.1f remaining, %.1f used", remainingWire, totalUsedWire));

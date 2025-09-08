@@ -381,6 +381,16 @@ public class WireConnection {
      * Ensures packets are properly initialized for wire-based movement.
      */
     public void updatePacketMovement(double deltaTime) {
+        updatePacketMovement(deltaTime, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates the packet movement along this wire using path-based movement.
+     * Ensures packets are properly initialized for wire-based movement.
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
+     */
+    public void updatePacketMovement(double deltaTime, boolean useSmoothCurves) {
         if (!isOccupied()) {
             return;
         }
@@ -410,7 +420,7 @@ public class WireConnection {
                 packet.updatePosition(deltaTime);
             }
             // Always constrain to wire path and enforce off-wire loss rule
-            constrainPacketToWire(packet);
+            constrainPacketToWire(packet, useSmoothCurves);
             // Note: Path-based movement is handled by MovementController
         }
 
@@ -439,6 +449,7 @@ public class WireConnection {
 
         // Calculate initial movement vector based on wire direction
         // For curved wires, look at the direction from start to a small progress ahead
+        // Use smooth curves by default for initialization
         Point2D currentPos = getPositionAtProgress(0.0);
         Point2D nextPos = getPositionAtProgress(Math.min(0.1, 10.0 / getTotalLength()));
 
@@ -457,12 +468,21 @@ public class WireConnection {
      * Constrains a specific packet to follow the wire path, including bends.
      */
     private void constrainPacketToWire(Packet packet) {
+        constrainPacketToWire(packet, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Constrains a specific packet to follow the wire path, including bends.
+     * @param packet Packet to constrain
+     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
+     */
+    private void constrainPacketToWire(Packet packet, boolean useSmoothCurves) {
         if (sourcePort == null || destinationPort == null) {
             return;
         }
 
         Point2D packetPos = packet.getCurrentPosition();
-        List<Point2D> pathPoints = getPathPoints();
+        List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
 
         if (pathPoints.size() < 2) {
             return;
@@ -615,10 +635,8 @@ public class WireConnection {
         // Find the exact point on the wire path closest to the click position
         Point2D alignedPosition = findClosestPointOnLineSegment(position, segmentStart, segmentEnd);
 
-        // Validate only against the affected segment to avoid false positives
-        if (wouldSegmentWithBendIntersectSystems(segmentStart, alignedPosition, segmentEnd, systems)) {
-            return false;
-        }
+        // Allow bend creation even if wire passes over systems
+        // This removes the restriction that prevented bend creation on wires crossing systems
 
         // Insert the bend at the aligned position in the bend list so ordering is preserved
         // Mapping: segment 0 => insert at index 0, last segment => insert at bends.size()
@@ -1367,9 +1385,18 @@ public class WireConnection {
 
     /**
      * Calculates the total length of the wire including all bends.
+     * Uses smooth curves by default for backward compatibility.
      */
     public double getTotalLength() {
-        List<Point2D> pathPoints = getPathPoints();
+        return getTotalLength(true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Calculates the total length of the wire including all bends.
+     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
+     */
+    public double getTotalLength(boolean useSmoothCurves) {
+        List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
         if (pathPoints.size() < 2) {
             return wireLength; // Fallback to stored length
         }
@@ -1387,9 +1414,20 @@ public class WireConnection {
     /**
      * Gets the position at a specific progress along the wire path (0.0 to 1.0).
      * This enables uniform motion along curved wire paths with bends.
+     * Uses smooth curves by default for backward compatibility.
      */
     public Point2D getPositionAtProgress(double progress) {
-        List<Point2D> pathPoints = getPathPoints();
+        return getPositionAtProgress(progress, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Gets the position at a specific progress along the wire path (0.0 to 1.0).
+     * This enables uniform motion along both curved and rigid wire paths with bends.
+     * @param progress Progress along the wire (0.0 to 1.0)
+     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
+     */
+    public Point2D getPositionAtProgress(double progress, boolean useSmoothCurves) {
+        List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
         if (pathPoints.size() < 2) {
             return pathPoints.isEmpty() ? new Point2D(0, 0) : pathPoints.get(0);
         }
@@ -1398,7 +1436,7 @@ public class WireConnection {
         progress = Math.max(0.0, Math.min(1.0, progress));
 
         // Calculate target distance along the path
-        double totalLength = getTotalLength();
+        double totalLength = getTotalLength(useSmoothCurves);
         double targetDistance = progress * totalLength;
 
         // Find the segment and interpolate within it

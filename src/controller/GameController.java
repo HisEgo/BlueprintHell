@@ -282,7 +282,13 @@ public class GameController {
             updateWirePacketMovement(deltaTime);
 
             // Update packet movement with MovementController (for enhanced path-based movement)
-            movementController.updatePackets(gameState.getActivePackets(), deltaTime);
+            // Check smooth curve setting and pass it to MovementController
+            boolean useSmoothCurves = true; // Default to smooth curves
+            Object setting = gameState.getGameSettings().get("smoothWireCurves");
+            if (setting instanceof Boolean) {
+                useSmoothCurves = (Boolean) setting;
+            }
+            movementController.updatePackets(gameState.getActivePackets(), deltaTime, useSmoothCurves);
 
             // Apply ability effects to packet movement
             for (Packet packet : gameState.getActivePackets()) {
@@ -534,10 +540,17 @@ public class GameController {
         if (gameState.getCurrentLevel() == null) return;
 
         int totalPacketsOnWires = 0;
+        // Check smooth curve setting and pass it to wire packet movement
+        boolean useSmoothCurves = true; // Default to smooth curves
+        Object setting = gameState.getGameSettings().get("smoothWireCurves");
+        if (setting instanceof Boolean) {
+            useSmoothCurves = (Boolean) setting;
+        }
+        
         for (WireConnection connection : gameState.getCurrentLevel().getWireConnections()) {
             if (connection.isActive()) {
                 int packetsBefore = connection.getPacketsOnWire().size();
-                connection.updatePacketMovement(deltaTime);
+                connection.updatePacketMovement(deltaTime, useSmoothCurves);
                 totalPacketsOnWires += connection.getPacketsOnWire().size();
 
                 // Debug: Log packet movement if there are packets
@@ -655,8 +668,11 @@ public class GameController {
                     ", duration: " + level.getLevelDuration() +
                     ", initialWireLength: " + level.getInitialWireLength() +
                     ", packetSchedule size: " + (level.getPacketSchedule() != null ? level.getPacketSchedule().size() : "null"));
-            // Preserve coins from previous levels - don't reset them
+            // Preserve coins from previous levels - don't reset them, but ensure minimum of 10
             int currentCoins = gameState.getCoins();
+            if (currentCoins == 0) {
+                currentCoins = 10; // Set initial coins to 10 if starting fresh
+            }
 
             gameState.setCurrentLevel(level);
             // Initialize remaining wire length adjusted by any pre-existing connections in the level definition
@@ -1954,7 +1970,13 @@ public class GameController {
             double stepSize = Math.min(timeStep, remainingTime);
 
             // Update packet positions
-            movementController.updatePackets(gameState.getActivePackets(), stepSize);
+            // Check smooth curve setting and pass it to MovementController
+            boolean useSmoothCurves = true; // Default to smooth curves
+            Object setting = gameState.getGameSettings().get("smoothWireCurves");
+            if (setting instanceof Boolean) {
+                useSmoothCurves = (Boolean) setting;
+            }
+            movementController.updatePackets(gameState.getActivePackets(), stepSize, useSmoothCurves);
 
             // Update temporal progress temporarily for injection processing
             double currentTemporalTime = gameState.getTemporalProgress() + (timeDelta - remainingTime) + stepSize;
@@ -2044,7 +2066,13 @@ public class GameController {
             processPacketInjectionsForTime(currentSimTime + stepSize);
 
             // Update packet movement
-            movementController.updatePackets(gameState.getActivePackets(), stepSize);
+            // Check smooth curve setting and pass it to MovementController
+            boolean useSmoothCurves = true; // Default to smooth curves
+            Object setting = gameState.getGameSettings().get("smoothWireCurves");
+            if (setting instanceof Boolean) {
+                useSmoothCurves = (Boolean) setting;
+            }
+            movementController.updatePackets(gameState.getActivePackets(), stepSize, useSmoothCurves);
 
             // Process game mechanics
             updateWirePacketMovement(stepSize);
@@ -2648,15 +2676,38 @@ public class GameController {
 
     /**
      * Toggles the smooth wire curves setting.
+     * Only allowed in editing mode to prevent changes during simulation.
      */
     public void toggleSmoothWires() {
+        if (!isEditingMode) {
+            java.lang.System.out.println("Cannot change wire curve mode during simulation. Return to editing mode first.");
+            return;
+        }
+        
         if (gameState != null) {
             Object setting = gameState.getGameSettings().get("smoothWireCurves");
             boolean currentSetting = true; // Default to true
             if (setting instanceof Boolean) {
                 currentSetting = (Boolean) setting;
             }
-            gameState.getGameSettings().put("smoothWireCurves", !currentSetting);
+            
+            // Toggle the setting
+            boolean newSetting = !currentSetting;
+            gameState.getGameSettings().put("smoothWireCurves", newSetting);
+            
+            // Recalculate remaining wire length based on new curve mode
+            if (gameState.getCurrentLevel() != null) {
+                double initialWireLength = gameState.getCurrentLevel().getInitialWireLength();
+                double totalUsedWire = wiringController.getTotalWireLengthUsed(gameState, newSetting);
+                double newRemainingWireLength = initialWireLength - totalUsedWire;
+                
+                // Ensure remaining wire length doesn't go negative
+                if (newRemainingWireLength < 0) {
+                    newRemainingWireLength = 0;
+                }
+                
+                gameState.setRemainingWireLength(newRemainingWireLength);
+            }
 
             // Request view update to show the change immediately
             if (gameView != null) {

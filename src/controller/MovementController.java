@@ -29,9 +29,20 @@ public class MovementController {
      * Handles both wire-based and free movement.
      */
     public void updatePackets(List<Packet> packets, double deltaTime) {
+        updatePackets(packets, deltaTime, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates packet positions with smooth movement.
+     * Handles both wire-based and free movement.
+     * @param packets List of packets to update
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
+     */
+    public void updatePackets(List<Packet> packets, double deltaTime, boolean useSmoothCurves) {
         for (Packet packet : packets) {
             if (packet.isActive()) {
-                updatePacketMovement(packet, deltaTime);
+                updatePacketMovement(packet, deltaTime, useSmoothCurves);
             }
         }
     }
@@ -41,9 +52,20 @@ public class MovementController {
      * Handles wire-based movement with uniform motion on curved paths.
      */
     private void updatePacketMovement(Packet packet, double deltaTime) {
+        updatePacketMovement(packet, deltaTime, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates a single packet's movement.
+     * Handles wire-based movement with uniform motion on both curved and rigid paths.
+     * @param packet Packet to update
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
+     */
+    private void updatePacketMovement(Packet packet, double deltaTime, boolean useSmoothCurves) {
         if (packet.isOnWire()) {
             // Use path-based movement for packets on wires
-            updateWireBasedMovement(packet, deltaTime);
+            updateWireBasedMovement(packet, deltaTime, useSmoothCurves);
         } else {
             // Use traditional vector-based movement for packets not on wires
             updateFreeMovement(packet, deltaTime);
@@ -56,6 +78,18 @@ public class MovementController {
      * Enhanced for Phase 2 with packet-specific acceleration profiles.
      */
     private void updateWireBasedMovement(Packet packet, double deltaTime) {
+        updateWireBasedMovement(packet, deltaTime, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates movement for packets traveling along wire paths.
+     * Ensures uniform appearance of motion on both straight and curved wires.
+     * Enhanced for Phase 2 with packet-specific acceleration profiles.
+     * @param packet Packet to update
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
+     */
+    private void updateWireBasedMovement(Packet packet, double deltaTime, boolean useSmoothCurves) {
         WireConnection wire = packet.getCurrentWire();
         if (wire == null) {
             return;
@@ -73,7 +107,7 @@ public class MovementController {
         packet.setBaseSpeed(currentSpeed);
 
         // Calculate progress increment based on wire length and speed
-        double wireLength = wire.getTotalLength();
+        double wireLength = wire.getTotalLength(useSmoothCurves);
         if (wireLength > 0) {
             double progressIncrement = (currentSpeed * deltaTime) / wireLength;
             double newProgress = packet.getPathProgress() + progressIncrement;
@@ -82,7 +116,7 @@ public class MovementController {
             if (newProgress >= 1.0) {
                 newProgress = 1.0;
                 packet.setPathProgress(newProgress);
-                packet.updatePositionOnWire();
+                packet.updatePositionOnWire(useSmoothCurves);
 
                 // Packet has reached destination - will be handled by wire transfer logic
                 return;
@@ -90,10 +124,10 @@ public class MovementController {
 
             // Update progress and position
             packet.setPathProgress(newProgress);
-            packet.updatePositionOnWire();
+            packet.updatePositionOnWire(useSmoothCurves);
 
             // Update movement vector for visual effects and collision detection
-            updateMovementVectorFromPath(packet, wire, deltaTime);
+            updateMovementVectorFromPath(packet, wire, deltaTime, useSmoothCurves);
         }
     }
 
@@ -101,15 +135,26 @@ public class MovementController {
      * Updates movement vector based on path direction for visual effects.
      */
     private void updateMovementVectorFromPath(Packet packet, WireConnection wire, double deltaTime) {
+        updateMovementVectorFromPath(packet, wire, deltaTime, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates movement vector based on path direction for visual effects.
+     * @param packet Packet to update
+     * @param wire Wire connection the packet is traveling on
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
+     */
+    private void updateMovementVectorFromPath(Packet packet, WireConnection wire, double deltaTime, boolean useSmoothCurves) {
         double currentProgress = packet.getPathProgress();
         double speed = packet.getBaseSpeed();
 
         // Calculate direction by looking slightly ahead on the path
-        double lookAheadDistance = Math.min(0.01, speed * deltaTime / wire.getTotalLength());
+        double lookAheadDistance = Math.min(0.01, speed * deltaTime / wire.getTotalLength(useSmoothCurves));
         double futureProgress = Math.min(1.0, currentProgress + lookAheadDistance);
 
-        Point2D currentPos = wire.getPositionAtProgress(currentProgress);
-        Point2D futurePos = wire.getPositionAtProgress(futureProgress);
+        Point2D currentPos = wire.getPositionAtProgress(currentProgress, useSmoothCurves);
+        Point2D futurePos = wire.getPositionAtProgress(futureProgress, useSmoothCurves);
 
         if (currentPos != null && futurePos != null) {
             Vec2D direction = new Vec2D(

@@ -1557,7 +1557,7 @@ public class GameView {
                     "SIMULATION MODE:",
                     "Arrow Keys - Temporal Navigation",
                     "P - Pause/Resume",
-                    "C - Toggle Smooth Wire Curves",
+                    "C - Wire Curves (LOCKED during simulation)",
                     "ESC - Return to Editing",
                     "S - Shop",
                     "",
@@ -1899,16 +1899,28 @@ public class GameView {
      * Draws a visual indicator in the top-right corner showing the current wire rendering mode.
      */
     private void showWireCurveModeIndicator(boolean smoothWires) {
-        double indicatorWidth = 100;
+        double indicatorWidth = 120;
         double indicatorHeight = 30;
         double indicatorX = canvas.getWidth() - indicatorWidth - 20;
         double indicatorY = 20;
 
-        gc.setFill(Color.BLACK);
+        // Different background color based on mode
+        if (gameController.isSimulationMode()) {
+            gc.setFill(Color.DARKGRAY); // Darker background for locked state
+        } else {
+            gc.setFill(Color.BLACK);
+        }
         gc.fillRect(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
 
-        gc.setFill(smoothWires ? Color.LIME : Color.ORANGE);
-        gc.setFont(javafx.scene.text.Font.font("Arial", 12));
-        gc.fillText(smoothWires ? "SMOOTH WIRES" : "RIGID WIRES", indicatorX + 10, indicatorY + 20);
+        // Different text color and content based on mode
+        if (gameController.isSimulationMode()) {
+            gc.setFill(Color.GRAY);
+            gc.setFont(javafx.scene.text.Font.font("Arial", 10));
+            gc.fillText(smoothWires ? "SMOOTH (LOCKED)" : "RIGID (LOCKED)", indicatorX + 5, indicatorY + 20);
+        } else {
+            gc.setFill(smoothWires ? Color.LIME : Color.ORANGE);
+            gc.setFont(javafx.scene.text.Font.font("Arial", 12));
+            gc.fillText(smoothWires ? "SMOOTH WIRES" : "RIGID WIRES", indicatorX + 10, indicatorY + 20);
+        }
     }
 }

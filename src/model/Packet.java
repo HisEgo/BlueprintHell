@@ -339,8 +339,17 @@ public abstract class Packet {
      * This enables uniform motion along curved wire paths.
      */
     public void updatePositionOnWire() {
+        updatePositionOnWire(true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Updates position based on path progress and current wire.
+     * This enables uniform motion along both curved and rigid wire paths.
+     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
+     */
+    public void updatePositionOnWire(boolean useSmoothCurves) {
         if (currentWire != null) {
-            Point2D newPosition = currentWire.getPositionAtProgress(pathProgress);
+            Point2D newPosition = currentWire.getPositionAtProgress(pathProgress, useSmoothCurves);
             if (newPosition != null) {
                 setCurrentPosition(newPosition);
             }

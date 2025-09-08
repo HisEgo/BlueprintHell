@@ -241,9 +241,13 @@ public class InputHandler {
                 }
                 break;
             case "toggle_smooth_wires":
-                // Toggle smooth wire curves
-                gameController.toggleSmoothWires();
-                java.lang.System.out.println("Smooth wire curves toggled: " + (gameController.isSmoothWires() ? "ON" : "OFF"));
+                // Toggle smooth wire curves - only allowed in editing mode
+                if (gameController.isEditingMode()) {
+                    gameController.toggleSmoothWires();
+                    java.lang.System.out.println("Smooth wire curves toggled: " + (gameController.isSmoothWires() ? "ON" : "OFF"));
+                } else {
+                    java.lang.System.out.println("Cannot change wire curve mode during simulation. Return to editing mode first.");
+                }
                 break;
         }
     }
@@ -534,8 +538,17 @@ public class InputHandler {
         if (wireAtPosition != null) {
             java.lang.System.out.println("DEBUG: Found wire for bend creation: " + wireAtPosition.getId());
             // Try to add a bend to this wire
+            // Get smooth curve setting to calculate wire length correctly
+            boolean useSmoothCurves = true; // Default to smooth curves
+            if (gameController.getGameState() != null) {
+                Object setting = gameController.getGameState().getGameSettings().get("smoothWireCurves");
+                if (setting instanceof Boolean) {
+                    useSmoothCurves = (Boolean) setting;
+                }
+            }
+            
             boolean success = gameController.getWiringController().addBendToWire(
-                    wireAtPosition, worldClickPos, gameController.getGameState()
+                    wireAtPosition, worldClickPos, gameController.getGameState(), useSmoothCurves
             );
 
             if (success) {

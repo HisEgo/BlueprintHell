@@ -345,6 +345,17 @@ public class WiringController {
      * Adds a bend to a wire connection with system validation.
      */
     public boolean addBendToWire(WireConnection connection, Point2D bendPosition, GameState gameState) {
+        return addBendToWire(connection, bendPosition, gameState, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Adds a bend to a wire connection with system validation.
+     * @param connection Wire connection to add bend to
+     * @param bendPosition Position where to add the bend
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
+     */
+    public boolean addBendToWire(WireConnection connection, Point2D bendPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
         }
@@ -354,13 +365,13 @@ public class WiringController {
             return false;
         }
 
-        // Calculate the wire length before adding the bend
-        double lengthBeforeBend = connection.getTotalLength();
+        // Calculate the wire length before adding the bend using the correct curve mode
+        double lengthBeforeBend = connection.getTotalLength(useSmoothCurves);
 
         // Try to add the bend
         if (connection.addBend(bendPosition, gameState.getCurrentLevel().getSystems())) {
-            // Calculate the new wire length after adding the bend
-            double lengthAfterBend = connection.getTotalLength();
+            // Calculate the new wire length after adding the bend using the correct curve mode
+            double lengthAfterBend = connection.getTotalLength(useSmoothCurves);
             double lengthIncrease = lengthAfterBend - lengthBeforeBend;
 
             // Check if there's enough remaining wire length for the bend
@@ -388,17 +399,29 @@ public class WiringController {
      * Moves a bend on a wire connection with system validation.
      */
     public boolean moveBendOnWire(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState) {
+        return moveBendOnWire(connection, bendIndex, newPosition, gameState, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Moves a bend on a wire connection with system validation.
+     * @param connection Wire connection to move bend on
+     * @param bendIndex Index of the bend to move
+     * @param newPosition New position for the bend
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
+     */
+    public boolean moveBendOnWire(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
         }
 
-        // Calculate the wire length before moving the bend
-        double lengthBeforeMove = connection.getTotalLength();
+        // Calculate the wire length before moving the bend using the correct curve mode
+        double lengthBeforeMove = connection.getTotalLength(useSmoothCurves);
 
         // Try to move the bend with more permissive validation for better user experience
         if (connection.moveBendPermissive(bendIndex, newPosition, gameState.getCurrentLevel().getSystems())) {
-            // Calculate the new wire length after moving the bend
-            double lengthAfterMove = connection.getTotalLength();
+            // Calculate the new wire length after moving the bend using the correct curve mode
+            double lengthAfterMove = connection.getTotalLength(useSmoothCurves);
             double lengthChange = lengthAfterMove - lengthBeforeMove;
 
             // Update the remaining wire length based on the change
@@ -432,14 +455,17 @@ public class WiringController {
             return false;
         }
 
-        // Use the permissive movement method for maximum freedom
-        if (connection.moveBendPermissive(bendIndex, newPosition, gameState.getCurrentLevel().getSystems())) {
-            // Don't check wire length constraints - allow free movement
-            // This gives users complete control over wire bending
-            return true;
+        // Get smooth curve setting to calculate wire length correctly
+        boolean useSmoothCurves = true; // Default to smooth curves
+        if (gameState != null) {
+            Object setting = gameState.getGameSettings().get("smoothWireCurves");
+            if (setting instanceof Boolean) {
+                useSmoothCurves = (Boolean) setting;
+            }
         }
 
-        return false;
+        // Use moveBendOnWire with proper wire length management
+        return moveBendOnWire(connection, bendIndex, newPosition, gameState, useSmoothCurves);
     }
 
     /**
@@ -690,12 +716,23 @@ public class WiringController {
     /**
      * Gets the total wire length used by all active connections.
      * Useful for HUD display and wire length management.
+     * Uses smooth curves by default for backward compatibility.
      */
     public double getTotalWireLengthUsed(GameState gameState) {
+        return getTotalWireLengthUsed(gameState, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Gets the total wire length used by all active connections.
+     * Useful for HUD display and wire length management.
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
+     */
+    public double getTotalWireLengthUsed(GameState gameState, boolean useSmoothCurves) {
         double totalUsed = 0.0;
         for (WireConnection connection : gameState.getWireConnections()) {
             if (connection.isActive()) {
-                totalUsed += connection.getTotalLength();
+                totalUsed += connection.getTotalLength(useSmoothCurves);
             }
         }
         return totalUsed;
@@ -704,9 +741,20 @@ public class WiringController {
     /**
      * Gets the total wire length available in the level.
      * This is the sum of remaining wire length and used wire length.
+     * Uses smooth curves by default for backward compatibility.
      */
     public double getTotalWireLengthAvailable(GameState gameState) {
         return gameState.getRemainingWireLength() + getTotalWireLengthUsed(gameState);
+    }
+
+    /**
+     * Gets the total wire length available in the level.
+     * This is the sum of remaining wire length and used wire length.
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
+     */
+    public double getTotalWireLengthAvailable(GameState gameState, boolean useSmoothCurves) {
+        return gameState.getRemainingWireLength() + getTotalWireLengthUsed(gameState, useSmoothCurves);
     }
 
     /**
@@ -714,20 +762,32 @@ public class WiringController {
      * This method calculates the potential length increase without actually adding the bend.
      */
     public boolean canAddBend(WireConnection connection, Point2D bendPosition, GameState gameState) {
+        return canAddBend(connection, bendPosition, gameState, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Checks if there's enough wire length available to add a bend at the specified position.
+     * This method calculates the potential length increase without actually adding the bend.
+     * @param connection Wire connection to check
+     * @param bendPosition Position where to add the bend
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
+     */
+    public boolean canAddBend(WireConnection connection, Point2D bendPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
         }
 
-        // Calculate the wire length before adding the bend
-        double lengthBeforeBend = connection.getTotalLength();
+        // Calculate the wire length before adding the bend using the correct curve mode
+        double lengthBeforeBend = connection.getTotalLength(useSmoothCurves);
 
         // Temporarily add the bend to calculate the new length
         List<WireBend> originalBends = new ArrayList<>(connection.getBends());
         WireBend tempBend = new WireBend(bendPosition, 50.0);
         connection.getBends().add(tempBend);
 
-        // Calculate the new wire length after adding the bend
-        double lengthAfterBend = connection.getTotalLength();
+        // Calculate the new wire length after adding the bend using the correct curve mode
+        double lengthAfterBend = connection.getTotalLength(useSmoothCurves);
         double lengthIncrease = lengthAfterBend - lengthBeforeBend;
 
         // Remove the temporary bend
@@ -742,20 +802,33 @@ public class WiringController {
      * This method calculates the potential length change without actually moving the bend.
      */
     public boolean canMoveBend(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState) {
+        return canMoveBend(connection, bendIndex, newPosition, gameState, true); // Default to smooth curves for backward compatibility
+    }
+
+    /**
+     * Checks if moving a bend to a new position would require additional wire length.
+     * This method calculates the potential length change without actually moving the bend.
+     * @param connection Wire connection to check
+     * @param bendIndex Index of the bend to move
+     * @param newPosition New position for the bend
+     * @param gameState Current game state
+     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
+     */
+    public boolean canMoveBend(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive() || bendIndex < 0 || bendIndex >= connection.getBends().size()) {
             return false;
         }
 
-        // Calculate the wire length before moving the bend
-        double lengthBeforeMove = connection.getTotalLength();
+        // Calculate the wire length before moving the bend using the correct curve mode
+        double lengthBeforeMove = connection.getTotalLength(useSmoothCurves);
 
         // Temporarily move the bend to calculate the new length
         WireBend bend = connection.getBends().get(bendIndex);
         Point2D originalPosition = bend.getPosition();
         bend.moveTo(newPosition, originalPosition);
 
-        // Calculate the new wire length after moving the bend
-        double lengthAfterMove = connection.getTotalLength();
+        // Calculate the new wire length after moving the bend using the correct curve mode
+        double lengthAfterMove = connection.getTotalLength(useSmoothCurves);
         double lengthChange = lengthAfterMove - lengthBeforeMove;
 
         // Restore the original position
