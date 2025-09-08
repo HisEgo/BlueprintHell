@@ -565,36 +565,51 @@ public class InputHandler {
 
     /**
      * Finds a wire with a bend at the given position.
+     * Improved to find the CLOSEST bend instead of the first bend found.
      */
     private WireConnection findWireWithBendAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
         }
 
+        WireConnection closestWire = null;
+        double closestDistance = Double.MAX_VALUE;
+        double maxBendRadius = 15.0; // Bend selection radius
+
+        // Check all wire connections and find the closest bend
         for (WireConnection connection : gameController.getGameState().getWireConnections()) {
             if (!connection.isActive()) continue;
 
             for (WireBend bend : connection.getBends()) {
-                if (position.distanceTo(bend.getPosition()) <= 15.0) { // Further increased bend radius for maximum ease of clicking
-                    return connection;
+                double distance = position.distanceTo(bend.getPosition());
+                if (distance <= maxBendRadius && distance < closestDistance) {
+                    closestWire = connection;
+                    closestDistance = distance;
                 }
             }
         }
 
-        return null;
+        return closestWire;
     }
 
     /**
      * Finds the index of a bend at the given position.
+     * Improved to find the CLOSEST bend instead of the first bend found.
      */
     private int findBendIndexAtPosition(WireConnection connection, Point2D position) {
+        int closestBendIndex = -1;
+        double closestDistance = Double.MAX_VALUE;
+        double maxBendRadius = 15.0; // Bend selection radius
+
         for (int i = 0; i < connection.getBends().size(); i++) {
             WireBend bend = connection.getBends().get(i);
-            if (position.distanceTo(bend.getPosition()) <= 15.0) { // Further increased bend radius for maximum ease of clicking
-                return i;
+            double distance = position.distanceTo(bend.getPosition());
+            if (distance <= maxBendRadius && distance < closestDistance) {
+                closestBendIndex = i;
+                closestDistance = distance;
             }
         }
-        return -1;
+        return closestBendIndex;
     }
 
     /**
@@ -999,33 +1014,65 @@ public class InputHandler {
 
     /**
      * Finds a wire at the given screen position.
+     * Improved to find the CLOSEST wire instead of the first wire found.
      */
     private WireConnection findWireAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
-            java.lang.System.out.println("DEBUG: findWireAtPosition - gameController or gameState is null");
             return null;
         }
 
-        java.lang.System.out.println("DEBUG: findWireAtPosition - searching for wire at position: " + position);
+        WireConnection closestWire = null;
+        double closestDistance = Double.MAX_VALUE;
+        double maxSelectionRadius = 20.0; // Reduced from 25.0 for more precise selection
 
-        // Check all wire connections
+        // Check all wire connections and find the closest one
         for (WireConnection connection : gameController.getGameState().getWireConnections()) {
             if (!connection.isActive()) {
-                java.lang.System.out.println("DEBUG: Skipping inactive connection: " + connection.getId());
                 continue;
             }
 
-            java.lang.System.out.println("DEBUG: Checking active connection: " + connection.getId() + " with " + connection.getPathPoints().size() + " path points");
-
-            // Check if position is near the wire path
-            if (isPositionNearWire(position, connection)) {
-                java.lang.System.out.println("DEBUG: Found wire at position: " + connection.getId());
-                return connection;
+            // Calculate distance to this wire
+            double distance = getDistanceToWire(position, connection);
+            
+            // Only consider wires within selection radius
+            if (distance <= maxSelectionRadius && distance < closestDistance) {
+                closestWire = connection;
+                closestDistance = distance;
             }
         }
 
-        java.lang.System.out.println("DEBUG: No wire found at position: " + position);
-        return null;
+        return closestWire;
+    }
+
+    /**
+     * Calculates the minimum distance from a position to a wire.
+     * Returns the closest distance to any segment of the wire.
+     */
+    private double getDistanceToWire(Point2D position, WireConnection connection) {
+        // Use the same smooth curve path that's used for rendering
+        boolean useSmoothCurves = true;
+        if (gameController != null && gameController.getGameState() != null) {
+            Object setting = gameController.getGameState().getGameSettings().get("smoothWireCurves");
+            if (setting != null) {
+                useSmoothCurves = (Boolean) setting;
+            }
+        }
+
+        List<Point2D> pathPoints = connection.getPathPoints(useSmoothCurves);
+        double minDistance = Double.MAX_VALUE;
+
+        // Check each line segment of the wire
+        for (int i = 0; i < pathPoints.size() - 1; i++) {
+            Point2D start = pathPoints.get(i);
+            Point2D end = pathPoints.get(i + 1);
+            
+            double segmentDistance = distanceToLineSegment(position, start, end);
+            if (segmentDistance < minDistance) {
+                minDistance = segmentDistance;
+            }
+        }
+
+        return minDistance;
     }
 
     /**
@@ -1042,21 +1089,17 @@ public class InputHandler {
         }
 
         List<Point2D> pathPoints = connection.getPathPoints(useSmoothCurves);
-        java.lang.System.out.println("DEBUG: isPositionNearWire - checking " + pathPoints.size() + " path points (smooth: " + useSmoothCurves + ")");
 
         // Check each line segment of the wire
         for (int i = 0; i < pathPoints.size() - 1; i++) {
             Point2D start = pathPoints.get(i);
             Point2D end = pathPoints.get(i + 1);
-            java.lang.System.out.println("DEBUG: Checking segment " + i + ": (" + start.getX() + ", " + start.getY() + ") to (" + end.getX() + ", " + end.getY() + ")");
 
             if (isPositionNearLineSegment(position, start, end)) {
-                java.lang.System.out.println("DEBUG: Position is near segment " + i);
                 return true;
             }
         }
 
-        java.lang.System.out.println("DEBUG: Position is not near any wire segment");
         return false;
     }
 
@@ -1065,11 +1108,7 @@ public class InputHandler {
      */
     private boolean isPositionNearLineSegment(Point2D position, Point2D lineStart, Point2D lineEnd) {
         double distance = distanceToLineSegment(position, lineStart, lineEnd);
-        boolean isNear = distance <= 25.0; // Increased from 20.0 to 25.0 pixel radius for better smooth curve detection
-        java.lang.System.out.println("DEBUG: isPositionNearLineSegment - position: (" + position.getX() + ", " + position.getY() +
-                "), lineStart: (" + lineStart.getX() + ", " + lineStart.getY() +
-                "), lineEnd: (" + lineEnd.getX() + ", " + lineEnd.getY() +
-                "), distance: " + distance + ", isNear: " + isNear);
+        boolean isNear = distance <= 20.0; // Reduced to 20.0 for more precise selection
         return isNear;
     }
 
