@@ -23,6 +23,7 @@ public class SpySystem extends System {
         // Destroy confidential packets immediately per spec
         if (packet.getPacketType() != null && packet.getPacketType().isConfidential()) {
             packet.setActive(false);
+            packet.setLost(true); // Mark as lost for proper counting
             return;
         }
 
@@ -34,12 +35,17 @@ public class SpySystem extends System {
             return;
         }
 
-        // For other packets, attempt teleport to a different spy system
-        List<SpySystem> otherSpySystems = findOtherSpySystems();
-        if (!otherSpySystems.isEmpty()) {
-            SpySystem targetSpy = otherSpySystems.get((int) (Math.random() * otherSpySystems.size()));
-            teleportPacketToSpySystem(packet, targetSpy);
-            // Teleportation hands packet off to target spy; do not process it again here
+        // For other packets, attempt teleport to any spy system (including this one)
+        List<SpySystem> allSpySystems = findAllSpySystems();
+        if (!allSpySystems.isEmpty()) {
+            SpySystem targetSpy = allSpySystems.get((int) (Math.random() * allSpySystems.size()));
+            if (targetSpy == this) {
+                // If selected this spy system, process normally
+                super.processPacket(packet);
+            } else {
+                // Teleport to another spy system
+                teleportPacketToSpySystem(packet, targetSpy);
+            }
             return;
         }
 
@@ -48,7 +54,24 @@ public class SpySystem extends System {
     }
 
     /**
-     * Finds other spy systems in the network.
+     * Finds all spy systems in the network (including this one).
+     */
+    private List<SpySystem> findAllSpySystems() {
+        List<SpySystem> allSpies = new ArrayList<>();
+        GameLevel level = getParentLevel();
+        if (level == null) {
+            return allSpies;
+        }
+        for (System system : level.getSystems()) {
+            if (system instanceof SpySystem) {
+                allSpies.add((SpySystem) system);
+            }
+        }
+        return allSpies;
+    }
+
+    /**
+     * Finds other spy systems in the network (excluding this one).
      */
     private List<SpySystem> findOtherSpySystems() {
         List<SpySystem> others = new ArrayList<>();

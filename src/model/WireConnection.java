@@ -318,9 +318,6 @@ public class WireConnection {
 
         this.packetsOnWire.add(packet);
 
-        // Debug: Log packet acceptance
-        java.lang.System.out.println("DEBUG: Packet " + packet.getClass().getSimpleName() + " accepted on wire " + id +
-                " (total packets on wire: " + packetsOnWire.size() + "/" + MAX_WIRE_CAPACITY + ")");
 
         // Initialize packet for path-based movement on this wire
         initializePacketOnWire(packet);

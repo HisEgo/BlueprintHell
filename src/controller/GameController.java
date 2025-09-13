@@ -273,10 +273,6 @@ public class GameController {
             // Process packet injections from schedule
             processPacketInjections();
 
-            // Debug: Print active packet count every few seconds
-            if ((int)(gameState.getLevelTimer()) % 3 == 0 && gameState.getLevelTimer() > 0) {
-                java.lang.System.out.println("Active packets: " + gameState.getActivePackets().size() + " at time " + gameState.getLevelTimer());
-            }
 
             // Phase 2: Update system deactivation timers early
             updateSystemDeactivationTimers(deltaTime);
@@ -356,34 +352,13 @@ public class GameController {
 
         // Use temporal progress instead of real time for packet injections
         double currentTemporalTime = gameState.getTemporalProgress();
+        
 
-        // Debug output for packet injection tracking
-        if ((int)(currentTemporalTime) % 5 == 0 && currentTemporalTime > 0) {
-            int totalScheduled = gameState.getCurrentLevel().getPacketSchedule().size();
-            int totalExecuted = (int) gameState.getCurrentLevel().getPacketSchedule().stream()
-                    .filter(injection -> injection.isExecuted()).count();
-            int totalDelivered = gameState.getTotalDeliveredPackets();
-            int totalLost = gameState.getTotalLostPackets();
-
-            java.lang.System.out.println("DEBUG: Packet injection progress - Time: " + String.format("%.1f", currentTemporalTime) +
-                    "s, Scheduled: " + totalScheduled + ", Executed: " + totalExecuted +
-                    ", Delivered: " + totalDelivered + ", Lost: " + totalLost);
-        }
-
-        // Debug: Always show packet injection status every few seconds
-        if ((int)(currentTemporalTime) % 2 == 0 && currentTemporalTime > 0) {
-            java.lang.System.out.println("DEBUG: Processing packet injections at temporal time " + String.format("%.1f", currentTemporalTime) +
-                    " - Level timer: " + String.format("%.1f", gameState.getLevelTimer()) +
-                    " - Packet schedule size: " + gameState.getCurrentLevel().getPacketSchedule().size());
-        }
 
         for (PacketInjection injection : gameState.getCurrentLevel().getPacketSchedule()) {
             if (!injection.isExecuted() && injection.getTime() <= currentTemporalTime) {
                 // Create a new packet for this injection attempt
                 Packet packet = injection.createPacket();
-
-                java.lang.System.out.println("DEBUG: Attempting packet injection " + packet.getClass().getSimpleName() +
-                        " at time " + currentTemporalTime + " from system " + injection.getSourceSystem().getClass().getSimpleName());
 
                 // Try to place the packet onto the first available wire from the source port
                 boolean placed = tryPlacePacketOnOutgoingWire(packet, injection.getSourceSystem());
@@ -392,11 +367,7 @@ public class GameController {
                     // Only now consider the packet active and mark the injection executed
                     gameState.addActivePacket(packet);
                     injection.setExecuted(true);
-                    java.lang.System.out.println("DEBUG: Packet injected and placed on wire: " + packet.getClass().getSimpleName() +
-                            " at time " + currentTemporalTime + " (active packets: " + gameState.getActivePacketCount() + ")");
                 } else {
-                    java.lang.System.out.println("DEBUG: Packet injection deferred - no available wire: " + packet.getClass().getSimpleName() +
-                            " at time " + currentTemporalTime + ". Will retry when connections allow.");
                     // Do NOT mark executed; we'll retry in a subsequent frame when connections permit
                     debugPacketPlacementFailure(injection.getSourceSystem());
                 }
@@ -430,7 +401,6 @@ public class GameController {
         // Get all reference systems (not just sources/destinations since they can be both)
         List<model.ReferenceSystem> allReferenceSystems = level.getReferenceSystems();
         if (allReferenceSystems.isEmpty()) {
-            java.lang.System.out.println("DEBUG: Reference systems not ready - no reference systems exist");
             return false;
         }
 
@@ -438,9 +408,7 @@ public class GameController {
         boolean anyOutputConnected = false;
         
         for (model.ReferenceSystem refSys : allReferenceSystems) {
-            
             for (Port out : refSys.getOutputPorts()) {
-                
                 if (out.isConnected()) {
                     anyOutputConnected = true;
                     break;
@@ -449,7 +417,6 @@ public class GameController {
             if (anyOutputConnected) break;
         }
         if (!anyOutputConnected) {
-            
             return false;
         }
 
@@ -457,9 +424,7 @@ public class GameController {
         boolean anyInputConnected = false;
         
         for (model.ReferenceSystem refSys : allReferenceSystems) {
-            
             for (Port inPort : refSys.getInputPorts()) {
-                
                 if (inPort.isConnected()) {
                     anyInputConnected = true;
                     break;
@@ -468,7 +433,6 @@ public class GameController {
             if (anyInputConnected) break;
         }
         if (!anyInputConnected) {
-            
             return false;
         }
 
@@ -608,13 +572,11 @@ public class GameController {
                     if (soundManager != null) {
                         soundManager.playPacketLostSound();
                     }
-                    java.lang.System.out.println("DEBUG: Packet " + packet.getClass().getSimpleName() + " marked as lost/destroyed");
                     // Count as lost due to collision/impact/time/off-wire
                     gameState.incrementLostPackets();
                     lostThisFrame++;
                 } else {
                     // Packet was delivered (made inactive by destination system)
-                    java.lang.System.out.println("DEBUG: Removing delivered packet " + packet.getClass().getSimpleName() + " from active list");
                     deliveredThisFrame++;
                 }
                 packetsToRemove.add(packet);
@@ -628,21 +590,13 @@ public class GameController {
         removeDestroyedPacketsFromWires(packetsToRemove);
 
         if (!packetsToRemove.isEmpty()) {
-            java.lang.System.out.println("DEBUG: Removed " + packetsToRemove.size() + " packets from active list. " +
-                    "Active count now: " + gameState.getActivePacketCount() +
-                    " (Lost: " + lostThisFrame + ", Delivered: " + deliveredThisFrame + ")");
+            // Packets removed from active list
         }
 
         // Update the packet loss percentage in the game state
         double currentPacketLoss = gameState.calculatePacketLossPercentage();
         gameState.setPacketLoss(currentPacketLoss);
 
-        // Debug output for packet loss tracking
-        if (currentPacketLoss > 0 || lostThisFrame > 0) {
-            java.lang.System.out.println("DEBUG: Packet loss updated to: " + String.format("%.1f", currentPacketLoss) +
-                    "% (Lost: " + gameState.getLostPacketsCount() + ", Total injected: " + gameState.getTotalInjectedPackets() +
-                    ", Active: " + gameState.getActivePacketCount() + ")");
-        }
 
         // Check for packets reaching reference systems (success)
         if (gameState.getCurrentLevel() != null) {

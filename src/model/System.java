@@ -290,7 +290,6 @@ public abstract class System {
             }
             if (!toRemove.isEmpty()) {
                 storage.removeAll(toRemove);
-                java.lang.System.out.println("DEBUG: Bulk packet destroyed " + toRemove.size() + " stored packets in " + getClass().getSimpleName());
             }
             
             // Bulk packets randomly change port types when entering systems
@@ -316,24 +315,19 @@ public abstract class System {
             boolean isCompatible = availablePort.isCompatibleWithPacket(packet);
             if (!isCompatible && packet instanceof MessengerPacket) {
                 ((MessengerPacket) packet).applyExitSpeedMultiplier(true);
-                java.lang.System.out.println("DEBUG: Applied 2x exit speed for incompatible port exit");
             } else if (!isCompatible && packet instanceof ProtectedPacket) {
                 ((ProtectedPacket) packet).applyExitSpeedMultiplier(true);
-                java.lang.System.out.println("DEBUG: Applied 2x exit speed for protected packet incompatible port exit");
             }
             
-            java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
-                    " transferred " + packet.getPacketType() + " packet to " + 
-                    (isCompatible ? "compatible" : "incompatible") + " output port");
         } else if (storage.size() < MAX_STORAGE) {
             // Store packet if storage is available
             storage.add(packet);
-            java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
+            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
                     " stored " + packet.getPacketType() + " packet (storage: " + storage.size() + "/" + MAX_STORAGE + ")");
         } else {
             // Packet is lost if no storage available
             packet.setActive(false);
-            java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
+            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
                     " LOST " + packet.getPacketType() + " packet - no storage available");
         }
     }
@@ -351,8 +345,12 @@ public abstract class System {
 
         for (Port port : outputPorts) {
             // Check if port is empty and destination system is active
-            if (port.canAcceptPacket(packet) && isDestinationSystemActive(port)) {
-                if (port.isCompatibleWithPacket(packet)) {
+            boolean canAccept = port.canAcceptPacket(packet);
+            boolean destActive = isDestinationSystemActive(port);
+            boolean isCompatible = port.isCompatibleWithPacket(packet);
+            
+            if (canAccept && destActive) {
+                if (isCompatible) {
                     // Priority 1: Compatible and empty
                     compatibleEmptyPorts.add(port);
                 } else {
@@ -362,17 +360,11 @@ public abstract class System {
             }
         }
 
-        // Debug logging
-        java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
-                " finding output port for " + packet.getPacketType() +
-                " packet (compatible empty: " + compatibleEmptyPorts.size() +
-                ", any empty: " + anyEmptyPorts.size() + ")");
-
         // Priority 1: Compatible empty ports (highest priority)
         if (!compatibleEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = compatibleEmptyPorts.get(random.nextInt(compatibleEmptyPorts.size()));
-            java.lang.System.out.println("DEBUG: Selected compatible empty " + selectedPort.getShape() + " port");
+            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected compatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
@@ -380,12 +372,12 @@ public abstract class System {
         if (!anyEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = anyEmptyPorts.get(random.nextInt(anyEmptyPorts.size()));
-            java.lang.System.out.println("DEBUG: Selected any empty " + selectedPort.getShape() + " port");
+            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected incompatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
         // Priority 3: No empty ports - packet will be stored in system
-        java.lang.System.out.println("DEBUG: No empty output ports found - packet will be stored");
+        java.lang.System.out.println("PORT_SELECTION_DEBUG: No available ports for " + packet.getPacketType() + " - will be stored");
         return null;
     }
 
@@ -478,7 +470,6 @@ public abstract class System {
         } while (newShape == currentShape);
         
         portToChange.setShape(newShape);
-        java.lang.System.out.println("DEBUG: Bulk packet changed " + currentShape + " port to " + newShape + " in " + getClass().getSimpleName());
     }
 
     /**

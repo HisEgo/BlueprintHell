@@ -88,9 +88,6 @@ public class PacketInjection {
         }
         Vec2D movementVector = new Vec2D(1, 0); // Default movement
 
-        java.lang.System.out.println("DEBUG: Creating packet type " + packetType +
-                " at position " + position + " from " +
-                (sourceSystem != null ? sourceSystem.getClass().getSimpleName() : "null"));
 
         switch (packetType) {
             case SQUARE_MESSENGER:
@@ -118,7 +115,6 @@ public class PacketInjection {
                 return new MessengerPacket(PacketType.BIT_PACKET, position, movementVector);
 
             default:
-                java.lang.System.out.println("WARNING: Unknown packet type " + packetType + ", creating SQUARE_MESSENGER");
                 return new MessengerPacket(PacketType.SQUARE_MESSENGER, position, movementVector);
         }
     }
