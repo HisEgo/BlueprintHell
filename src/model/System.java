@@ -772,4 +772,23 @@ public abstract class System {
         }
         return available;
     }
+
+    /**
+     * Resets the system to its initial state.
+     */
+    public void reset() {
+        clearStorage();
+        isActive = true;
+        deactivationTimer = 0.0;
+        isFailed = false;
+        indicatorVisible = false;
+        
+        // Clear packets from ports
+        for (Port port : inputPorts) {
+            port.setCurrentPacket(null);
+        }
+        for (Port port : outputPorts) {
+            port.setCurrentPacket(null);
+        }
+    }
 }

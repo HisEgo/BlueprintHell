@@ -40,9 +40,22 @@ public class MovementController {
      * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
      */
     public void updatePackets(List<Packet> packets, double deltaTime, boolean useSmoothCurves) {
+        updatePackets(packets, deltaTime, useSmoothCurves, 1.0); // Default acceleration factor
+    }
+    
+    /**
+     * Updates packet positions with smooth movement and acceleration factor.
+     * Handles both wire-based and free movement.
+     * @param packets List of packets to update
+     * @param deltaTime Time elapsed since last update
+     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
+     * @param accelerationFactor Speed multiplier for fast simulation
+     */
+    public void updatePackets(List<Packet> packets, double deltaTime, boolean useSmoothCurves, double accelerationFactor) {
+        double acceleratedDeltaTime = deltaTime * accelerationFactor;
         for (Packet packet : packets) {
             if (packet.isActive()) {
-                updatePacketMovement(packet, deltaTime, useSmoothCurves);
+                updatePacketMovement(packet, acceleratedDeltaTime, useSmoothCurves);
             }
         }
     }

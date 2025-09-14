@@ -84,13 +84,9 @@ public class ReferenceSystem extends System {
     public void update(double currentTime) {
         if (!isActive()) return;
 
-        // Any reference system with packets can act as a source
-        if (!injectedPackets.isEmpty()) {
-            if (currentTime - lastInjectionTime >= injectionInterval) {
-                injectNextPacket();
-                lastInjectionTime = currentTime;
-            }
-        }
+        // ReferenceSystem should not inject packets during temporal preview
+        // Packet injection is handled by PacketInjection schedule in GameController
+        // This method is kept for compatibility but does nothing during temporal preview
     }
 
     /**
@@ -134,9 +130,14 @@ public class ReferenceSystem extends System {
         // Reference systems don't forward packets, they just receive them
         // Packets reaching here are considered "delivered"
         packet.setActive(false);
-        deliveredPacketCount++;
-        java.lang.System.out.println("*** PACKET DELIVERED *** " + packet.getPacketType() +
-                " (" + packet.getClass().getSimpleName() + ") to ReferenceSystem (total delivered: " + deliveredPacketCount + ")");
+        
+        // Only count delivered packets once to prevent duplication in temporal navigation
+        if (!packet.isProcessedByReferenceSystem()) {
+            deliveredPacketCount++;
+            packet.setProcessedByReferenceSystem(true);
+            java.lang.System.out.println("*** PACKET DELIVERED *** " + packet.getPacketType() +
+                    " (" + packet.getClass().getSimpleName() + ") to ReferenceSystem (total delivered: " + deliveredPacketCount + ")");
+        }
     }
 
     /**
@@ -155,16 +156,42 @@ public class ReferenceSystem extends System {
      * Gets the total number of packets received by this reference system.
      */
     public int getReceivedPacketCount() {
-        // Return the count of delivered packets (processed by processPacket) plus storage
-        int count = deliveredPacketCount + getStorage().size();
+        // Return only the count of delivered packets (processed by processPacket)
+        // This gives the correct count for packet loss calculation
+        return deliveredPacketCount;
+    }
 
+    /**
+     * Resets packet statistics for temporal navigation.
+     */
+    public void resetStatistics() {
+        deliveredPacketCount = 0;
+        lastInjectionTime = 0.0;
+    }
+    
+    /**
+     * Resets all packets to prevent duplication in temporal navigation.
+     */
+    public void resetPacketFlags() {
+        // Reset all packets in storage
+        for (Packet packet : getStorage()) {
+            packet.setProcessedByReferenceSystem(false);
+        }
+        
+        // Reset all packets in input ports
         for (Port inputPort : getInputPorts()) {
-            if (inputPort.getCurrentPacket() != null) {
-                count++;
+            Packet packet = inputPort.getCurrentPacket();
+            if (packet != null) {
+                packet.setProcessedByReferenceSystem(false);
             }
         }
-
-        return count;
+    }
+    
+    /**
+     * Gets the number of delivered packets (for coin calculation).
+     */
+    public int getDeliveredPacketCount() {
+        return deliveredPacketCount;
     }
 
     @Override

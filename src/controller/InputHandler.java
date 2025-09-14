@@ -152,12 +152,12 @@ public class InputHandler {
 
         switch (action) {
             case "temporal_backward":
-                // Temporal navigation - move backward in time
-                handleTemporalNavigation(-1);
+                // Temporal navigation disabled - use time slider instead
+                // handleTemporalNavigation(-1);
                 break;
             case "temporal_forward":
-                // Temporal navigation - move forward in time
-                handleTemporalNavigation(1);
+                // Temporal navigation disabled - use time slider instead
+                // handleTemporalNavigation(1);
                 break;
             case "wiring_mode":
                 // Enter wiring mode
@@ -392,12 +392,13 @@ public class InputHandler {
 
     /**
      * Handles temporal navigation with improved step sizes and visual feedback.
+     * Now uses smaller steps for more precise navigation.
      */
     private void handleTemporalNavigation(int direction) {
         if (gameController != null && gameController.isSimulationMode()) {
             double currentProgress = gameController.getGameState().getTemporalProgress();
             double levelDuration = gameController.getGameState().getCurrentLevel().getLevelDuration();
-            double timeStep = 0.5; // Smaller steps for more precise navigation
+            double timeStep = 0.1; // Even smaller steps for more precise navigation
             double newProgress;
 
             if (direction > 0) {
@@ -417,7 +418,8 @@ public class InputHandler {
                 
             }
         } else if (gameController != null && gameController.isEditingMode()) {
-            
+            // In editing mode, temporal navigation is not available
+            //System.out.println("Temporal navigation only available in simulation mode");
         }
     }
 

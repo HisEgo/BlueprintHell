@@ -4,6 +4,10 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Label;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import controller.GameController;
 import model.*;
 
@@ -43,6 +47,24 @@ public class GameView {
     private double runButtonWidth = 120;
     private double runButtonHeight = 40;
 
+    // Simulate button for temporal navigation
+    private boolean isSimulateButtonVisible = true;
+    private double simulateButtonX = 0;
+    private double simulateButtonY = 60;
+    private double simulateButtonWidth = 120;
+    private double simulateButtonHeight = 40;
+
+    // Exit simulate button
+    private boolean isExitSimulateButtonVisible = false;
+    private double exitSimulateButtonX = 0;
+    private double exitSimulateButtonY = 60;
+    private double exitSimulateButtonWidth = 120;
+    private double exitSimulateButtonHeight = 40;
+
+    // Time slider for temporal navigation
+    private Slider timeSlider;
+    private Label timeSliderLabel;
+
     public GameView(GameController gameController) {
         this.gameController = gameController;
         initializeUI();
@@ -68,10 +90,45 @@ public class GameView {
 
         root.getChildren().add(canvas);
 
+        // Create time slider
+        createTimeSlider();
+
         // Set background
         root.setStyle("-fx-background-color: #0a0a0a;");
     }
 
+    /**
+     * Creates the time slider for temporal navigation.
+     */
+    private void createTimeSlider() {
+        // Create slider label
+        timeSliderLabel = new Label("Time: 0.0s / 60.0s");
+        timeSliderLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        timeSliderLabel.setTextFill(Color.WHITE);
+        timeSliderLabel.setLayoutX(20);
+        timeSliderLabel.setLayoutY(20);
+
+        // Create slider
+        timeSlider = new Slider();
+        timeSlider.setMin(0.0);
+        timeSlider.setMax(60.0);
+        timeSlider.setValue(0.0);
+        timeSlider.setPrefWidth(300);
+        timeSlider.setLayoutX(20);
+        timeSlider.setLayoutY(50);
+        timeSlider.setDisable(true);
+        timeSlider.setVisible(false);
+
+        // Add listener for slider value changes
+        timeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (gameController.canStartSimulation()) {
+                gameController.updatePacketPositionsForTime(newVal.doubleValue());
+            }
+        });
+
+        // Add to root pane
+        root.getChildren().addAll(timeSliderLabel, timeSlider);
+    }
 
     /**
      * Sets up input event handlers to connect with the InputHandler.
@@ -98,6 +155,18 @@ public class GameView {
             // Check if Run button was clicked
             if (isRunButtonClicked(event.getX(), event.getY())) {
                 handleRunButtonClick();
+                return;
+            }
+
+            // Check if Simulate button was clicked
+            if (isSimulateButtonClicked(event.getX(), event.getY())) {
+                handleSimulateButtonClick();
+                return;
+            }
+
+            // Check if Exit Simulate button was clicked
+            if (isExitSimulateButtonClicked(event.getX(), event.getY())) {
+                handleExitSimulateButtonClick();
                 return;
             }
 
@@ -434,9 +503,49 @@ public class GameView {
 
         // Draw Run button (always in screen space)
         drawRunButton();
+        
+        // Draw Simulate and Exit buttons
+        drawSimulateButtons();
 
         // Draw error message if any
         drawErrorMessage();
+
+        // Update time slider
+        updateTimeSlider();
+    }
+
+    /**
+     * Updates the time slider based on current game state.
+     */
+    private void updateTimeSlider() {
+        if (timeSlider == null || timeSliderLabel == null) return;
+
+        // Only show slider when in simulating mode
+        boolean isSimulating = gameController.isSimulatingMode();
+        
+        // Update slider visibility and state
+        timeSlider.setVisible(isSimulating);
+        timeSlider.setDisable(!isSimulating);
+        
+        if (isSimulating) {
+            // Update slider values
+            double currentTime = gameController.getGameState().getTemporalProgress();
+            double maxTime = gameController.getGameState().getCurrentLevel() != null ?
+                    gameController.getGameState().getCurrentLevel().getLevelDuration() : 60.0;
+            
+            // Update slider max value if needed
+            if (timeSlider.getMax() != maxTime) {
+                timeSlider.setMax(maxTime);
+            }
+            
+            // Update slider value (prevent infinite loop)
+            if (Math.abs(timeSlider.getValue() - currentTime) > 0.01) {
+                timeSlider.setValue(currentTime);
+            }
+            
+            // Update label
+            timeSliderLabel.setText(String.format("Time: %.1fs / %.1fs", currentTime, maxTime));
+        }
     }
 
     /**
@@ -1948,6 +2057,7 @@ public class GameView {
      * Draws the Run button on canvas.
      */
     private void drawRunButton() {
+        // Show Run button only in editing mode, not in simulating mode
         if (!gameController.isEditingMode()) {
             isRunButtonVisible = false;
             return;
@@ -2054,6 +2164,7 @@ public class GameView {
      * Handles Run button click with validation and error messages.
      */
     private void handleRunButtonClick() {
+        // Only allow Run button in editing mode
         if (!gameController.isEditingMode()) {
             return;
         }
@@ -2080,6 +2191,51 @@ public class GameView {
 
         // All conditions met - start simulation
         gameController.enterSimulationMode();
+    }
+
+    /**
+     * Handles Simulate button click to enter temporal navigation mode.
+     */
+    private void handleSimulateButtonClick() {
+        // Only allow Simulate button in editing mode
+        if (!gameController.isEditingMode()) {
+            return;
+        }
+
+        // Check all conditions and show appropriate error message
+        boolean allPortsConnected = gameController.getWiringController().areAllPortsConnected(gameController.getGameState());
+        boolean referenceSystemsReady = gameController.areReferenceSystemsReady();
+        boolean noWireCollisions = !gameController.doAnyWiresPassOverSystems();
+
+        if (!allPortsConnected) {
+            showSimulationError("All ports must be connected!");
+            return;
+        }
+
+        if (!referenceSystemsReady) {
+            showSimulationError("Reference systems not ready. Connect source to destination.");
+            return;
+        }
+
+        if (!noWireCollisions) {
+            showSimulationError("Some wires pass over systems. Move wires away from systems.");
+            return;
+        }
+
+        // All conditions met - enter simulation mode
+        gameController.enterSimulatingMode();
+    }
+
+    /**
+     * Handles Exit Simulate button click to exit temporal navigation mode.
+     */
+    private void handleExitSimulateButtonClick() {
+        if (!gameController.isSimulatingMode()) {
+            return;
+        }
+
+        // Exit simulation mode and reset to initial state
+        gameController.exitSimulatingMode();
     }
 
     /**
@@ -2112,6 +2268,91 @@ public class GameView {
     }
 
     /**
+     * Draws the Simulate and Exit buttons on canvas.
+     */
+    private void drawSimulateButtons() {
+        // Show buttons in both editing and simulating modes
+        if (!gameController.isEditingMode() && !gameController.isSimulatingMode()) {
+            isSimulateButtonVisible = false;
+            isExitSimulateButtonVisible = false;
+            return;
+        }
+
+        // Check if simulation can start and current mode
+        boolean canStart = canStartSimulation();
+        boolean isSimulating = gameController.isSimulatingMode();
+
+        // Position buttons in top-right corner
+        if (canvas != null) {
+            double canvasWidth = canvas.getWidth();
+            if (isSimulating) {
+                // In simulating mode, position Exit button where Run button was
+                exitSimulateButtonX = canvasWidth - exitSimulateButtonWidth - 20;
+            } else {
+                // In editing mode, position Simulate button below Run button
+                simulateButtonX = canvasWidth - simulateButtonWidth - 20;
+            }
+        }
+
+        // Draw Simulate button
+        if (!isSimulating) {
+            isSimulateButtonVisible = true;
+            isExitSimulateButtonVisible = false;
+            
+            // Draw button background
+            if (canStart) {
+                // Ready to start - green button
+                gc.setFill(Color.rgb(76, 175, 80)); // Green
+            } else {
+                // Not ready - red button
+                gc.setFill(Color.rgb(244, 67, 54)); // Red
+            }
+            
+            // Draw button rectangle with rounded corners effect
+            gc.fillRoundRect(simulateButtonX, simulateButtonY, simulateButtonWidth, simulateButtonHeight, 8, 8);
+            
+            // Draw button border
+            gc.setStroke(Color.rgb(255, 255, 255, 0.3));
+            gc.setLineWidth(1);
+            gc.strokeRoundRect(simulateButtonX, simulateButtonY, simulateButtonWidth, simulateButtonHeight, 8, 8);
+            
+            // Draw button text
+            gc.setFill(Color.WHITE);
+            gc.setFont(javafx.scene.text.Font.font("Arial", javafx.scene.text.FontWeight.BOLD, 14));
+            String buttonText = "SIMULATE";
+            double textWidth = gc.getFont().getSize() * buttonText.length() * 0.6;
+            double textX = simulateButtonX + (simulateButtonWidth - textWidth) / 2;
+            double textY = simulateButtonY + simulateButtonHeight / 2 + 5;
+            gc.fillText(buttonText, textX, textY);
+        }
+        // Draw Exit Simulate button
+        else {
+            isSimulateButtonVisible = false;
+            isExitSimulateButtonVisible = true;
+            
+            // Draw button background - orange for exit
+            gc.setFill(Color.rgb(255, 152, 0)); // Orange
+            
+            // Draw button rectangle with rounded corners effect
+            gc.fillRoundRect(exitSimulateButtonX, exitSimulateButtonY, exitSimulateButtonWidth, exitSimulateButtonHeight, 8, 8);
+            
+            // Draw button border
+            gc.setStroke(Color.rgb(255, 255, 255, 0.3));
+            gc.setLineWidth(1);
+            gc.strokeRoundRect(exitSimulateButtonX, exitSimulateButtonY, exitSimulateButtonWidth, exitSimulateButtonHeight, 8, 8);
+            
+            // Draw button text
+            gc.setFill(Color.WHITE);
+            gc.setFont(javafx.scene.text.Font.font("Arial", javafx.scene.text.FontWeight.BOLD, 14));
+            String buttonText = "EXIT SIM";
+            double textWidth = gc.getFont().getSize() * buttonText.length() * 0.6;
+            double textX = exitSimulateButtonX + (exitSimulateButtonWidth - textWidth) / 2;
+            double textY = exitSimulateButtonY + exitSimulateButtonHeight / 2 + 5;
+            gc.fillText(buttonText, textX, textY);
+        }
+    }
+
+    /**
      * Checks if the given coordinates are within the Run button area.
      */
     private boolean isRunButtonClicked(double x, double y) {
@@ -2119,5 +2360,25 @@ public class GameView {
         
         return x >= runButtonX && x <= runButtonX + runButtonWidth &&
                y >= runButtonY && y <= runButtonY + runButtonHeight;
+    }
+
+    /**
+     * Checks if the given coordinates are within the Simulate button area.
+     */
+    private boolean isSimulateButtonClicked(double x, double y) {
+        if (!isSimulateButtonVisible) return false;
+        
+        return x >= simulateButtonX && x <= simulateButtonX + simulateButtonWidth &&
+               y >= simulateButtonY && y <= simulateButtonY + simulateButtonHeight;
+    }
+
+    /**
+     * Checks if the given coordinates are within the Exit Simulate button area.
+     */
+    private boolean isExitSimulateButtonClicked(double x, double y) {
+        if (!isExitSimulateButtonVisible) return false;
+        
+        return x >= exitSimulateButtonX && x <= exitSimulateButtonX + exitSimulateButtonWidth &&
+               y >= exitSimulateButtonY && y <= exitSimulateButtonY + exitSimulateButtonHeight;
     }
 }

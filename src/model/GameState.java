@@ -337,11 +337,28 @@ public class GameState {
      */
     public int getTotalLostPackets() {
         int lost = lostPacketsCount;
+        
+        // Count lost packets from active packets
         for (Packet packet : activePackets) {
-            if (!packet.isActive() || packet.shouldBeLost() || packet.shouldBeDestroyedByTime()) {
+            if (!packet.isActive() && (packet.shouldBeLost() || packet.shouldBeDestroyedByTime())) {
                 lost++;
             }
         }
+        
+        // Count lost packets from all systems (including spy systems)
+        if (currentLevel != null) {
+            for (model.System system : currentLevel.getSystems()) {
+                if (system instanceof SpySystem) {
+                    // Spy systems destroy confidential packets
+                    for (Packet packet : system.getStorage()) {
+                        if (!packet.isActive() && packet.isLost()) {
+                            lost++;
+                        }
+                    }
+                }
+            }
+        }
+        
         return lost;
     }
 

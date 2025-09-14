@@ -75,6 +75,13 @@ public class PacketInjection {
     }
 
     /**
+     * Resets the injection state so it can be executed again.
+     */
+    public void reset() {
+        this.isExecuted = false;
+    }
+
+    /**
      * Creates a packet based on the injection configuration.
      */
     public Packet createPacket() {

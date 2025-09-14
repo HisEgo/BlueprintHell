@@ -83,6 +83,8 @@ public class GameController {
     // Temporal navigation and mode management
     private boolean isEditingMode;
     private boolean isSimulationMode;
+    private boolean isSimulatingMode;
+    private int initialCoinsBeforeSimulate = 0; // Store initial coins before simulate
 
     public GameController(GameState gameState) {
         this.gameState = gameState;
@@ -99,6 +101,7 @@ public class GameController {
         // Initialize temporal navigation modes
         this.isEditingMode = true;  // Start in editing mode
         this.isSimulationMode = false;
+        this.isSimulatingMode = false; // For temporal navigation
 
         // Initialize game loading mode (default to fresh mode)
 
@@ -271,7 +274,7 @@ public class GameController {
             currentTime += deltaTime;
 
             // Process packet injections from schedule
-            processPacketInjections();
+            processPacketInjections(deltaTime);
 
 
             // Phase 2: Update system deactivation timers early
@@ -342,7 +345,14 @@ public class GameController {
     /**
      * Processes packet injections from the level schedule based on current time.
      */
-    private void processPacketInjections() {
+    private void processPacketInjections(double deltaTime) {
+        processPacketInjections(deltaTime, 1.0);
+    }
+    
+    /**
+     * Processes packet injections with acceleration factor.
+     */
+    private void processPacketInjections(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
         // Gate packet flow until reference systems (sources/destinations) are ready
@@ -353,8 +363,8 @@ public class GameController {
         // Use temporal progress instead of real time for packet injections
         double currentTemporalTime = gameState.getTemporalProgress();
         
-
-
+        // For fast simulation, we need to be more careful about packet injection timing
+        // Only inject packets at their exact scheduled time, not during acceleration
         for (PacketInjection injection : gameState.getCurrentLevel().getPacketSchedule()) {
             if (!injection.isExecuted() && injection.getTime() <= currentTemporalTime) {
                 // Create a new packet for this injection attempt
@@ -457,18 +467,28 @@ public class GameController {
      * Updates all systems in the current level.
      */
     private void updateSystems(double deltaTime) {
+        updateSystems(deltaTime, 1.0);
+    }
+    
+    /**
+     * Updates all systems with acceleration factor.
+     */
+    private void updateSystems(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
         for (model.System system : gameState.getCurrentLevel().getSystems()) {
             if (system instanceof ReferenceSystem) {
                 ((ReferenceSystem) system).update(gameState.getTemporalProgress());
             }
-            // Award coins only once at the moment of entry: consume pending flags
-            for (Port inputPort : system.getInputPorts()) {
-                Packet p = inputPort.getCurrentPacket();
-                if (p != null && p.isCoinAwardPending()) {
-                    gameState.addCoins(p.getCoinValue());
-                    p.setCoinAwardPending(false);
+            // Award coins only during normal simulation, not during temporal preview
+            // This prevents duplicate coin counting during fast simulation
+            if (accelerationFactor == 1.0 && isSimulationMode) {
+                for (Port inputPort : system.getInputPorts()) {
+                    Packet p = inputPort.getCurrentPacket();
+                    if (p != null && p.isCoinAwardPending()) {
+                        gameState.addCoins(p.getCoinValue());
+                        p.setCoinAwardPending(false);
+                    }
                 }
             }
             system.processInputs();
@@ -504,6 +524,13 @@ public class GameController {
      * Updates packet movement on all wires.
      */
     private void updateWirePacketMovement(double deltaTime) {
+        updateWirePacketMovement(deltaTime, 1.0); // Default acceleration factor
+    }
+    
+    /**
+     * Updates packet movement on all wires with acceleration factor.
+     */
+    private void updateWirePacketMovement(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
         int totalPacketsOnWires = 0;
@@ -514,16 +541,19 @@ public class GameController {
             useSmoothCurves = (Boolean) setting;
         }
         
+        // Apply acceleration factor to deltaTime for faster simulation
+        double acceleratedDeltaTime = deltaTime * accelerationFactor;
+        
         for (WireConnection connection : gameState.getCurrentLevel().getWireConnections()) {
             if (connection.isActive()) {
                 int packetsBefore = connection.getPacketsOnWire().size();
-                connection.updatePacketMovement(deltaTime, useSmoothCurves);
+                connection.updatePacketMovement(acceleratedDeltaTime, useSmoothCurves);
                 totalPacketsOnWires += connection.getPacketsOnWire().size();
 
                 // Debug: Log packet movement if there are packets
                 if (packetsBefore > 0) {
                     java.lang.System.out.println("DEBUG: Wire " + connection.getId().substring(0, 8) +
-                            " has " + connection.getPacketsOnWire().size() + " packets, deltaTime=" + deltaTime);
+                            " has " + connection.getPacketsOnWire().size() + " packets, deltaTime=" + acceleratedDeltaTime + " (accel=" + accelerationFactor + ")");
                 }
             }
         }
@@ -1837,6 +1867,10 @@ public class GameController {
             return;
         }
 
+        // Exit temporal navigation and reset simulation state (preserve initial coins)
+        exitTemporalNavigation();
+        resetSimulationToBeginning();
+        
         isEditingMode = false;
         isSimulationMode = true;
         isRunning = true;
@@ -1854,10 +1888,72 @@ public class GameController {
     }
 
     /**
+     * Enters simulating mode - enables temporal navigation.
+     */
+    public void enterSimulatingMode() {
+        if (!isEditingMode) return;
+
+        // Check all conditions first
+        boolean allPortsConnected = wiringController != null && wiringController.areAllPortsConnected(gameState);
+        boolean referenceSystemsReady = areReferenceSystemsReady();
+        boolean noWireCollisions = !doAnyWiresPassOverSystems();
+
+        if (!allPortsConnected || !referenceSystemsReady || !noWireCollisions) {
+            System.out.println("Cannot enter simulating mode: conditions not met");
+            return;
+        }
+
+        // Store initial coins before entering simulate mode
+        initialCoinsBeforeSimulate = gameState.getCoins();
+        System.out.println("Stored initial coins: " + initialCoinsBeforeSimulate);
+
+        isSimulatingMode = true;
+        isEditingMode = false;
+        isSimulationMode = false;
+        isRunning = false;
+
+        // Reset simulation to beginning for temporal navigation
+        resetSimulationToBeginning();
+
+        System.out.println("Entered SIMULATING MODE - Use time slider for temporal navigation");
+    }
+
+    /**
+     * Exits simulating mode - returns to editing mode.
+     */
+    public void exitSimulatingMode() {
+        if (!isSimulatingMode) return;
+
+        // Reset simulation state but preserve initial coins
+        resetSimulationToBeginning();
+        
+        // Reset packet statistics completely to clear all counts
+        resetPacketStatisticsCompletely();
+        
+        // Restore initial coins from before simulate
+        gameState.setCoins(initialCoinsBeforeSimulate);
+        System.out.println("Restored initial coins: " + initialCoinsBeforeSimulate);
+
+        isSimulatingMode = false;
+        isEditingMode = true;
+        isSimulationMode = false;
+        isRunning = false;
+
+        System.out.println("Exited SIMULATING MODE - Returned to editing mode with initial state");
+    }
+
+    /**
      * Checks if currently in editing mode.
      */
     public boolean isEditingMode() {
         return isEditingMode;
+    }
+
+    /**
+     * Checks if currently in simulating mode (temporal navigation).
+     */
+    public boolean isSimulatingMode() {
+        return isSimulatingMode;
     }
 
     /**
@@ -1868,36 +1964,301 @@ public class GameController {
     }
 
     /**
+     * Checks if simulation can be started (Run button is green).
+     */
+    public boolean canStartSimulation() {
+        if (isSimulationMode) return false; // Already running
+        
+        boolean allIndicatorsOn = areAllIndicatorsOn();
+        boolean refSystemsReady = areReferenceSystemsReady();
+        boolean noWireCollisions = !doAnyWiresPassOverSystems();
+        
+        return allIndicatorsOn && refSystemsReady && noWireCollisions;
+    }
+
+    /**
      * Updates packet positions based on temporal progress (for temporal navigation).
-     * Enhanced to properly handle rewind scenarios and maintain game state consistency.
+     * Only works when Run button is ready but simulation hasn't started yet.
      */
     public void updatePacketPositionsForTime(double targetTime) {
-        if (!isSimulationMode) return;
+        // Only allow temporal navigation when in simulating mode
+        if (!isSimulatingMode) {
+            System.out.println("Temporal navigation blocked: not in simulating mode");
+            return;
+        }
 
         double currentTime = gameState.getTemporalProgress();
         double timeDelta = targetTime - currentTime;
 
         if (Math.abs(timeDelta) < 0.01) return; // No significant change
 
-        java.lang.System.out.println("Temporal navigation: " + String.format("%.2f", currentTime) + "s -> " + String.format("%.2f", targetTime) + "s");
+        System.out.println("Temporal navigation: " + String.format("%.2f", currentTime) + "s -> " + String.format("%.2f", targetTime) + "s");
 
-        if (timeDelta < 0) {
-            // Rewinding: need to reset and recalculate state
-            handleTemporalRewind(targetTime);
-        } else {
-            // Fast-forwarding: need to simulate intermediate steps
-            handleTemporalFastForward(targetTime, timeDelta);
-        }
-
-        // Update temporal progress and keep level timer in sync during temporal navigation
-        gameState.setTemporalProgress(targetTime);
-        gameState.setLevelTimer(targetTime);
-
-        // Update visual display to show temporal navigation changes
+        // Reset simulation to beginning (preserves initial coins)
+        resetSimulationToBeginning();
+        
+        // Run simulation forward to target time
+        runSimulationToTime(targetTime);
+        
+        // Update visual display
         Platform.runLater(() -> {
             gameView.update();
             hudView.update();
         });
+    }
+    
+    /**
+     * Exits temporal navigation mode and prepares for normal simulation.
+     */
+    public void exitTemporalNavigation() {
+        // Reset to beginning but preserve initial coins
+        resetSimulationToBeginning();
+        
+        // Ensure we're in editing mode
+        isEditingMode = true;
+        isSimulationMode = false;
+        isRunning = false;
+        
+        // Update visual display
+        Platform.runLater(() -> {
+            gameView.update();
+            hudView.update();
+        });
+        
+        System.out.println("Exited temporal navigation mode");
+    }
+
+    /**
+     * Resets simulation to the beginning (time 0) - for temporal navigation.
+     * Preserves initial coins and only resets simulation state.
+     */
+    private void resetSimulationToBeginning() {
+        // Reset time
+        gameState.setTemporalProgress(0.0);
+        gameState.setLevelTimer(0.0);
+        
+        // DON'T reset coins - preserve initial coins for temporal navigation
+        // gameState.setCoins(0);
+        resetPacketStatistics();
+        
+        // Clear all packets
+        gameState.clearActivePackets();
+        clearPacketsFromWires();
+        clearPacketsFromSystems();
+        
+        // Reset packet injections
+        if (gameState.getCurrentLevel() != null) {
+            for (PacketInjection injection : gameState.getCurrentLevel().getPacketSchedule()) {
+                injection.reset();
+            }
+        }
+        
+        // Reset systems
+        if (gameState.getCurrentLevel() != null) {
+            for (model.System system : gameState.getCurrentLevel().getSystems()) {
+                system.clearStorage();
+                system.reset();
+            }
+        }
+        
+        System.out.println("Simulation reset to beginning - temporal navigation");
+    }
+    
+    /**
+     * Resets simulation completely - for starting new simulation.
+     * Resets everything including coins.
+     */
+    private void resetSimulationCompletely() {
+        // Reset time
+        gameState.setTemporalProgress(0.0);
+        gameState.setLevelTimer(0.0);
+        
+        // Reset coins and packet statistics
+        gameState.setCoins(0);
+        resetPacketStatisticsCompletely();
+        
+        // Clear all packets
+        gameState.clearActivePackets();
+        clearPacketsFromWires();
+        clearPacketsFromSystems();
+        
+        // Reset packet injections
+        if (gameState.getCurrentLevel() != null) {
+            for (PacketInjection injection : gameState.getCurrentLevel().getPacketSchedule()) {
+                injection.reset();
+            }
+        }
+        
+        // Reset systems
+        if (gameState.getCurrentLevel() != null) {
+            for (model.System system : gameState.getCurrentLevel().getSystems()) {
+                system.clearStorage();
+                system.reset();
+            }
+        }
+        
+        System.out.println("Simulation reset completely - starting new simulation");
+    }
+    
+    /**
+     * Resets packet statistics for temporal navigation.
+     */
+    private void resetPacketStatistics() {
+        if (gameState.getCurrentLevel() != null) {
+            for (model.System system : gameState.getCurrentLevel().getSystems()) {
+                if (system instanceof ReferenceSystem) {
+                    ((ReferenceSystem) system).resetStatistics();
+                    ((ReferenceSystem) system).resetPacketFlags();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Resets packet statistics completely for new simulation.
+     */
+    private void resetPacketStatisticsCompletely() {
+        if (gameState.getCurrentLevel() != null) {
+            for (model.System system : gameState.getCurrentLevel().getSystems()) {
+                if (system instanceof ReferenceSystem) {
+                    ((ReferenceSystem) system).resetStatistics();
+                    ((ReferenceSystem) system).resetPacketFlags();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Runs simulation forward to the specified time using fast simulation.
+     */
+    private void runSimulationToTime(double targetTime) {
+        if (targetTime <= 0) return;
+        
+        double currentTime = 0.0;
+        double deltaTime = 0.2; // Even larger steps for better performance (0.2s steps)
+        double accelerationFactor = 1.0; // No acceleration - run at normal speed for accuracy
+        
+        System.out.println("Running precise simulation forward to time " + String.format("%.2f", targetTime) + "s");
+        
+        // Store initial coins to prevent duplication
+        int initialCoins = gameState.getCoins();
+        System.out.println("Initial coins: " + initialCoins);
+        
+        int stepCount = 0;
+        while (currentTime < targetTime) {
+            double stepTime = Math.min(deltaTime, targetTime - currentTime);
+            
+            // Update simulation with normal speed for accuracy
+            updateSimulationStep(stepTime, accelerationFactor);
+            
+            currentTime += stepTime;
+            gameState.setTemporalProgress(currentTime);
+            gameState.setLevelTimer(currentTime);
+            
+            stepCount++;
+            
+            // Safety check to prevent infinite loops
+            if (stepCount > 10000) {
+                System.out.println("Warning: Simulation step limit reached, stopping at " + String.format("%.2f", currentTime) + "s");
+                break;
+            }
+        }
+        
+        // Calculate correct coins based on delivered packets
+        calculateCorrectCoins(initialCoins);
+        
+        System.out.println("Fast simulation completed at time " + String.format("%.2f", currentTime) + "s in " + stepCount + " steps");
+    }
+    
+    /**
+     * Calculates correct coins based on delivered packets for temporal navigation.
+     */
+    private void calculateCorrectCoins(int initialCoins) {
+        if (gameState.getCurrentLevel() == null) return;
+        
+        int deliveredCoins = 0;
+        
+        // Count coins from all delivered packets
+        for (model.System system : gameState.getCurrentLevel().getSystems()) {
+            if (system instanceof ReferenceSystem) {
+                ReferenceSystem refSystem = (ReferenceSystem) system;
+                int deliveredCount = refSystem.getDeliveredPacketCount();
+                // Each delivered packet gives 1 coin
+                deliveredCoins += deliveredCount;
+            }
+        }
+        
+        // For temporal navigation, we need to calculate coins based on the current state
+        // not just add to initial coins, because initial coins might be from previous temporal navigation
+        int totalCoins = deliveredCoins;
+        
+        // Set coins to the calculated amount
+        gameState.setCoins(totalCoins);
+        
+        System.out.println("Calculated coins: delivered=" + deliveredCoins + " = total=" + totalCoins);
+    }
+    
+    /**
+     * Updates a single simulation step (without view updates).
+     */
+    private void updateSimulationStep(double deltaTime) {
+        updateSimulationStep(deltaTime, 1.0); // Default acceleration factor
+    }
+    
+    /**
+     * Updates a single simulation step with acceleration factor (for fast simulation).
+     */
+    private void updateSimulationStep(double deltaTime, double accelerationFactor) {
+        // Process packet injections with acceleration
+        processPacketInjections(deltaTime, accelerationFactor);
+        
+        // Update packet movement with acceleration
+        updatePacketMovement(deltaTime, accelerationFactor);
+        
+        // Update packet movement with MovementController (for enhanced path-based movement)
+        boolean useSmoothCurves = true; // Default to smooth curves
+        Object setting = gameState.getGameSettings().get("smoothWireCurves");
+        if (setting instanceof Boolean) {
+            useSmoothCurves = (Boolean) setting;
+        }
+        movementController.updatePackets(gameState.getActivePackets(), deltaTime, useSmoothCurves, accelerationFactor);
+        
+        // Apply ability effects to packet movement
+        for (Packet packet : gameState.getActivePackets()) {
+            movementController.applyAbilityEffects(packet, activeAbilities);
+        }
+        
+        // Process wire connections
+        processWireConnections();
+        
+        // Update systems with acceleration
+        updateSystems(deltaTime, accelerationFactor);
+        
+        // Process wire connections again
+        processWireConnections();
+        
+        // Process system transfers
+        processSystemTransfers();
+        
+        // Check collisions
+        collisionController.checkCollisions(getPacketsOnWires());
+        
+        // Remove destroyed packets
+        removeDestroyedPacketsFromWiresImmediate();
+    }
+
+    /**
+     * Updates packet movement for all packets.
+     */
+    private void updatePacketMovement(double deltaTime) {
+        updatePacketMovement(deltaTime, 1.0); // Default acceleration factor
+    }
+    
+    /**
+     * Updates packet movement for all packets with acceleration factor.
+     */
+    private void updatePacketMovement(double deltaTime, double accelerationFactor) {
+        updateWirePacketMovement(deltaTime, accelerationFactor);
     }
 
     /**

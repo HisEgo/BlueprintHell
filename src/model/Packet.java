@@ -33,6 +33,8 @@ public abstract class Packet {
     private int bulkPacketColor; // For distinguishing bit packets
     // Marks that this packet has just entered a system input port and a coin award is pending
     private boolean coinAwardPending;
+    // Marks that this packet has been processed by a reference system to prevent duplication
+    private boolean processedByReferenceSystem;
 
     public Packet() {
         this.id = java.util.UUID.randomUUID().toString();
@@ -45,6 +47,7 @@ public abstract class Packet {
         this.retryDestination = false;
         this.sourcePosition = new Point2D();
         this.destinationPosition = new Point2D();
+        this.processedByReferenceSystem = false;
 
         // Initialize path-based movement tracking
         this.pathProgress = 0.0;
@@ -204,6 +207,21 @@ public abstract class Packet {
      */
     public void setCoinAwardPending(boolean pending) {
         this.coinAwardPending = pending;
+    }
+
+    /**
+     * Returns whether this packet has been processed by a reference system.
+     */
+    @JsonIgnore
+    public boolean isProcessedByReferenceSystem() {
+        return processedByReferenceSystem;
+    }
+
+    /**
+     * Marks that this packet has been processed by a reference system.
+     */
+    public void setProcessedByReferenceSystem(boolean processed) {
+        this.processedByReferenceSystem = processed;
     }
 
     /**

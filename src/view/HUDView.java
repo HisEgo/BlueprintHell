@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -58,7 +59,7 @@ public class HUDView {
         // Make sure HUD is visible by default
         root.setVisible(true);
         
-        // Make HUD transparent to mouse events so wiring works
+        // Make HUD transparent to mouse events so wiring works, but allow slider interaction
         root.setMouseTransparent(true);
 
         // Game statistics
@@ -70,6 +71,10 @@ public class HUDView {
         // Mode indicator
         Label modeLabel = createStatLabel("Mode: Editing");
         modeLabel.setId("modeLabel");
+
+        // Time slider removed - now handled in GameView
+        
+        // Time slider functionality moved to GameView
 
         // Active abilities section
         Label abilitiesTitle = new Label("Active Abilities:");
@@ -135,6 +140,8 @@ public class HUDView {
                 gameController.getGameState().getCurrentLevel().getLevelDuration() : 60.0;
         temporalProgressLabel.setText(String.format("Time: %.1fs / %.0fs", currentTime, maxTime));
 
+        // Time slider functionality moved to GameView
+
         // Color-code based on time progress
         double timeProgress = currentTime / maxTime;
         if (timeProgress < 0.5) {
@@ -152,7 +159,7 @@ public class HUDView {
                 modeLabel.setText("Mode: Editing (Press R to Run)");
                 modeLabel.setTextFill(Color.GREEN);
             } else {
-                modeLabel.setText("Mode: Simulation (Arrows: Time Travel)");
+                modeLabel.setText("Mode: Simulation (Time: " + String.format("%.1f", currentTime) + "s/" + String.format("%.1f", maxTime) + "s)");
                 modeLabel.setTextFill(Color.ORANGE);
             }
         }
