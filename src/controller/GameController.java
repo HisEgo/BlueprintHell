@@ -1213,71 +1213,84 @@ public class GameController {
     }
 
     private GameLevel createLevel2() {
-        // Intermediate Level - Add spy systems and confidential packets
+        java.lang.System.out.println("DEBUG: createLevel2() method called - creating level like level1 but with 2 spy systems");
+
+        // Level 2 - Same as Level 1 but with 2 spy systems added
         GameLevel level = new GameLevel();
         level.setLevelId("level2");
-        level.setName("Intermediate - Spy Networks");
-        level.setInitialWireLength(2700.0); // Increased budget for new systems that require longer connections
-        level.setDuration(90.0);
+        level.setName("Enhanced Foundation with Spy Networks");
+        level.setInitialWireLength(8000.0); // Same as level 1
+        level.setDuration(120.0); // 2 minutes
 
-        // Build on level 1 systems
-        ReferenceSystem source = new ReferenceSystem(new Point2D(100, 300), true);
+        // Create 2 reference systems (same as level 1)
+        ReferenceSystem refSystem1 = new ReferenceSystem(new Point2D(100, 200));
+        ReferenceSystem refSystem2 = new ReferenceSystem(new Point2D(700, 500));
 
-        ReferenceSystem destination = new ReferenceSystem(new Point2D(700, 300), false);
+        // Create 4 normal systems (same as level 1)
+        model.System normalSystem1 = new NormalSystem(new Point2D(300, 150), SystemType.NORMAL);
+        model.System normalSystem2 = new NormalSystem(new Point2D(300, 350), SystemType.NORMAL);
+        model.System normalSystem3 = new NormalSystem(new Point2D(500, 150), SystemType.NORMAL);
+        model.System normalSystem4 = new NormalSystem(new Point2D(500, 350), SystemType.NORMAL);
 
-        model.System normalSystem1 = new NormalSystem(new Point2D(400, 200), SystemType.NORMAL);
-        model.System normalSystem2 = new NormalSystem(new Point2D(400, 400), SystemType.NORMAL);
+        // Add 2 spy systems
+        SpySystem spySystem1 = new SpySystem(new Point2D(400, 100));
+        SpySystem spySystem2 = new SpySystem(new Point2D(400, 400));
 
-        // Add new spy systems
-        SpySystem spySystem1 = new SpySystem(new Point2D(300, 150));
-        SpySystem spySystem2 = new SpySystem(new Point2D(500, 450));
+        // Reference System 1 ports: 3 input + 3 output (one of each type) - same as level 1
+        refSystem1.addInputPort(new Port(PortShape.SQUARE, refSystem1, new Point2D(80, 180), true));
+        refSystem1.addInputPort(new Port(PortShape.TRIANGLE, refSystem1, new Point2D(80, 200), true));
+        refSystem1.addInputPort(new Port(PortShape.HEXAGON, refSystem1, new Point2D(80, 220), true));
+        refSystem1.addOutputPort(new Port(PortShape.SQUARE, refSystem1, new Point2D(120, 180), false));
+        refSystem1.addOutputPort(new Port(PortShape.TRIANGLE, refSystem1, new Point2D(120, 200), false));
+        refSystem1.addOutputPort(new Port(PortShape.HEXAGON, refSystem1, new Point2D(120, 220), false));
 
-        // Add ports (same as level 1 plus spy ports)
-        source.addOutputPort(new Port(PortShape.SQUARE, source, new Point2D(120, 300), false));
-        source.addOutputPort(new Port(PortShape.TRIANGLE, source, new Point2D(120, 320), false));
-        // Extra output on source for level 2
-        source.addOutputPort(new Port(PortShape.SQUARE, source, new Point2D(120, 340), false));
+        // Reference System 2 ports: 3 input + 3 output (one of each type) - same as level 1
+        refSystem2.addInputPort(new Port(PortShape.SQUARE, refSystem2, new Point2D(680, 480), true));
+        refSystem2.addInputPort(new Port(PortShape.TRIANGLE, refSystem2, new Point2D(680, 500), true));
+        refSystem2.addInputPort(new Port(PortShape.HEXAGON, refSystem2, new Point2D(680, 520), true));
+        refSystem2.addOutputPort(new Port(PortShape.SQUARE, refSystem2, new Point2D(720, 480), false));
+        refSystem2.addOutputPort(new Port(PortShape.TRIANGLE, refSystem2, new Point2D(720, 500), false));
+        refSystem2.addOutputPort(new Port(PortShape.HEXAGON, refSystem2, new Point2D(720, 520), false));
 
-        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(280, 150), true));
-        spySystem1.addOutputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(320, 150), false));
-        // Extra input/output on spySystem1
-        spySystem1.addInputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(280, 160), true));
-        spySystem1.addOutputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(320, 160), false));
+        // Normal System 1: 2 input (triangle, square) + 3 output (one of each) - same as level 1
+        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(280, 140), true));
+        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(280, 160), true));
+        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(320, 140), false));
+        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(320, 150), false));
+        normalSystem1.addOutputPort(new Port(PortShape.HEXAGON, normalSystem1, new Point2D(320, 160), false));
 
-        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(480, 450), true));
-        spySystem2.addOutputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(520, 450), false));
-        // Extra output on spySystem2
-        spySystem2.addOutputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(520, 460), false));
-        // Additional input on spySystem2 to balance port counts (fixes 21-port issue)
-        spySystem2.addInputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(480, 460), true));
+        // Normal System 2: 2 input (hexagon, triangle) + 1 output (hexagon) - same as level 1
+        normalSystem2.addInputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(280, 340), true));
+        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(280, 360), true));
+        normalSystem2.addOutputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(320, 350), false));
 
-        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(380, 200), true));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 200), false));
-        // Extra input/output on normalSystem1
-        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(380, 210), true));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 210), false));
+        // Normal System 3: 2 input (hexagon, square) + 2 output (hexagon, square) - same as level 1
+        normalSystem3.addInputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(480, 140), true));
+        normalSystem3.addInputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(480, 160), true));
+        normalSystem3.addOutputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(520, 140), false));
+        normalSystem3.addOutputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(520, 160), false));
 
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(380, 400), true));
-        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(420, 400), false));
-        // Extra output on normalSystem2
-        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(420, 410), false));
-        // Additional input port to balance the level (fixes the 13-port issue)
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(380, 420), true));
+        // Normal System 4: 2 input (square, triangle) + 2 output (square, triangle) - same as level 1
+        normalSystem4.addInputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(480, 340), true));
+        normalSystem4.addInputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(480, 360), true));
+        normalSystem4.addOutputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(520, 340), false));
+        normalSystem4.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(520, 360), false));
 
-        destination.addInputPort(new Port(PortShape.TRIANGLE, destination, new Point2D(680, 300), true));
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 320), true));
-        // Extra input on destination
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 340), true));
+        // Spy System 1: 2 input + 2 output ports
+        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(380, 90), true));
+        spySystem1.addInputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(380, 110), true));
+        spySystem1.addOutputPort(new Port(PortShape.HEXAGON, spySystem1, new Point2D(420, 90), false));
+        spySystem1.addOutputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(420, 110), false));
 
-        // Add systems via level.addSystem to ensure parentLevel is set for each system
-        level.addSystem(source);
-        level.addSystem(destination);
-        level.addSystem(normalSystem1);
-        level.addSystem(normalSystem2);
-        level.addSystem(spySystem1);
-        level.addSystem(spySystem2);
+        // Spy System 2: 2 input + 2 output ports
+        spySystem2.addInputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(380, 390), true));
+        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(380, 410), true));
+        spySystem2.addOutputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(420, 390), false));
+        spySystem2.addOutputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(420, 410), false));
 
-        // Debug: Print port counts to verify the fix
+        level.getSystems().addAll(Arrays.asList(refSystem1, refSystem2, normalSystem1, normalSystem2, normalSystem3, normalSystem4, spySystem1, spySystem2));
+
+        // Debug: Print port counts
         int totalInputPorts = 0;
         int totalOutputPorts = 0;
         for (model.System system : level.getSystems()) {
@@ -1286,29 +1299,28 @@ public class GameController {
         }
         java.lang.System.out.println("DEBUG: Level 2 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
 
-        // Early injections for immediate visual activity
-        level.getPacketSchedule().add(new PacketInjection(0.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(1.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(2.5, PacketType.SQUARE_MESSENGER, source));
+        // Packet injection schedule: 40 packets total (20 from each reference system)
+        // Reference System 1: 20 packets (5 of each messenger type + 5 confidential)
+        double time = 2.0;
+        for (int i = 0; i < 5; i++) {
+            level.getPacketSchedule().add(new PacketInjection(time, PacketType.SMALL_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 1.0, PacketType.SQUARE_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.TRIANGLE_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 3.0, PacketType.CONFIDENTIAL, refSystem1));
+            time += 6.0; // Space out packets
+        }
 
-        // Enhanced packet schedule with confidential packets (15 packets total)
-        level.getPacketSchedule().add(new PacketInjection(5.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(10.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(15.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(20.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(25.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(30.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(35.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(40.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(45.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(50.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(55.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(60.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(65.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(70.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(75.0, PacketType.SQUARE_MESSENGER, source));
+        // Reference System 2: 20 packets (5 of each messenger type + 5 confidential)
+        time = 4.0; // Start slightly offset from first system
+        for (int i = 0; i < 5; i++) {
+            level.getPacketSchedule().add(new PacketInjection(time, PacketType.SMALL_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 1.0, PacketType.SQUARE_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.TRIANGLE_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 3.0, PacketType.CONFIDENTIAL, refSystem2));
+            time += 6.0; // Space out packets
+        }
 
-        java.lang.System.out.println("DEBUG: Hardcoded Level 2 created with " + level.getPacketSchedule().size() + " packet injections");
+        java.lang.System.out.println("DEBUG: Level 2 created with " + level.getPacketSchedule().size() + " packet injections (40 total: 10 small hexagons, 10 squares, 10 triangles, 10 confidential)");
 
         return level;
     }
@@ -1442,6 +1454,7 @@ public class GameController {
 
         normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(380, 200), true));
         normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 200), false));
+        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(420, 190), false));
 
         antiTrojan.addInputPort(new Port(PortShape.SQUARE, antiTrojan, new Point2D(330, 350), true));
         antiTrojan.addOutputPort(new Port(PortShape.TRIANGLE, antiTrojan, new Point2D(370, 350), false));
@@ -1994,8 +2007,16 @@ public class GameController {
 
         System.out.println("Temporal navigation: " + String.format("%.2f", currentTime) + "s -> " + String.format("%.2f", targetTime) + "s");
 
+        // Store initial coins before reset
+        int initialCoins = gameState.getCoins();
+        System.out.println("Storing initial coins for temporal navigation: " + initialCoins);
+
         // Reset simulation to beginning (preserves initial coins)
         resetSimulationToBeginning();
+        
+        // Restore initial coins after reset
+        gameState.setCoins(initialCoins);
+        System.out.println("Restored initial coins after reset: " + initialCoins);
         
         // Run simulation forward to target time
         runSimulationToTime(targetTime);
@@ -2053,6 +2074,13 @@ public class GameController {
             }
         }
         
+        // Reset all systems to clear their state
+        if (gameState.getCurrentLevel() != null) {
+            for (model.System system : gameState.getCurrentLevel().getSystems()) {
+                system.reset();
+            }
+        }
+        
         // Reset systems
         if (gameState.getCurrentLevel() != null) {
             for (model.System system : gameState.getCurrentLevel().getSystems()) {
@@ -2104,6 +2132,9 @@ public class GameController {
      * Resets packet statistics for temporal navigation.
      */
     private void resetPacketStatistics() {
+        // Reset lost packets count
+        gameState.setLostPacketsCount(0);
+        
         if (gameState.getCurrentLevel() != null) {
             for (model.System system : gameState.getCurrentLevel().getSystems()) {
                 if (system instanceof ReferenceSystem) {
@@ -2118,6 +2149,9 @@ public class GameController {
      * Resets packet statistics completely for new simulation.
      */
     private void resetPacketStatisticsCompletely() {
+        // Reset lost packets count
+        gameState.setLostPacketsCount(0);
+        
         if (gameState.getCurrentLevel() != null) {
             for (model.System system : gameState.getCurrentLevel().getSystems()) {
                 if (system instanceof ReferenceSystem) {
@@ -2140,9 +2174,9 @@ public class GameController {
         
         System.out.println("Running precise simulation forward to time " + String.format("%.2f", targetTime) + "s");
         
-        // Store initial coins to prevent duplication
+        // Store initial coins before simulation starts
         int initialCoins = gameState.getCoins();
-        System.out.println("Initial coins: " + initialCoins);
+        System.out.println("Initial coins before simulation: " + initialCoins);
         
         int stepCount = 0;
         while (currentTime < targetTime) {
@@ -2188,14 +2222,14 @@ public class GameController {
             }
         }
         
-        // For temporal navigation, we need to calculate coins based on the current state
-        // not just add to initial coins, because initial coins might be from previous temporal navigation
-        int totalCoins = deliveredCoins;
+        // For temporal navigation, calculate total coins based on current state
+        // This ensures we don't accumulate coins from previous temporal navigation
+        int totalCoins = initialCoins + deliveredCoins;
         
         // Set coins to the calculated amount
         gameState.setCoins(totalCoins);
         
-        System.out.println("Calculated coins: delivered=" + deliveredCoins + " = total=" + totalCoins);
+        System.out.println("Temporal navigation coins: initial=" + initialCoins + " + delivered=" + deliveredCoins + " = total=" + totalCoins);
     }
     
     /**

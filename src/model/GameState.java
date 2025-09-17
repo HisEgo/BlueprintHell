@@ -340,7 +340,7 @@ public class GameState {
         
         // Count lost packets from active packets
         for (Packet packet : activePackets) {
-            if (!packet.isActive() && (packet.shouldBeLost() || packet.shouldBeDestroyedByTime())) {
+            if (!packet.isActive() && packet.isLost()) {
                 lost++;
             }
         }
