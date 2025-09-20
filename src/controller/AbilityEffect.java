@@ -3,10 +3,6 @@ package controller;
 import model.*;
 import java.util.List;
 
-/**
- * Base class for all ability effects.
- * Handles duration tracking and provides interface for applying effects.
- */
 public abstract class AbilityEffect {
     protected double duration;
     protected double remainingTime;
@@ -20,9 +16,6 @@ public abstract class AbilityEffect {
         this.isActive = true;
     }
 
-    /**
-     * Updates the effect, decreasing remaining time.
-     */
     public void update(double deltaTime) {
         if (isActive) {
             remainingTime -= deltaTime;
@@ -32,43 +25,25 @@ public abstract class AbilityEffect {
         }
     }
 
-    /**
-     * Applies the effect to a list of packets.
-     */
     public abstract void applyToPackets(List<Packet> packets);
 
-    /**
-     * Checks if the effect has expired.
-     */
     public boolean isExpired() {
         return !isActive || remainingTime <= 0;
     }
 
-    /**
-     * Gets the remaining time for this effect.
-     */
     public double getRemainingTime() {
         return remainingTime;
     }
 
-    /**
-     * Gets the effect point.
-     */
     public Point2D getEffectPoint() {
         return effectPoint;
     }
 
-    /**
-     * Gets the original duration.
-     */
     public double getDuration() {
         return duration;
     }
 }
 
-/**
- * Aergia effect - sets packet acceleration to zero at a specific point.
- */
 class AergiaEffect extends AbilityEffect {
     private WireConnection targetWire;
     private double wireProgress;
@@ -110,9 +85,6 @@ class AergiaEffect extends AbilityEffect {
     }
 }
 
-/**
- * Sisyphus effect - allows moving a specific system.
- */
 class SisyphusEffect extends AbilityEffect {
     private model.System targetSystem;
     private Point2D originalPosition;
@@ -143,9 +115,6 @@ class SisyphusEffect extends AbilityEffect {
     }
 }
 
-/**
- * Eliphas effect - continuously realigns packet centers to wire center.
- */
 class EliphasEffect extends AbilityEffect {
     private WireConnection targetWire;
     private double wireProgress;
@@ -174,9 +143,6 @@ class EliphasEffect extends AbilityEffect {
         }
     }
 
-    /**
-     * Realigns a packet's center to the wire center.
-     */
     private void realignPacketCenter(Packet packet) {
         // Get the current position and the ideal wire center position
         Point2D currentPos = packet.getCurrentPosition();
@@ -216,3 +182,4 @@ class EliphasEffect extends AbilityEffect {
         return wireProgress;
     }
 }
+

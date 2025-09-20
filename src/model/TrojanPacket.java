@@ -2,10 +2,6 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Trojan packets created by Saboteur systems.
- * These packets have no coin value and can cause network issues.
- */
 public class TrojanPacket extends Packet {
 
     public TrojanPacket() {
@@ -27,9 +23,6 @@ public class TrojanPacket extends Packet {
         return 0; // Trojans have no coin value
     }
 
-    /**
-     * Trojan packets can be converted back to normal packets by Anti-Trojan systems.
-     */
     public Packet convertToMessenger() {
         // Convert to a medium messenger packet (size 2)
         MessengerPacket messenger = new MessengerPacket(PacketType.SQUARE_MESSENGER,
@@ -40,10 +33,6 @@ public class TrojanPacket extends Packet {
         return messenger;
     }
 
-    /**
-     * Trojan packets have special movement behavior.
-     * They move at constant velocity but can be affected by anti-trojan systems.
-     */
     @Override
     public void applyShockwave(Vec2D effectVector) {
         super.applyShockwave(effectVector);
@@ -51,11 +40,9 @@ public class TrojanPacket extends Packet {
         setNoiseLevel(getNoiseLevel() + 0.5);
     }
 
-    /**
-     * Checks if this packet should be destroyed due to high noise.
-     */
     public boolean shouldBeDestroyed() {
         return getNoiseLevel() > getSize();
     }
 }
+
 

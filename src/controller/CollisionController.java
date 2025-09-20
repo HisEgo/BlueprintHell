@@ -6,10 +6,6 @@ import model.AbilityType;
 import java.util.*;
 import java.util.List;
 
-/**
- * Handles collision detection between packets and shockwave effects.
- * Uses spatial partitioning for optimized performance.
- */
 public class CollisionController {
 
     private GameController gameController;
@@ -29,16 +25,10 @@ public class CollisionController {
         this.collisionCooldowns = new HashMap<>();
     }
 
-    /**
-     * Sets the game controller.
-     */
     public void setGameController(GameController gameController) {
         this.gameController = gameController;
     }
 
-    /**
-     * Updates the spatial grid with current packet positions.
-     */
     private void updateSpatialGrid(List<Packet> packets) {
         spatialGrid.clear();
 
@@ -50,18 +40,12 @@ public class CollisionController {
         }
     }
 
-    /**
-     * Gets the grid key for a position.
-     */
     private String getGridKey(Point2D position) {
         int gridX = (int) (position.getX() / GRID_SIZE);
         int gridY = (int) (position.getY() / GRID_SIZE);
         return gridX + "," + gridY;
     }
 
-    /**
-     * Gets packets in neighboring grid cells.
-     */
     private List<Packet> getNeighboringPackets(Point2D position) {
         List<Packet> neighboringPackets = new ArrayList<>();
         String centerKey = getGridKey(position);
@@ -80,9 +64,6 @@ public class CollisionController {
         return neighboringPackets;
     }
 
-    /**
-     * Gets the key for a neighboring grid cell.
-     */
     private String getNeighborKey(String centerKey, int dx, int dy) {
         String[] parts = centerKey.split(",");
         int gridX = Integer.parseInt(parts[0]) + dx;
@@ -90,9 +71,6 @@ public class CollisionController {
         return gridX + "," + gridY;
     }
 
-    /**
-     * Checks for collisions between all packets and handles them.
-     */
     public void checkCollisions(List<Packet> allPackets) {
         if (allPackets == null || allPackets.size() < 2) {
             return;
@@ -129,7 +107,6 @@ public class CollisionController {
                 double threshold = packet1.getSize() + packet2.getSize();
 
                 if (distance <= threshold) {
-                    java.lang.System.out.println("COLLISION DETECTED between packets at " + packet1.getCurrentPosition() + " and " + packet2.getCurrentPosition());
 
                     // Add cooldown for this pair
                     collisionCooldowns.put(pairId, currentTime + COLLISION_COOLDOWN);
@@ -141,16 +118,10 @@ public class CollisionController {
         }
     }
 
-    /**
-     * Updates collision cooldowns, removing expired ones.
-     */
     private void updateCollisionCooldowns(double currentTime) {
         collisionCooldowns.entrySet().removeIf(entry -> entry.getValue() <= currentTime);
     }
 
-    /**
-     * Checks if two packets are colliding.
-     */
     private boolean checkCollision(Packet packet1, Packet packet2) {
         Point2D pos1 = packet1.getCurrentPosition();
         Point2D pos2 = packet2.getCurrentPosition();
@@ -166,9 +137,6 @@ public class CollisionController {
         return shouldCollide;
     }
 
-    /**
-     * Handles collision between two packets.
-     */
     private void handleCollision(Packet packet1, Packet packet2, List<Packet> allPackets) {
         // Check if collisions are disabled by ability
         if (gameController != null && gameController.isAbilityActive(AbilityType.O_AIRYAMAN)) {
@@ -196,9 +164,6 @@ public class CollisionController {
         }
     }
 
-    /**
-     * Separates two colliding packets to prevent them from getting stuck.
-     */
     private void separatePackets(Packet packet1, Packet packet2) {
         Point2D pos1 = packet1.getCurrentPosition();
         Point2D pos2 = packet2.getCurrentPosition();
@@ -223,13 +188,9 @@ public class CollisionController {
             packet1.setCurrentPosition(new Point2D(pos1.getX() + offset.getX(), pos1.getY() + offset.getY()));
             packet2.setCurrentPosition(new Point2D(pos2.getX() - offset.getX(), pos2.getY() - offset.getY()));
 
-            java.lang.System.out.println("DEBUG: Separated packets - distance was " + distance + ", moved apart by " + minSeparation);
         }
     }
 
-    /**
-     * Handles special collision behaviors for different packet types and sizes.
-     */
     private void handleSpecialCollisionBehaviors(Packet packet1, Packet packet2) {
         // Size 1 packets reverse direction after collision (Phase 2 requirement)
         if (packet1.getSize() == 1) {
@@ -249,16 +210,12 @@ public class CollisionController {
         }
     }
 
-    /**
-     * Creates a shockwave effect that affects nearby packets.
-     */
     private void createShockwave(Packet packet1, Packet packet2, List<Packet> allPackets) {
         Point2D collisionPoint = new Point2D(
                 (packet1.getCurrentPosition().getX() + packet2.getCurrentPosition().getX()) / 2,
                 (packet1.getCurrentPosition().getY() + packet2.getCurrentPosition().getY()) / 2
         );
 
-        java.lang.System.out.println("SHOCKWAVE: collision at " + collisionPoint + ", packets to check: " + allPackets.size());
 
         for (Packet packet : allPackets) {
             if (packet == packet1 || packet == packet2) {
@@ -266,12 +223,10 @@ public class CollisionController {
             }
 
             double distance = collisionPoint.distanceTo(packet.getCurrentPosition());
-            java.lang.System.out.println("SHOCKWAVE: checking packet at " + packet.getCurrentPosition() + ", distance: " + distance + ", radius: 100.0");
 
             // Limit shockwave radius to 100 pixels
             if (distance <= 100.0) {
                 double strength = 1.0 - (distance / 100.0);
-                java.lang.System.out.println("SHOCKWAVE: applying effect to packet at " + packet.getCurrentPosition() + ", strength: " + strength);
 
                 // Skip applying shockwave to size 1 packets that have already been reversed
                 if (packet.getSize() == 1 && packet.isReversing()) {
@@ -298,10 +253,6 @@ public class CollisionController {
         }
     }
 
-    /**
-     * Gets all active packets from the current game state.
-     * This is a temporary solution until we have proper access to the game state.
-     */
     private List<Packet> getAllActivePackets() {
         // For now, we'll use a simple approach - this should be replaced with proper game state access
         List<Packet> allPackets = new ArrayList<>();
@@ -314,9 +265,6 @@ public class CollisionController {
         return allPackets;
     }
 
-    /**
-     * Calculates shockwave vector from collision.
-     */
     private Vec2D calculateShockwaveVector(Packet packet1, Packet packet2) {
         Point2D pos1 = packet1.getCurrentPosition();
         Point2D pos2 = packet2.getCurrentPosition();
@@ -329,9 +277,6 @@ public class CollisionController {
         return direction.normalize().scale(20.0);
     }
 
-    /**
-     * Gets the game controller for accessing game state.
-     */
     private GameController getGameController() {
         return gameController;
     }

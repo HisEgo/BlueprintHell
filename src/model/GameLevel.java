@@ -7,10 +7,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-/**
- * Represents a game level with system layout, wire length, and packet injection schedule.
- * POJO class for serialization support.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GameLevel {
     private String levelId;
@@ -86,23 +82,14 @@ public class GameLevel {
         this.levelDuration = levelDuration;
     }
 
-    /**
-     * Alias for setLevelDuration for compatibility with GameController.
-     */
     public void setDuration(double duration) {
         this.levelDuration = duration;
     }
 
-    /**
-     * Gets the packet injection schedule as a list of PacketInjection objects.
-     */
     public List<PacketInjection> getPacketSchedule() {
         return packetSchedule;
     }
 
-    /**
-     * Sets the packet injection schedule.
-     */
     public void setPacketSchedule(List<PacketInjection> packetSchedule) {
         this.packetSchedule = packetSchedule;
 
@@ -112,9 +99,6 @@ public class GameLevel {
         }
     }
 
-    /**
-     * Binds packet injection source IDs to actual system references after JSON deserialization.
-     */
     private void bindPacketInjectionSources() {
         if (packetSchedule == null || systems == null) return;
 
@@ -184,9 +168,6 @@ public class GameLevel {
         isCompleted = completed;
     }
 
-    /**
-     * Adds a system to this level.
-     */
     public void addSystem(System system) {
         system.setParentLevel(this);
         // Ensure ports are bound back to this system
@@ -209,27 +190,18 @@ public class GameLevel {
         systems.add(system);
     }
 
-    /**
-     * Adds a wire connection to this level.
-     */
     public void addWireConnection(WireConnection connection) {
         if (connection != null) {
             wireConnections.add(connection);
         }
     }
 
-    /**
-     * Removes a wire connection from this level.
-     */
     public void removeWireConnection(WireConnection connection) {
         if (connection != null) {
             wireConnections.remove(connection);
         }
     }
 
-    /**
-     * Checks if a wire connection exists between two ports.
-     */
     public boolean hasWireConnection(Port port1, Port port2) {
         for (WireConnection connection : wireConnections) {
             if (connection.isActive()) {
@@ -244,54 +216,31 @@ public class GameLevel {
         return false;
     }
 
-    /**
-     * Schedules packet injection at a specific time.
-     */
     public void schedulePacketInjection(double time, Packet packet) {
         packetInjectionSchedule.computeIfAbsent(time, k -> new ArrayList<>()).add(packet);
     }
 
-    /**
-     * Schedules multiple packet injections at a specific time.
-     */
     public void schedulePacketInjection(double time, List<Packet> packets) {
         packetInjectionSchedule.computeIfAbsent(time, k -> new ArrayList<>()).addAll(packets);
     }
 
-    /**
-     * Gets all packets scheduled for injection at a specific time.
-     */
     public List<Packet> getPacketsForTime(double time) {
         return packetInjectionSchedule.getOrDefault(time, new ArrayList<>());
     }
 
-    /**
-     * Converts packet injection schedule from JSON format to PacketInjection objects.
-     * Handles both direct list format and legacy map format.
-     */
     public void convertPacketScheduleFromJSON() {
-        java.lang.System.out.println("DEBUG: convertPacketScheduleFromJSON called");
-        java.lang.System.out.println("DEBUG: packetSchedule size: " + (packetSchedule != null ? packetSchedule.size() : "null"));
-        java.lang.System.out.println("DEBUG: packetInjectionSchedule size: " + (packetInjectionSchedule != null ? packetInjectionSchedule.size() : "null"));
-
         boolean usedDirectList = false;
 
         // Preferred path: if packetSchedule already populated via JSON list, just resolve sources
         if (this.packetSchedule != null && !this.packetSchedule.isEmpty()) {
-            java.lang.System.out.println("DEBUG: Using direct packetSchedule list with " + packetSchedule.size() + " items");
             resolvePacketInjectionSources();
             usedDirectList = true;
-        } else {
-            java.lang.System.out.println("DEBUG: packetSchedule is null or empty, will use legacy conversion");
         }
 
         // Backward-compatible path: convert legacy map<Double, List<Packet>> into PacketInjection list
         if (!usedDirectList) {
             List<PacketInjection> converted = new ArrayList<>();
-            if (packetInjectionSchedule == null || packetInjectionSchedule.isEmpty()) {
-                java.lang.System.out.println("DEBUG: No packet injection schedule found in JSON");
-            } else {
-                java.lang.System.out.println("DEBUG: Converting " + packetInjectionSchedule.size() + " packet injection entries from legacy JSON format");
+            if (packetInjectionSchedule != null && !packetInjectionSchedule.isEmpty()) {
                 for (Map.Entry<Double, List<Packet>> entry : packetInjectionSchedule.entrySet()) {
                     double time = entry.getKey();
                     List<Packet> packets = entry.getValue();
@@ -311,21 +260,9 @@ public class GameLevel {
         // Sort by time
         if (packetSchedule != null) {
             packetSchedule.sort((a, b) -> Double.compare(a.getTime(), b.getTime()));
-            java.lang.System.out.println("DEBUG: Final packet schedule has " + packetSchedule.size() + " injections");
-
-            // Debug: print first few injections
-            for (int i = 0; i < Math.min(3, packetSchedule.size()); i++) {
-                PacketInjection inj = packetSchedule.get(i);
-                java.lang.System.out.println("DEBUG: Injection " + i + ": time=" + inj.getTime() +
-                        ", type=" + inj.getPacketType() + ", sourceId=" + inj.getSourceId() +
-                        ", sourceSystem=" + (inj.getSourceSystem() != null ? inj.getSourceSystem().getId() : "null"));
-            }
         }
     }
 
-    /**
-     * Resolves PacketInjection.sourceId to actual System reference after JSON load.
-     */
     public void resolvePacketInjectionSources() {
         if (packetSchedule == null) return;
         Map<String, System> idToSystem = new HashMap<>();
@@ -348,9 +285,6 @@ public class GameLevel {
         }
     }
 
-    /**
-     * Finds the source system for a packet based on its position.
-     */
     private System findSourceSystemForPacket(Packet packet) {
         if (packet.getCurrentPosition() == null) {
             return null;
@@ -371,9 +305,6 @@ public class GameLevel {
         return null;
     }
 
-    /**
-     * Checks if two positions are near each other (within 50 pixels).
-     */
     private boolean isPositionNear(Point2D pos1, Point2D pos2) {
         if (pos1 == null || pos2 == null) return false;
         double distance = Math.sqrt(Math.pow(pos1.getX() - pos2.getX(), 2) +
@@ -381,9 +312,6 @@ public class GameLevel {
         return distance < 50.0;
     }
 
-    /**
-     * Gets all reference systems.
-     */
     @JsonIgnore
     public List<ReferenceSystem> getReferenceSystems() {
         List<ReferenceSystem> referenceSystems = new ArrayList<>();
@@ -395,9 +323,6 @@ public class GameLevel {
         return referenceSystems;
     }
 
-    /**
-     * Gets all source reference systems.
-     */
     @JsonIgnore
     public List<ReferenceSystem> getSourceSystems() {
         List<ReferenceSystem> sourceSystems = new ArrayList<>();
@@ -409,19 +334,12 @@ public class GameLevel {
         return sourceSystems;
     }
 
-    /**
-     * Gets all destination reference systems (all reference systems can receive packets).
-     * Note: With the new dual-functionality, all reference systems are potential destinations.
-     */
     @JsonIgnore
     public List<ReferenceSystem> getDestinationSystems() {
         // All reference systems can receive packets now
         return getReferenceSystems();
     }
 
-    /**
-     * Gets all regular systems (non-reference systems).
-     */
     @JsonIgnore
     public List<System> getRegularSystems() {
         List<System> regularSystems = new ArrayList<>();
@@ -433,9 +351,6 @@ public class GameLevel {
         return regularSystems;
     }
 
-    /**
-     * Calculates the total wire length consumed by all connections.
-     */
     @JsonIgnore
     public double getTotalWireLengthConsumed() {
         return wireConnections.stream()
@@ -443,25 +358,16 @@ public class GameLevel {
                 .sum();
     }
 
-    /**
-     * Gets the remaining wire length available.
-     */
     @JsonIgnore
     public double getRemainingWireLength() {
         return initialWireLength - getTotalWireLengthConsumed();
     }
 
-    /**
-     * Checks if the level has enough wire length remaining.
-     */
     @JsonIgnore
     public boolean hasSufficientWireLength() {
         return getRemainingWireLength() > 0;
     }
 
-    /**
-     * Validates the level configuration.
-     */
     @JsonIgnore
     public boolean isValid() {
         // Check if there's at least one source and one destination

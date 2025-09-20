@@ -4,10 +4,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.ArrayList;
 
-/**
- * Saboteur system that sends packets to incompatible ports and can convert packets to trojans.
- * Cannot affect protected packets.
- */
 public class SaboteurSystem extends System {
     private static final double TROJAN_CONVERSION_PROBABILITY = 0.3; // 30% chance
     private Random random;
@@ -25,49 +21,65 @@ public class SaboteurSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
-        // If a protected packet passes through saboteur, it reverts to original type (Phase 2 rule)
-        if ((packet.getPacketType() != null && packet.getPacketType().isProtected()) || packet instanceof ProtectedPacket) {
-            packet.convertFromProtected();
+        // Protected packets are NOT affected by saboteur systems - they pass through unchanged
+        if (packet instanceof ProtectedPacket || 
+            (packet.getPacketType() != null && packet.getPacketType().isProtected())) {
+            // Send protected packets to compatible ports like normal systems
+            super.processPacket(packet);
+            return;
         }
 
-        // Add noise if packet has no noise
+        // For non-protected packets, apply saboteur effects:
+        
+        // 1. Add noise if packet has no noise
         if (packet.getNoiseLevel() == 0.0) {
             packet.setNoiseLevel(1.0);
         }
 
-        // Convert to trojan with probability (no effect on protected after reversion step above)
-        if (packet.getPacketType() == null || !packet.getPacketType().isProtected()) {
-            if (random.nextDouble() < TROJAN_CONVERSION_PROBABILITY) {
-                packet.convertToTrojan();
-            }
+        // 2. Convert to trojan with probability
+        if (random.nextDouble() < TROJAN_CONVERSION_PROBABILITY) {
+            packet.convertToTrojan();
         }
 
-        // Send to incompatible port
+        // 3. Send to incompatible port (opposite of normal systems)
         sendToIncompatiblePort(packet);
     }
 
-    /**
-     * Sends a packet to an incompatible port.
-     */
     private void sendToIncompatiblePort(Packet packet) {
         List<Port> incompatiblePorts = new ArrayList<>();
+        List<Port> availablePorts = new ArrayList<>();
 
+        // Find all available output ports and categorize them
         for (Port port : getOutputPorts()) {
-            if (!port.canAcceptPacket(packet)) {
-                incompatiblePorts.add(port);
+            if (port.isEmpty()) {
+                availablePorts.add(port);
+                if (!port.isCompatibleWithPacket(packet)) {
+                    incompatiblePorts.add(port);
+                }
             }
         }
 
+        // Priority 1: Send to incompatible ports (saboteur behavior)
         if (!incompatiblePorts.isEmpty()) {
-            // Choose a random incompatible port
             Port targetPort = incompatiblePorts.get(random.nextInt(incompatiblePorts.size()));
             targetPort.acceptPacket(packet);
-        } else if (hasStorageSpace()) {
-            // Store if no incompatible ports available
+            return;
+        }
+
+        // Priority 2: If no incompatible ports available, use any available port
+        if (!availablePorts.isEmpty()) {
+            Port targetPort = availablePorts.get(random.nextInt(availablePorts.size()));
+            targetPort.acceptPacket(packet);
+            return;
+        }
+
+        // Priority 3: Store if no output ports available
+        if (hasStorageSpace()) {
             getStorage().add(packet);
         } else {
             // Packet is lost
             packet.setActive(false);
         }
     }
+
 }

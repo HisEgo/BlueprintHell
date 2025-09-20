@@ -2,10 +2,6 @@ package model;
 
 import java.util.List;
 
-/**
- * Distributor system that splits bulk packets into bit packets.
- * Behaves like a normal system for non-bulk packets.
- */
 public class DistributorSystem extends System {
 
     public DistributorSystem() {
@@ -28,9 +24,6 @@ public class DistributorSystem extends System {
         }
     }
 
-    /**
-     * Processes a bulk packet by splitting it into bit packets.
-     */
     private void processBulkPacket(BulkPacket bulkPacket) {
         // Split bulk packet into bit packets
         List<Packet> bitPackets = bulkPacket.splitIntoBitPackets();
@@ -57,3 +50,4 @@ public class DistributorSystem extends System {
         }
     }
 }
+

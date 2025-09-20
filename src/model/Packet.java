@@ -3,11 +3,6 @@ package model;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Abstract base class for all packets in the network simulation.
- * POJO class for serialization support.
- * Enhanced for Phase 2 with new packet types and mechanics.
- */
 public abstract class Packet {
     private int size;
     private double noiseLevel;
@@ -18,6 +13,7 @@ public abstract class Packet {
     // Tracks explicit loss events (e.g., off-wire) to differentiate from deliveries
     private boolean wasLost;
     private PacketType packetType;
+    private PacketType originalPacketType; // Store original type before protection
     private double travelTime;
 
     // Path-based movement tracking for wire movement
@@ -130,6 +126,14 @@ public abstract class Packet {
         this.packetType = packetType;
     }
 
+    public PacketType getOriginalPacketType() {
+        return originalPacketType;
+    }
+
+    public void setOriginalPacketType(PacketType originalPacketType) {
+        this.originalPacketType = originalPacketType;
+    }
+
     public double getTravelTime() {
         return travelTime;
     }
@@ -194,40 +198,24 @@ public abstract class Packet {
         this.bulkPacketColor = bulkPacketColor;
     }
 
-    /**
-     * Returns whether a coin award is pending for this packet's most recent system entry.
-     */
     @JsonIgnore
     public boolean isCoinAwardPending() {
         return coinAwardPending;
     }
 
-    /**
-     * Marks that this packet has entered a system and should award coins once.
-     */
     public void setCoinAwardPending(boolean pending) {
         this.coinAwardPending = pending;
     }
 
-    /**
-     * Returns whether this packet has been processed by a reference system.
-     */
     @JsonIgnore
     public boolean isProcessedByReferenceSystem() {
         return processedByReferenceSystem;
     }
 
-    /**
-     * Marks that this packet has been processed by a reference system.
-     */
     public void setProcessedByReferenceSystem(boolean processed) {
         this.processedByReferenceSystem = processed;
     }
 
-    /**
-     * Updates the packet's position based on its movement vector.
-     * Enhanced for Phase 2 with travel time tracking.
-     */
     public void updatePosition(double deltaTime) {
         if (!isActive) return;
 
@@ -244,46 +232,28 @@ public abstract class Packet {
         currentPosition = currentPosition.add(movement);
     }
 
-    /**
-     * Marks this packet as lost due to a rule (e.g., off-wire).
-     */
     public void setLost(boolean lost) {
         this.wasLost = lost;
     }
 
-    /**
-     * Returns whether this packet has been explicitly marked as lost.
-     */
     @JsonIgnore
     public boolean isLost() {
         return wasLost;
     }
 
-    /**
-     * Checks if the packet should be lost due to noise level exceeding size.
-     */
     public boolean shouldBeLost() {
         return noiseLevel >= size;
     }
 
-    /**
-     * Applies a shockwave effect to this packet.
-     */
     public void applyShockwave(Vec2D effectVector) {
         if (!isActive) return;
         movementVector = movementVector.add(effectVector);
         noiseLevel += 0.5; // Increase noise when hit by shockwave
     }
 
-    /**
-     * Gets the coin value of this packet.
-     */
     @JsonIgnore
     public abstract int getCoinValue();
 
-    /**
-     * Gets the coin value based on packet type.
-     */
     @JsonIgnore
     public int getCoinValueByType() {
         if (packetType != null) {
@@ -292,44 +262,26 @@ public abstract class Packet {
         return getCoinValue();
     }
 
-    /**
-     * Checks if this packet should be destroyed due to travel time.
-     */
     public boolean shouldBeDestroyedByTime() {
         return travelTime > maxTravelTime;
     }
 
-    /**
-     * Resets travel time for a new wire connection.
-     */
     public void resetTravelTime() {
         travelTime = 0.0;
     }
 
-    /**
-     * Gets the progress along the current wire path (0.0 to 1.0).
-     */
     public double getPathProgress() {
         return pathProgress;
     }
 
-    /**
-     * Sets the progress along the current wire path (0.0 to 1.0).
-     */
     public void setPathProgress(double pathProgress) {
         this.pathProgress = Math.max(0.0, Math.min(1.0, pathProgress));
     }
 
-    /**
-     * Gets the current wire connection this packet is traveling on.
-     */
     public WireConnection getCurrentWire() {
         return currentWire;
     }
 
-    /**
-     * Sets the current wire connection this packet is traveling on.
-     */
     public void setCurrentWire(WireConnection currentWire) {
         this.currentWire = currentWire;
         if (currentWire != null) {
@@ -338,33 +290,18 @@ public abstract class Packet {
         }
     }
 
-    /**
-     * Gets the base speed for uniform motion.
-     */
     public double getBaseSpeed() {
         return baseSpeed;
     }
 
-    /**
-     * Sets the base speed for uniform motion.
-     */
     public void setBaseSpeed(double baseSpeed) {
         this.baseSpeed = Math.max(0.0, baseSpeed);
     }
 
-    /**
-     * Updates position based on path progress and current wire.
-     * This enables uniform motion along curved wire paths.
-     */
     public void updatePositionOnWire() {
         updatePositionOnWire(true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates position based on path progress and current wire.
-     * This enables uniform motion along both curved and rigid wire paths.
-     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
-     */
     public void updatePositionOnWire(boolean useSmoothCurves) {
         if (currentWire != null) {
             Point2D newPosition = currentWire.getPositionAtProgress(pathProgress, useSmoothCurves);
@@ -374,40 +311,24 @@ public abstract class Packet {
         }
     }
 
-    /**
-     * Checks if the packet is currently on a wire.
-     */
     @JsonIgnore
     public boolean isOnWire() {
         return currentWire != null;
     }
 
-    /**
-     * JSON serialization compatibility - maps isOnWire() to onWire property.
-     */
     public boolean getOnWire() {
         return isOnWire();
     }
 
-    /**
-     * JSON deserialization compatibility - ignores onWire setter.
-     */
     public void setOnWire(boolean onWire) {
         // This is computed from currentWire, so we ignore the setter
     }
 
-    /**
-     * Reverses the packet's direction to return to source.
-     */
     public void reverseDirection() {
         isReversing = true;
         movementVector = movementVector.scale(-1.0);
     }
 
-    /**
-     * Initiates packet return to source system when destination system fails.
-     * Phase 2 requirement: Packets return to source along the same wire when destination fails.
-     */
     public void returnToSource() {
         if (currentWire != null) {
             // Reverse the packet's progress on the current wire
@@ -427,71 +348,55 @@ public abstract class Packet {
         }
     }
 
-    /**
-     * Checks if this packet is currently returning to source.
-     */
     public boolean isReturningToSource() {
         return isReversing;
     }
 
-    /**
-     * JSON serialization compatibility - maps isReturningToSource() to returningToSource property.
-     */
     public boolean getReturningToSource() {
         return isReturningToSource();
     }
 
-    /**
-     * JSON deserialization compatibility - ignores returningToSource setter.
-     */
     public void setReturningToSource(boolean returningToSource) {
         // This is computed from isReversing, so we ignore the setter
     }
 
-    /**
-     * Converts this packet to a protected packet.
-     */
     public void convertToProtected() {
         if (packetType != null && packetType.isMessenger()) {
+            originalPacketType = packetType; // Store original type
             packetType = PacketType.PROTECTED;
             size = size * 2; // Protected packets are twice the size
         } else if (packetType != null && packetType.isConfidential()) {
+            originalPacketType = packetType; // Store original type
             packetType = PacketType.CONFIDENTIAL_PROTECTED;
             size = packetType.getBaseSize();
         }
     }
 
-    /**
-     * Converts this packet from protected back to original type.
-     */
     public void convertFromProtected() {
         if (packetType != null && packetType.isProtected()) {
-            // For protected packets, we need to restore the original size
-            size = size / 2; // Restore original size
-            packetType = PacketType.SQUARE_MESSENGER; // Default back to square messenger
+            if (originalPacketType != null) {
+                // Restore to the original type that was stored
+                packetType = originalPacketType;
+                size = originalPacketType.getBaseSize(); // Restore original size
+                originalPacketType = null; // Clear the stored original type
+            } else {
+                // Fallback if original type wasn't stored
+                size = size / 2; // Restore original size
+                packetType = PacketType.SQUARE_MESSENGER; // Default back to square messenger
+            }
         }
     }
 
-    /**
-     * Converts this packet to a trojan packet.
-     */
     public void convertToTrojan() {
         packetType = PacketType.TROJAN;
         size = 2;
     }
 
-    /**
-     * Converts this packet from trojan to messenger.
-     */
     public void convertFromTrojan() {
         packetType = PacketType.SQUARE_MESSENGER;
         size = 2;
     }
 
-    /**
-     * Realigns the packet's center of gravity to the wire center.
-     * Used by Scroll of Eliphas ability.
-     */
     public void realignCenter() {
         // This method will be overridden by specific packet types
         // to implement their own realignment logic

@@ -9,12 +9,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Objects;
 
-/**
- * Abstract base class for all systems in the network simulation.
- * Contains input and output ports with up to 5-packet storage.
- * POJO class for serialization support.
- * Enhanced for Phase 2 with new system types and mechanics.
- */
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME,
         include = com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY, property = "type")
@@ -168,28 +162,18 @@ public abstract class System {
         this.parentLevel = parentLevel;
     }
 
-    /**
-     * Adds an input port to this system.
-     */
     public void addInputPort(Port port) {
         port.setParentSystem(this);
         port.setInput(true);
         inputPorts.add(port);
     }
 
-    /**
-     * Adds an output port to this system.
-     */
     public void addOutputPort(Port port) {
         port.setParentSystem(this);
         port.setInput(false);
         outputPorts.add(port);
     }
 
-    /**
-     * Gets all ports (both input and output) from this system.
-     * Useful for checking complete port connectivity.
-     */
     public List<Port> getAllPorts() {
         List<Port> allPorts = new ArrayList<>();
         allPorts.addAll(inputPorts);
@@ -197,17 +181,12 @@ public abstract class System {
         return allPorts;
     }
 
-    /**
-     * Processes incoming packets from input ports.
-     */
     public void processInputs() {
         if (!isActive) return;
 
         for (Port inputPort : inputPorts) {
             if (inputPort.getCurrentPacket() != null) {
                 Packet packet = inputPort.releasePacket();
-                java.lang.System.out.println("DEBUG: " + this.getClass().getSimpleName() +
-                        " processing packet " + packet.getPacketType() + " from input port");
                 processPacket(packet);
             }
         }
@@ -216,10 +195,6 @@ public abstract class System {
         processStoredPackets();
     }
 
-    /**
-     * Attempts to move stored packets to available output ports.
-     * Implements the storage system: packets wait until an output port becomes available.
-     */
     private void processStoredPackets() {
         if (storage.isEmpty()) return;
 
@@ -238,25 +213,15 @@ public abstract class System {
                 boolean isCompatible = availablePort.isCompatibleWithPacket(packet);
                 if (!isCompatible && packet instanceof MessengerPacket) {
                     ((MessengerPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for stored packet incompatible port exit");
                 } else if (!isCompatible && packet instanceof ProtectedPacket) {
                     ((ProtectedPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for stored protected packet incompatible port exit");
                 }
-                
-                java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
-                        " moved stored " + packet.getPacketType() + " packet to " + 
-                        (isCompatible ? "compatible" : "incompatible") + " output port (remaining in storage: " + storage.size() + ")");
                 // Process only one packet per update cycle to avoid overwhelming the system
                 break;
             }
         }
     }
 
-    /**
-     * Processes a single packet that has entered the system.
-     * Enhanced for Phase 2 with speed threshold checking.
-     */
     public void processPacket(Packet packet) {
         // Phase 2: Check if packet speed exceeds damage threshold
         // Disable the damage rule for Level 1 as requested
@@ -322,23 +287,12 @@ public abstract class System {
         } else if (storage.size() < MAX_STORAGE) {
             // Store packet if storage is available
             storage.add(packet);
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
-                    " stored " + packet.getPacketType() + " packet (storage: " + storage.size() + "/" + MAX_STORAGE + ")");
         } else {
             // Packet is lost if no storage available
             packet.setActive(false);
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
-                    " LOST " + packet.getPacketType() + " packet - no storage available");
         }
     }
 
-    /**
-     * Finds an available output port that can accept the given packet.
-     * Implements the priority rule: 
-     * 1. Compatible empty port (highest priority)
-     * 2. Any empty port (random selection)
-     * 3. Store in system if no empty ports available
-     */
     protected Port findAvailableOutputPort(Packet packet) {
         List<Port> compatibleEmptyPorts = new ArrayList<>();
         List<Port> anyEmptyPorts = new ArrayList<>();
@@ -364,7 +318,6 @@ public abstract class System {
         if (!compatibleEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = compatibleEmptyPorts.get(random.nextInt(compatibleEmptyPorts.size()));
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected compatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
@@ -372,18 +325,13 @@ public abstract class System {
         if (!anyEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = anyEmptyPorts.get(random.nextInt(anyEmptyPorts.size()));
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected incompatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
         // Priority 3: No empty ports - packet will be stored in system
-        java.lang.System.out.println("PORT_SELECTION_DEBUG: No available ports for " + packet.getPacketType() + " - will be stored");
         return null;
     }
 
-    /**
-     * Checks if the wire connected to this port is available for a new packet.
-     */
     private boolean isPortWireAvailable(Port port) {
         // Only treat a port as having wire capacity if there is an ACTIVE
         // outgoing connection starting from this port that can accept a packet.
@@ -403,9 +351,6 @@ public abstract class System {
         return false;
     }
 
-    /**
-     * Finds the wire connection associated with a given port.
-     */
     private WireConnection findWireConnectionForPort(Port port) {
         if (parentLevel == null || port == null) {
             return null;
@@ -429,11 +374,6 @@ public abstract class System {
         return null;
     }
 
-    /**
-     * Checks whether two ports refer to the same logical endpoint, allowing for
-     * JSON rehydration to produce distinct instances. Matches by equality or by
-     * near-identical position with the same shape and input/output direction.
-     */
     private boolean portsEquivalent(Port a, Port b) {
         if (a == null || b == null) return false;
         if (a.equals(b)) return true;
@@ -445,10 +385,6 @@ public abstract class System {
         return pa.distanceTo(pb) < 1.0;
     }
 
-    /**
-     * Randomly changes port types when a bulk packet enters the system.
-     * Phase 2 spec: "Bulk packets randomly change a port to another port type when entering any system."
-     */
     private void randomlyChangePortTypes() {
         List<Port> allPorts = new ArrayList<>();
         allPorts.addAll(inputPorts);
@@ -472,10 +408,6 @@ public abstract class System {
         portToChange.setShape(newShape);
     }
 
-    /**
-     * Checks if the destination system connected to this port is active.
-     * Phase 2 requirement: Packets must not choose ports leading to inactive systems.
-     */
     private boolean isDestinationSystemActive(Port port) {
         WireConnection connection = findWireConnectionForPort(port);
         if (connection == null) return false;
@@ -492,19 +424,11 @@ public abstract class System {
         return destinationSystem != null && destinationSystem.isActive() && !destinationSystem.hasFailed();
     }
 
-    /**
-     * Attempts to move stored packets to available output ports.
-     * NOTE: This functionality is now handled by GameController.processSystemTransfers()
-     * to maintain proper coordination with wire systems and collision detection.
-     */
     public void processStorage() {
         // Storage processing is now handled by GameController for better coordination
         // This prevents conflicts between system-level and controller-level packet management
     }
 
-    /**
-     * Gets the total number of packets currently in this system.
-     */
     public int getTotalPacketCount() {
         int count = storage.size();
 
@@ -519,23 +443,14 @@ public abstract class System {
         return count;
     }
 
-    /**
-     * Checks if this system has any available storage space.
-     */
     public boolean hasStorageSpace() {
         return storage.size() < MAX_STORAGE;
     }
 
-    /**
-     * Clears all packets from system storage (for temporal navigation rewind).
-     */
     public void clearStorage() {
         storage.clear();
     }
 
-    /**
-     * Gets the coin value for all packets that have entered this system.
-     */
     public int getCoinValue() {
         int totalCoins = 0;
 
@@ -577,9 +492,6 @@ public abstract class System {
                 '}';
     }
 
-    /**
-     * Updates the system's state (deactivation timers, etc.).
-     */
     public void update(double deltaTime) {
         if (deactivationTimer > 0) {
             deactivationTimer -= deltaTime;
@@ -593,11 +505,6 @@ public abstract class System {
         updateIndicatorStatus();
     }
 
-    /**
-     * Updates the indicator status based on network connectivity.
-     * Note: This method is now deprecated as indicators are determined by the view layer
-     * based on network connectivity rather than direct port connections.
-     */
     private void updateIndicatorStatus() {
         // Indicators are now handled by the view layer based on network connectivity
         // This method is kept for backward compatibility but no longer controls visibility
@@ -605,11 +512,6 @@ public abstract class System {
         setIndicatorVisible(allPortsConnected);
     }
 
-    /**
-     * Checks if all input and output ports of this system are connected.
-     * Note: This method is still useful for other game logic, but system indicators
-     * now use network connectivity instead of direct port connections.
-     */
     public boolean areAllPortsConnected() {
         // If the system has no ports at all, it's considered connected by default
         // (e.g., standalone systems that don't need connections)
@@ -647,9 +549,6 @@ public abstract class System {
         return allInputsConnected && allOutputsConnected;
     }
 
-    /**
-     * Deactivates the system for a specified duration.
-     */
     public void deactivate(double duration) {
         isActive = false;
         deactivationTimer = duration;
@@ -657,10 +556,6 @@ public abstract class System {
         updateIndicatorStatus();
     }
 
-    /**
-     * Updates the system's deactivation timer.
-     * Should be called each frame to handle system reactivation.
-     */
     public void updateDeactivationTimer(double deltaTime) {
         if (deactivationTimer > 0) {
             deactivationTimer -= deltaTime;
@@ -677,17 +572,10 @@ public abstract class System {
         }
     }
 
-    /**
-     * Checks if the system is currently deactivated.
-     */
     public boolean isDeactivated() {
         return !isActive && deactivationTimer > 0;
     }
 
-    /**
-     * Fails the system (permanent deactivation).
-     * Phase 2: Triggers packet return for any packets en route to this system.
-     */
     public void fail() {
         isFailed = true;
         isActive = false;
@@ -702,10 +590,6 @@ public abstract class System {
                 " has failed permanently. Returning packets to source.");
     }
 
-    /**
-     * Returns all packets en route to this system back to their sources.
-     * Phase 2 requirement: When a system fails, packets return along the same wire.
-     */
     private void returnPacketsToSource() {
         if (parentLevel == null) return;
 
@@ -735,17 +619,10 @@ public abstract class System {
         }
     }
 
-    /**
-     * Checks if the system has failed.
-     */
     public boolean hasFailed() {
         return isFailed;
     }
 
-    /**
-     * Gets the bounding rectangle of this system for collision detection.
-     * Systems are rendered as 40x40 rectangles centered at their position.
-     */
     @JsonIgnore
     public java.awt.geom.Rectangle2D getBounds() {
         return new java.awt.geom.Rectangle2D.Double(
@@ -756,9 +633,6 @@ public abstract class System {
         );
     }
 
-    /**
-     * Gets all available output ports for a given packet.
-     */
     public List<Port> getAvailableOutputPorts() {
         List<Port> available = new ArrayList<>();
         for (Port port : outputPorts) {
@@ -773,9 +647,6 @@ public abstract class System {
         return available;
     }
 
-    /**
-     * Resets the system to its initial state.
-     */
     public void reset() {
         clearStorage();
         isActive = true;

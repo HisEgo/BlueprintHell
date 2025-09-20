@@ -5,10 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
-/**
- * Represents a scheduled packet injection in a game level.
- * Defines when, what type, and from which system a packet should be injected.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PacketInjection {
     private double time;
@@ -53,11 +49,6 @@ public class PacketInjection {
         this.sourceSystem = sourceSystem;
     }
 
-    /**
-     * Optional JSON-friendly identifier of the source system.
-     * When loading from JSON, this will be resolved to {@link #sourceSystem}
-     * using the systems defined in the {@link GameLevel}.
-     */
     public String getSourceId() {
         return sourceId;
     }
@@ -74,16 +65,10 @@ public class PacketInjection {
         isExecuted = executed;
     }
 
-    /**
-     * Resets the injection state so it can be executed again.
-     */
     public void reset() {
         this.isExecuted = false;
     }
 
-    /**
-     * Creates a packet based on the injection configuration.
-     */
     public Packet createPacket() {
         // Get position from first available output port of source system
         Point2D position = sourceSystem.getPosition(); // Default to system position
@@ -94,7 +79,6 @@ public class PacketInjection {
             }
         }
         Vec2D movementVector = new Vec2D(1, 0); // Default movement
-
 
         switch (packetType) {
             case SQUARE_MESSENGER:
@@ -126,10 +110,6 @@ public class PacketInjection {
         }
     }
 
-    /**
-     * Binds the sourceId to the actual sourceSystem after JSON deserialization.
-     * This method should be called after the level is loaded to resolve references.
-     */
     public void bindSourceSystem(List<System> systems) {
         if (sourceId != null && sourceSystem == null) {
             for (System system : systems) {
@@ -151,3 +131,4 @@ public class PacketInjection {
                 '}';
     }
 }
+

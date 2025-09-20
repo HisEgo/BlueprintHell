@@ -41,10 +41,6 @@ import java.util.Arrays;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 
-/**
- * Main game controller that manages the core game loop and logic.
- * Uses AnimationTimer for smooth updates and manages all game systems.
- */
 public class GameController {
     private GameState gameState;
     private GameView gameView;
@@ -111,9 +107,6 @@ public class GameController {
         initializeGameLoop();
     }
 
-    /**
-     * Initializes all the sub-controllers.
-     */
     private void initializeControllers() {
         inputHandler = new InputHandler(this);
         movementController = new MovementController();
@@ -124,9 +117,6 @@ public class GameController {
         soundManager = new SoundManager();
     }
 
-    /**
-     * Initializes all the views.
-     */
     private void initializeViews() {
         gameView = new GameView(this);
         hudView = new HUDView(this);
@@ -149,9 +139,6 @@ public class GameController {
         
     }
 
-    /**
-     * Sets the callback for returning to main menu from level select.
-     */
     public void setMainMenuCallback(Runnable callback) {
         if (levelSelectView != null) {
             levelSelectView.setOnBackToMainMenu(callback);
@@ -167,18 +154,11 @@ public class GameController {
         }
     }
 
-    /**
-     * Ensures all navigation callbacks are properly set up.
-     * This method should be called after all views are initialized.
-     */
     public void setupNavigationCallbacks(Runnable mainMenuCallback, Runnable restartLevelCallback) {
         setMainMenuCallback(mainMenuCallback);
         setRestartLevelCallback(restartLevelCallback);
     }
 
-    /**
-     * Sets the callback for restarting the current level.
-     */
     public void setRestartLevelCallback(Runnable callback) {
         if (gameOverView != null) {
             // Wrap provided callback to auto-route to level 1 on forced-restart conditions
@@ -208,9 +188,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Initializes the main game loop using AnimationTimer.
-     */
     private void initializeGameLoop() {
         // Main simulation game loop (only runs during simulation mode)
         gameLoop = new AnimationTimer() {
@@ -259,9 +236,6 @@ public class GameController {
         };
     }
 
-    /**
-     * Main update method called by the game loop.
-     */
     private void update(double deltaTime) {
         // Only update simulation logic during simulation mode
         if (isSimulationMode) {
@@ -342,16 +316,10 @@ public class GameController {
         });
     }
 
-    /**
-     * Processes packet injections from the level schedule based on current time.
-     */
     private void processPacketInjections(double deltaTime) {
         processPacketInjections(deltaTime, 1.0);
     }
     
-    /**
-     * Processes packet injections with acceleration factor.
-     */
     private void processPacketInjections(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -385,9 +353,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Checks if all system indicators are on (all systems are fully connected).
-     */
     private boolean areAllIndicatorsOn() {
         if (gameState.getCurrentLevel() == null) return false;
         for (model.System system : gameState.getCurrentLevel().getSystems()) {
@@ -398,12 +363,6 @@ public class GameController {
         return true;
     }
 
-    /**
-     * Returns true when reference systems are sufficiently wired for packet flow.
-     * Relaxed per spec: only require that at least one source output and at least one
-     * destination input are connected, rather than all of them. This aligns with the
-     * connected-graph requirement without forcing full utilization of every port.
-     */
     public boolean areReferenceSystemsReady() {
         if (gameState.getCurrentLevel() == null) return false;
         GameLevel level = gameState.getCurrentLevel();
@@ -450,10 +409,6 @@ public class GameController {
         return true;
     }
 
-    /**
-     * Returns true if the network is connected (all systems can reach each other).
-     * Packet flow is allowed when this returns true.
-     */
     private boolean areAllSystemsFullyConnected() {
         if (gameState.getCurrentLevel() == null) return false;
         if (wiringController == null) return false;
@@ -463,16 +418,10 @@ public class GameController {
         return wiringController.isNetworkConnected(gameState);
     }
 
-    /**
-     * Updates all systems in the current level.
-     */
     private void updateSystems(double deltaTime) {
         updateSystems(deltaTime, 1.0);
     }
     
-    /**
-     * Updates all systems with acceleration factor.
-     */
     private void updateSystems(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -496,9 +445,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Triggers Anti-Trojan systems to scan and convert trojans in range.
-     */
     private void runAntiTrojanScans() {
         if (gameState.getCurrentLevel() == null) return;
         for (model.System system : gameState.getCurrentLevel().getSystems()) {
@@ -508,9 +454,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Updates system deactivation timers and indicator status.
-     */
     private void updateSystemDeactivationTimers(double deltaTime) {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -520,16 +463,10 @@ public class GameController {
         }
     }
 
-    /**
-     * Updates packet movement on all wires.
-     */
     private void updateWirePacketMovement(double deltaTime) {
         updateWirePacketMovement(deltaTime, 1.0); // Default acceleration factor
     }
     
-    /**
-     * Updates packet movement on all wires with acceleration factor.
-     */
     private void updateWirePacketMovement(double deltaTime, double accelerationFactor) {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -550,24 +487,11 @@ public class GameController {
                 connection.updatePacketMovement(acceleratedDeltaTime, useSmoothCurves);
                 totalPacketsOnWires += connection.getPacketsOnWire().size();
 
-                // Debug: Log packet movement if there are packets
-                if (packetsBefore > 0) {
-                    java.lang.System.out.println("DEBUG: Wire " + connection.getId().substring(0, 8) +
-                            " has " + connection.getPacketsOnWire().size() + " packets, deltaTime=" + acceleratedDeltaTime + " (accel=" + accelerationFactor + ")");
-                }
             }
         }
 
-        // Debug: Log total packets on wires vs active packets
-        if (totalPacketsOnWires != gameState.getActivePacketCount()) {
-            java.lang.System.out.println("DEBUG: Packet count mismatch - On wires: " + totalPacketsOnWires +
-                    ", Active: " + gameState.getActivePacketCount());
-        }
     }
 
-    /**
-     * Processes wire connections to transfer packets.
-     */
     private void processWireConnections() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -576,16 +500,11 @@ public class GameController {
                 boolean transferred = connection.transferPacket();
                 if (transferred) {
                     // Debug: Log successful packet transfers
-                    java.lang.System.out.println("DEBUG: Packet transferred on wire " + connection.getId() +
-                            " (packets on wire: " + connection.getPacketsOnWire().size() + ")");
                 }
             }
         }
     }
 
-    /**
-     * Checks for packet loss and success, playing appropriate sound effects.
-     */
     private void checkPacketLossAndSuccess() {
         if (gameState.getActivePackets() == null) return;
 
@@ -644,17 +563,9 @@ public class GameController {
         }
     }
 
-    /**
-     * Loads a level by ID.
-     */
     public void loadLevel(String levelId) {
         try {
-            java.lang.System.out.println("DEBUG: loadLevel called with levelId: " + levelId);
             GameLevel level = createLevel(levelId);
-            java.lang.System.out.println("DEBUG: Loading level: " + levelId +
-                    ", duration: " + level.getLevelDuration() +
-                    ", initialWireLength: " + level.getInitialWireLength() +
-                    ", packetSchedule size: " + (level.getPacketSchedule() != null ? level.getPacketSchedule().size() : "null"));
             // Preserve coins from previous levels - don't reset them, but ensure minimum of 10
             int currentCoins = gameState.getCoins();
             if (currentCoins == 0) {
@@ -676,7 +587,6 @@ public class GameController {
 
             // Clear all wire connections for fresh start
             level.setWireConnections(new ArrayList<>());
-            java.lang.System.out.println("DEBUG: Cleared all wire connections for fresh start");
 
             // Ensure wire connections and packet sources are correctly rebound after JSON load
             updateWireConnectionPortReferences(level);
@@ -707,9 +617,6 @@ public class GameController {
 
 
 
-    /**
-     * Creates a reference system with appropriate ports and positioning.
-     */
     private ReferenceSystem createReferenceSystem(double x, double y, boolean isSource, String id) {
         ReferenceSystem system = new ReferenceSystem(new Point2D(x, y), isSource);
         system.setId(id);
@@ -729,9 +636,6 @@ public class GameController {
         return system;
     }
 
-    /**
-     * Generates packet injection schedule for new reference systems based on level complexity.
-     */
     private List<PacketInjection> generatePacketScheduleForLevel(String levelId, List<model.System> newReferenceSystems) {
         List<PacketInjection> packetSchedule = new ArrayList<>();
 
@@ -775,13 +679,9 @@ public class GameController {
             }
         }
 
-        java.lang.System.out.println("DEBUG: Generated " + packetSchedule.size() + " packet injections for new reference systems in " + levelId);
         return packetSchedule;
     }
 
-    /**
-     * Gets the level multiplier for determining packet injection complexity.
-     */
     private int getLevelMultiplier(String levelId) {
         switch (levelId) {
             case "level1": return 1;
@@ -793,10 +693,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Restarts the current level with a fresh start (clears all connections).
-     * Restores coins and lost packets to their pre-level state.
-     */
     public void restartLevelPreservingPrevious() {
         try {
             GameLevel currentLevel = gameState.getCurrentLevel();
@@ -816,7 +712,6 @@ public class GameController {
             // Reload the level fresh (this will also save the restored state as new level start state)
             loadLevel(levelId);
 
-            java.lang.System.out.println("DEBUG: Level restarted with restored coins and lost packets");
 
             // Keep user in editing mode
             enterEditingMode();
@@ -825,9 +720,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Checks if two systems are equivalent (same type and position).
-     */
     private boolean systemsAreEquivalent(model.System system1, model.System system2) {
         if (system1.getClass() != system2.getClass()) {
             return false;
@@ -845,10 +737,6 @@ public class GameController {
         return distance < 10.0;
     }
 
-    /**
-     * Restores port connection status from wire connections.
-     * Fixes cases where port references might get out of sync.
-     */
     private void restorePortConnectionsFromWires(GameLevel level) {
         // First, mark all ports as disconnected
         for (model.System system : level.getSystems()) {
@@ -880,15 +768,9 @@ public class GameController {
             system.update(0.0); // Force indicator update
         }
 
-        java.lang.System.out.println("DEBUG: Restored port connections from " + level.getWireConnections().size() + " wire connections");
     }
 
-    /**
-     * Updates wire connection port references to match the current level's system port instances.
-     * This is critical for preventing packets from moving outside wires during level loading.
-     */
     private void updateWireConnectionPortReferences(GameLevel level) {
-        java.lang.System.out.println("DEBUG: Updating wire connection port references...");
 
         int updatedConnections = 0;
 
@@ -905,8 +787,6 @@ public class GameController {
                 connection.updatePortReferences(newSourcePort, newDestPort);
                 updatedConnections++;
 
-                java.lang.System.out.println("DEBUG: Updated wire connection port references: " +
-                        originalSourcePort.getPosition() + " -> " + originalDestPort.getPosition());
             } else {
                 java.lang.System.err.println("ERROR: Could not find matching ports for wire connection: " +
                         (originalSourcePort != null ? originalSourcePort.getPosition() : "null") + " -> " +
@@ -914,12 +794,8 @@ public class GameController {
             }
         }
 
-        java.lang.System.out.println("DEBUG: Updated " + updatedConnections + " wire connection port references");
     }
 
-    /**
-     * Ensures PacketInjection source systems reference the correct instances in the given level.
-     */
     private void rebindPacketInjectionSources(GameLevel level) {
         if (level == null || level.getPacketSchedule() == null) return;
         java.util.Map<String, model.System> byId = new java.util.HashMap<>();
@@ -939,9 +815,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Finds an equivalent system in the list by type and approximate position.
-     */
     private model.System findEquivalentSystem(model.System target, java.util.List<model.System> systems) {
         for (model.System s : systems) {
             if (s.getClass() != target.getClass()) continue;
@@ -954,9 +827,6 @@ public class GameController {
         return null;
     }
 
-    /**
-     * Finds a port in the current level's systems that matches the given port by position and type.
-     */
     private Port findMatchingPort(Port targetPort, List<model.System> systems) {
         if (targetPort == null) return null;
 
@@ -983,9 +853,6 @@ public class GameController {
         return null;
     }
 
-    /**
-     * Checks if a port matches the target criteria.
-     */
     private boolean portsMatch(Port port, Point2D targetPosition, PortShape targetShape, boolean targetIsInput) {
         if (port.isInput() != targetIsInput) return false;
         if (port.getShape() != targetShape) return false;
@@ -998,9 +865,6 @@ public class GameController {
         return distance < 5.0;
     }
 
-    /**
-     * Estimates the minimum wire length needed for a minimal spanning tree connection.
-     */
     private double estimateMinimumWireNeeded(List<model.System> systems) {
         if (systems.size() < 2) return 0.0;
 
@@ -1025,48 +889,24 @@ public class GameController {
         return totalDistance;
     }
 
-    /**
-     * Creates a level based on the level ID.
-     * First tries to load from JSON to get the level template.
-     * The JSON file contains the level template with systems and packet schedule,
-     * but wire connections are created by the user during gameplay.
-     */
     private GameLevel createLevel(String levelId) {
-        java.lang.System.out.println("DEBUG: createLevel called with levelId: " + levelId);
 
-        // Always try to load from JSON first to get the level template
-        GameLevel jsonLevel = loadLevelFromJSON(levelId);
-        if (jsonLevel != null) {
-            java.lang.System.out.println("DEBUG: Successfully loaded level template from JSON: " + levelId);
-            java.lang.System.out.println("DEBUG: JSON level has " + jsonLevel.getSystems().size() + " systems");
-            java.lang.System.out.println("DEBUG: JSON level has " + jsonLevel.getPacketSchedule().size() + " packet injections");
-            java.lang.System.out.println("DEBUG: JSON level has " + jsonLevel.getWireConnections().size() + " wire connections (should be 0)");
-            return jsonLevel;
-        }
-
-        // Only fall back to hardcoded levels if JSON loading completely fails
-        java.lang.System.out.println("DEBUG: JSON loading failed, falling back to hardcoded level creation");
+        // Use hardcoded level creation
         switch (levelId) {
             case "level1":
-                java.lang.System.out.println("DEBUG: Using hardcoded createLevel1() for level1");
                 return createLevel1();
             case "level2": return createLevel2();
             case "level3": return createLevel3();
             case "level4": return createLevel4();
             case "level5": return createLevel5();
             default:
-                java.lang.System.out.println("DEBUG: Using hardcoded createLevel1() as default");
                 return createLevel1();
         }
     }
 
-    /**
-     * Loads a level from its JSON configuration file.
-     */
     private GameLevel loadLevelFromJSON(String levelId) {
         try {
             String resourcePath = "/levels/" + levelId + ".json";
-            java.lang.System.out.println("DEBUG: Attempting to load JSON from: " + resourcePath);
 
             InputStream inputStream = getClass().getResourceAsStream(resourcePath);
 
@@ -1075,13 +915,11 @@ public class GameController {
                 return null;
             }
 
-            java.lang.System.out.println("DEBUG: Found JSON resource, attempting to deserialize...");
 
             ObjectMapper mapper = new ObjectMapper();
             GameLevel level = mapper.readValue(inputStream, GameLevel.class);
             inputStream.close();
 
-            java.lang.System.out.println("DEBUG: JSON deserialization completed successfully");
 
             // Validate the loaded level
             if (level.getLevelId() == null || level.getName() == null) {
@@ -1090,22 +928,25 @@ public class GameController {
             }
 
             // Debug: Check what was loaded from JSON
-            java.lang.System.out.println("DEBUG: JSON loaded level: " + level.getName());
-            java.lang.System.out.println("DEBUG: JSON packetSchedule size: " + (level.getPacketSchedule() != null ? level.getPacketSchedule().size() : "null"));
-            java.lang.System.out.println("DEBUG: JSON packetInjectionSchedule size: " + (level.getPacketInjectionSchedule() != null ? level.getPacketInjectionSchedule().size() : "null"));
 
             // Normalize references so ports know their parent systems and systems know their parent level
             // This ensures wire transfers can see packets on system output ports
             if (level.getSystems() != null) {
+                java.lang.System.out.println("LEVEL DEBUG: Setting parentLevel for " + level.getSystems().size() + " systems in JSON level");
                 level.setSystems(level.getSystems());
+                
+                // Verify parentLevel was set
+                for (model.System system : level.getSystems()) {
+                    if (system instanceof SpySystem) {
+                        java.lang.System.out.println("LEVEL DEBUG: SpySystem " + java.lang.System.identityHashCode(system) + 
+                                " parentLevel: " + (system.getParentLevel() != null ? "SET" : "NULL"));
+                    }
+                }
             }
 
-            java.lang.System.out.println("Loaded level from JSON: " + level.getName() +
-                    " with " + level.getSystems().size() + " systems");
 
             // Convert JSON packet schedule to PacketInjection objects
             level.convertPacketScheduleFromJSON();
-            java.lang.System.out.println("Converted " + level.getPacketSchedule().size() + " packet injections");
 
             return level;
 
@@ -1118,7 +959,6 @@ public class GameController {
     }
 
     private GameLevel createLevel1() {
-        java.lang.System.out.println("DEBUG: createLevel1() method called - creating new level with 30 packets from 2 reference systems and 4 normal systems");
 
         // Enhanced Level 1 - Two reference systems and four normal systems
         GameLevel level = new GameLevel();
@@ -1179,15 +1019,6 @@ public class GameController {
 
         level.getSystems().addAll(Arrays.asList(refSystem1, refSystem2, normalSystem1, normalSystem2, normalSystem3, normalSystem4));
 
-        // Debug: Print port counts
-        int totalInputPorts = 0;
-        int totalOutputPorts = 0;
-        for (model.System system : level.getSystems()) {
-            totalInputPorts += system.getInputPorts().size();
-            totalOutputPorts += system.getOutputPorts().size();
-        }
-        java.lang.System.out.println("DEBUG: Level 1 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
-
         // Packet injection schedule: 30 packets total (15 from each reference system)
         // Reference System 1: 15 packets (5 of each type)
         double time = 2.0;
@@ -1207,13 +1038,11 @@ public class GameController {
             time += 6.0; // Space out packets
         }
 
-        java.lang.System.out.println("DEBUG: Level 1 created with " + level.getPacketSchedule().size() + " packet injections (30 total: 10 small hexagons, 10 squares, 10 triangles)");
 
         return level;
     }
 
     private GameLevel createLevel2() {
-        java.lang.System.out.println("DEBUG: createLevel2() method called - creating level like level1 but with 2 spy systems");
 
         // Level 2 - Same as Level 1 but with 2 spy systems added
         GameLevel level = new GameLevel();
@@ -1226,15 +1055,15 @@ public class GameController {
         ReferenceSystem refSystem1 = new ReferenceSystem(new Point2D(100, 200));
         ReferenceSystem refSystem2 = new ReferenceSystem(new Point2D(700, 500));
 
-        // Create 4 normal systems (same as level 1)
-        model.System normalSystem1 = new NormalSystem(new Point2D(300, 150), SystemType.NORMAL);
-        model.System normalSystem2 = new NormalSystem(new Point2D(300, 350), SystemType.NORMAL);
-        model.System normalSystem3 = new NormalSystem(new Point2D(500, 150), SystemType.NORMAL);
-        model.System normalSystem4 = new NormalSystem(new Point2D(500, 350), SystemType.NORMAL);
+        // Create 4 normal systems with better spacing
+        model.System normalSystem1 = new NormalSystem(new Point2D(250, 150), SystemType.NORMAL); // فاصله بیشتر از spy
+        model.System normalSystem2 = new NormalSystem(new Point2D(250, 350), SystemType.NORMAL); // فاصله بیشتر از spy
+        model.System normalSystem3 = new NormalSystem(new Point2D(550, 150), SystemType.NORMAL); // فاصله بیشتر از spy
+        model.System normalSystem4 = new NormalSystem(new Point2D(550, 350), SystemType.NORMAL); // فاصله بیشتر از spy
 
         // Add 2 spy systems
-        SpySystem spySystem1 = new SpySystem(new Point2D(400, 100));
-        SpySystem spySystem2 = new SpySystem(new Point2D(400, 400));
+        SpySystem spySystem1 = new SpySystem(new Point2D(400, 100)); // وسط بین normal systems
+        SpySystem spySystem2 = new SpySystem(new Point2D(400, 400)); // وسط بین normal systems
 
         // Reference System 1 ports: 3 input + 3 output (one of each type) - same as level 1
         refSystem1.addInputPort(new Port(PortShape.SQUARE, refSystem1, new Point2D(80, 180), true));
@@ -1252,29 +1081,29 @@ public class GameController {
         refSystem2.addOutputPort(new Port(PortShape.TRIANGLE, refSystem2, new Point2D(720, 500), false));
         refSystem2.addOutputPort(new Port(PortShape.HEXAGON, refSystem2, new Point2D(720, 520), false));
 
-        // Normal System 1: 2 input (triangle, square) + 3 output (one of each) - same as level 1
-        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(280, 140), true));
-        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(280, 160), true));
-        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(320, 140), false));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(320, 150), false));
-        normalSystem1.addOutputPort(new Port(PortShape.HEXAGON, normalSystem1, new Point2D(320, 160), false));
+        // Normal System 1: 2 input (triangle, square) + 3 output (one of each) - moved for better spacing
+        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(230, 140), true));
+        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(230, 160), true));
+        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(270, 140), false));
+        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(270, 150), false));
+        normalSystem1.addOutputPort(new Port(PortShape.HEXAGON, normalSystem1, new Point2D(270, 160), false));
 
-        // Normal System 2: 2 input (hexagon, triangle) + 1 output (hexagon) - same as level 1
-        normalSystem2.addInputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(280, 340), true));
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(280, 360), true));
-        normalSystem2.addOutputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(320, 350), false));
+        // Normal System 2: 2 input (hexagon, triangle) + 1 output (hexagon) - moved for better spacing
+        normalSystem2.addInputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(230, 340), true));
+        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(230, 360), true));
+        normalSystem2.addOutputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(270, 350), false));
 
-        // Normal System 3: 2 input (hexagon, square) + 2 output (hexagon, square) - same as level 1
-        normalSystem3.addInputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(480, 140), true));
-        normalSystem3.addInputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(480, 160), true));
-        normalSystem3.addOutputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(520, 140), false));
-        normalSystem3.addOutputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(520, 160), false));
+        // Normal System 3: 2 input (hexagon, square) + 2 output (hexagon, square) - moved for better spacing
+        normalSystem3.addInputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(530, 140), true));
+        normalSystem3.addInputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(530, 160), true));
+        normalSystem3.addOutputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(570, 140), false));
+        normalSystem3.addOutputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(570, 160), false));
 
-        // Normal System 4: 2 input (square, triangle) + 2 output (square, triangle) - same as level 1
-        normalSystem4.addInputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(480, 340), true));
-        normalSystem4.addInputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(480, 360), true));
-        normalSystem4.addOutputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(520, 340), false));
-        normalSystem4.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(520, 360), false));
+        // Normal System 4: 2 input (square, triangle) + 2 output (square, triangle) - moved for better spacing
+        normalSystem4.addInputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(530, 340), true));
+        normalSystem4.addInputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(530, 360), true));
+        normalSystem4.addOutputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(570, 340), false));
+        normalSystem4.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(570, 360), false));
 
         // Spy System 1: 2 input + 2 output ports
         spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(380, 90), true));
@@ -1289,15 +1118,6 @@ public class GameController {
         spySystem2.addOutputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(420, 410), false));
 
         level.getSystems().addAll(Arrays.asList(refSystem1, refSystem2, normalSystem1, normalSystem2, normalSystem3, normalSystem4, spySystem1, spySystem2));
-
-        // Debug: Print port counts
-        int totalInputPorts = 0;
-        int totalOutputPorts = 0;
-        for (model.System system : level.getSystems()) {
-            totalInputPorts += system.getInputPorts().size();
-            totalOutputPorts += system.getOutputPorts().size();
-        }
-        java.lang.System.out.println("DEBUG: Level 2 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
 
         // Packet injection schedule: 40 packets total (20 from each reference system)
         // Reference System 1: 20 packets (5 of each messenger type + 5 confidential)
@@ -1320,96 +1140,129 @@ public class GameController {
             time += 6.0; // Space out packets
         }
 
-        java.lang.System.out.println("DEBUG: Level 2 created with " + level.getPacketSchedule().size() + " packet injections (40 total: 10 small hexagons, 10 squares, 10 triangles, 10 confidential)");
 
         return level;
     }
 
     private GameLevel createLevel3() {
-        // Advanced Level - Add saboteur systems and VPN protection
+        // Level 3 - Same as Level 2 but with VPN and Saboteur systems added
         GameLevel level = new GameLevel();
         level.setLevelId("level3");
-        level.setName("Advanced - Saboteurs & VPN");
-        level.setInitialWireLength(3300.0);
-        level.setDuration(120.0);
+        level.setName("Advanced - Spies, VPN & Saboteurs");
+        level.setInitialWireLength(8000.0); // Same as level 2
+        level.setDuration(120.0); // 2 minutes
 
-        // Build on previous levels
-        ReferenceSystem source = new ReferenceSystem(new Point2D(100, 300), true);
+        // Create 2 reference systems (same as level 2)
+        ReferenceSystem refSystem1 = new ReferenceSystem(new Point2D(100, 200));
+        ReferenceSystem refSystem2 = new ReferenceSystem(new Point2D(700, 500));
 
-        ReferenceSystem destination = new ReferenceSystem(new Point2D(700, 300), false);
+        // Create 4 normal systems (same as level 2)
+        model.System normalSystem1 = new NormalSystem(new Point2D(250, 150), SystemType.NORMAL); // فاصله بیشتر از بقیه
+        model.System normalSystem2 = new NormalSystem(new Point2D(600, 350), SystemType.NORMAL); // زیر spy system راستی
+        model.System normalSystem3 = new NormalSystem(new Point2D(550, 150), SystemType.NORMAL); // فاصله بیشتر از بقیه
+        model.System normalSystem4 = new NormalSystem(new Point2D(300, 450), SystemType.NORMAL); // 100 واحد به راست (50+50)
 
-        model.System normalSystem1 = new NormalSystem(new Point2D(400, 200), SystemType.NORMAL);
-        model.System normalSystem2 = new NormalSystem(new Point2D(400, 400), SystemType.NORMAL);
-        SpySystem spySystem1 = new SpySystem(new Point2D(300, 150));
-        SpySystem spySystem2 = new SpySystem(new Point2D(500, 450));
+        // Add 2 spy systems (same as level 2)
+        SpySystem spySystem1 = new SpySystem(new Point2D(400, 100)); // وسط بین دو normal
+        SpySystem spySystem2 = new SpySystem(new Point2D(600, 250)); // جا عوض شد با saboteurSystem
 
-        // Add new systems
-        SaboteurSystem saboteur = new SaboteurSystem(new Point2D(600, 200));
-        VPNSystem vpnSystem = new VPNSystem(new Point2D(200, 450));
+        // Add new systems for level 3
+        VPNSystem vpnSystem = new VPNSystem(new Point2D(150, 350)); // فاصله بیشتر از بقیه
+        SaboteurSystem saboteurSystem = new SaboteurSystem(new Point2D(450, 350)); // فاصله بیشتر از بقیه
 
-        // Add ports
-        source.addOutputPort(new Port(PortShape.SQUARE, source, new Point2D(120, 300), false));
-        source.addOutputPort(new Port(PortShape.TRIANGLE, source, new Point2D(120, 320), false));
+        // Reference System 1 ports: 3 input + 3 output (one of each type) - same as level 2
+        refSystem1.addInputPort(new Port(PortShape.SQUARE, refSystem1, new Point2D(80, 180), true));
+        refSystem1.addInputPort(new Port(PortShape.TRIANGLE, refSystem1, new Point2D(80, 200), true));
+        refSystem1.addInputPort(new Port(PortShape.HEXAGON, refSystem1, new Point2D(80, 220), true));
+        refSystem1.addOutputPort(new Port(PortShape.SQUARE, refSystem1, new Point2D(120, 180), false));
+        refSystem1.addOutputPort(new Port(PortShape.TRIANGLE, refSystem1, new Point2D(120, 200), false));
+        refSystem1.addOutputPort(new Port(PortShape.HEXAGON, refSystem1, new Point2D(120, 220), false));
 
-        vpnSystem.addInputPort(new Port(PortShape.SQUARE, vpnSystem, new Point2D(180, 450), true));
-        vpnSystem.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(220, 450), false));
+        // Reference System 2 ports: 3 input + 3 output (one of each type) - same as level 2
+        refSystem2.addInputPort(new Port(PortShape.SQUARE, refSystem2, new Point2D(680, 480), true));
+        refSystem2.addInputPort(new Port(PortShape.TRIANGLE, refSystem2, new Point2D(680, 500), true));
+        refSystem2.addInputPort(new Port(PortShape.HEXAGON, refSystem2, new Point2D(680, 520), true));
+        refSystem2.addOutputPort(new Port(PortShape.SQUARE, refSystem2, new Point2D(720, 480), false));
+        refSystem2.addOutputPort(new Port(PortShape.TRIANGLE, refSystem2, new Point2D(720, 500), false));
+        refSystem2.addOutputPort(new Port(PortShape.HEXAGON, refSystem2, new Point2D(720, 520), false));
 
-        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(280, 150), true));
-        spySystem1.addOutputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(320, 150), false));
+        // Normal System 1: 2 input (triangle, square) + 3 output (one of each) - moved for better spacing
+        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(230, 140), true));
+        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(230, 160), true));
+        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(270, 140), false));
+        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(270, 150), false));
+        normalSystem1.addOutputPort(new Port(PortShape.HEXAGON, normalSystem1, new Point2D(270, 160), false));
 
-        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(380, 200), true));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 200), false));
+        // Normal System 2: 3 input (hexagon, triangle, square) + 2 output (hexagon, triangle) - moved below right spy system
+        normalSystem2.addInputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(580, 335), true));
+        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(580, 350), true));
+        normalSystem2.addInputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(580, 365), true)); // پورت ورودی مربعی جدید
+        normalSystem2.addOutputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(620, 340), false));
+        normalSystem2.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(620, 360), false)); // پورت خروجی مثلثی جدید
 
-        saboteur.addInputPort(new Port(PortShape.TRIANGLE, saboteur, new Point2D(580, 200), true));
-        saboteur.addOutputPort(new Port(PortShape.SQUARE, saboteur, new Point2D(620, 200), false));
+        // Normal System 3: 2 input (hexagon, square) + 2 output (hexagon, square) - moved for better spacing
+        normalSystem3.addInputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(530, 140), true));
+        normalSystem3.addInputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(530, 160), true));
+        normalSystem3.addOutputPort(new Port(PortShape.HEXAGON, normalSystem3, new Point2D(570, 140), false));
+        normalSystem3.addOutputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(570, 160), false));
 
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(380, 400), true));
-        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(420, 400), false));
+        // Normal System 4: 2 input (square, triangle) + 2 output (square, triangle) - moved 100 units right total
+        normalSystem4.addInputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(280, 440), true));
+        normalSystem4.addInputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(280, 460), true));
+        normalSystem4.addOutputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(320, 440), false));
+        normalSystem4.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(320, 460), false));
 
-        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(480, 450), true));
-        spySystem2.addOutputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(520, 450), false));
+        // Spy System 1: 2 input + 2 output ports - same as level 2
+        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(380, 90), true));
+        spySystem1.addInputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(380, 110), true));
+        spySystem1.addOutputPort(new Port(PortShape.HEXAGON, spySystem1, new Point2D(420, 90), false));
+        spySystem1.addOutputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(420, 110), false));
 
-        destination.addInputPort(new Port(PortShape.TRIANGLE, destination, new Point2D(680, 300), true));
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 320), true));
+        // Spy System 2: 2 input + 2 output ports - moved to saboteur's old position
+        spySystem2.addInputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(580, 240), true));
+        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(580, 260), true));
+        spySystem2.addOutputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(620, 240), false));
+        spySystem2.addOutputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(620, 260), false));
 
-        level.getSystems().addAll(Arrays.asList(source, destination, normalSystem1, normalSystem2,
-                spySystem1, spySystem2, saboteur, vpnSystem));
+        // VPN System: 2 input (hexagon, triangle) + 2 output (hexagon, triangle) - moved for better spacing
+        vpnSystem.addInputPort(new Port(PortShape.HEXAGON, vpnSystem, new Point2D(130, 340), true));
+        vpnSystem.addInputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(130, 360), true));
+        vpnSystem.addOutputPort(new Port(PortShape.HEXAGON, vpnSystem, new Point2D(170, 340), false));
+        vpnSystem.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(170, 360), false));
 
-        // Debug: Print port counts to verify the fix
-        int totalInputPorts = 0;
-        int totalOutputPorts = 0;
-        for (model.System system : level.getSystems()) {
-            totalInputPorts += system.getInputPorts().size();
-            totalOutputPorts += system.getOutputPorts().size();
+        // Saboteur System: 2 input (triangle, square) + 2 output (triangle, square) - moved for better spacing
+        saboteurSystem.addInputPort(new Port(PortShape.TRIANGLE, saboteurSystem, new Point2D(430, 340), true));
+        saboteurSystem.addInputPort(new Port(PortShape.SQUARE, saboteurSystem, new Point2D(430, 360), true));
+        saboteurSystem.addOutputPort(new Port(PortShape.TRIANGLE, saboteurSystem, new Point2D(470, 340), false));
+        saboteurSystem.addOutputPort(new Port(PortShape.SQUARE, saboteurSystem, new Point2D(470, 360), false));
+
+        // Add all systems to level and set parent level using setSystems
+        level.setSystems(Arrays.asList(refSystem1, refSystem2, normalSystem1, normalSystem2, normalSystem3, normalSystem4, 
+                spySystem1, spySystem2, vpnSystem, saboteurSystem));
+
+
+        // Packet injection schedule: 40 packets total (20 from each reference system) - same as level 2
+        // Reference System 1: 20 packets (5 of each messenger type + 5 confidential)
+        double time = 2.0;
+        for (int i = 0; i < 5; i++) {
+            level.getPacketSchedule().add(new PacketInjection(time, PacketType.SMALL_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 1.0, PacketType.SQUARE_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.TRIANGLE_MESSENGER, refSystem1));
+            level.getPacketSchedule().add(new PacketInjection(time + 3.0, PacketType.CONFIDENTIAL, refSystem1));
+            time += 6.0; // Space out packets
         }
-        java.lang.System.out.println("DEBUG: Level 3 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
 
-        // Early injections for immediate visual activity
-        level.getPacketSchedule().add(new PacketInjection(0.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(1.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(2.5, PacketType.SQUARE_MESSENGER, source));
+        // Reference System 2: 20 packets (5 of each messenger type + 5 confidential)
+        time = 4.0; // Start slightly offset from first system
+        for (int i = 0; i < 5; i++) {
+            level.getPacketSchedule().add(new PacketInjection(time, PacketType.SMALL_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 1.0, PacketType.SQUARE_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.TRIANGLE_MESSENGER, refSystem2));
+            level.getPacketSchedule().add(new PacketInjection(time + 3.0, PacketType.CONFIDENTIAL, refSystem2));
+            time += 6.0; // Space out packets
+        }
 
-        // Enhanced packet schedule with trojans and protected packets (18 packets total)
-        level.getPacketSchedule().add(new PacketInjection(5.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(10.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(15.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(20.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(25.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(30.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(35.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(40.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(45.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(50.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(55.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(60.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(65.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(70.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(75.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(80.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(85.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(90.0, PacketType.SQUARE_MESSENGER, source));
-
-        java.lang.System.out.println("DEBUG: Hardcoded Level 3 created with " + level.getPacketSchedule().size() + " packet injections");
+        java.lang.System.out.println("LEVEL3 DEBUG: Created with " + level.getPacketSchedule().size() + " packet injections (40 total: 10 small hexagons, 10 squares, 10 triangles, 10 confidential)");
 
         return level;
     }
@@ -1477,17 +1330,13 @@ public class GameController {
         destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 340), true));
 
         level.getSystems().addAll(Arrays.asList(source, destination, normalSystem1, normalSystem2,
-                spySystem1, spySystem2, saboteur, vpnSystem,
-                antiTrojan, distributor, merger));
+                spySystem1, spySystem2, saboteur, vpnSystem));
 
-        // Debug: Print port counts to verify the fix
-        int totalInputPorts = 0;
-        int totalOutputPorts = 0;
+        // Manually set parent level for all systems since addAll doesn't trigger setSystems
         for (model.System system : level.getSystems()) {
-            totalInputPorts += system.getInputPorts().size();
-            totalOutputPorts += system.getOutputPorts().size();
+            system.setParentLevel(level);
         }
-        java.lang.System.out.println("DEBUG: Level 4 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
+
 
         // Early injections for immediate visual activity
         level.getPacketSchedule().add(new PacketInjection(0.0, PacketType.SMALL_MESSENGER, source));
@@ -1516,7 +1365,6 @@ public class GameController {
         level.getPacketSchedule().add(new PacketInjection(95.0, PacketType.SMALL_MESSENGER, source));
         level.getPacketSchedule().add(new PacketInjection(100.0, PacketType.CONFIDENTIAL, source));
 
-        java.lang.System.out.println("DEBUG: Hardcoded Level 4 created with " + level.getPacketSchedule().size() + " packet injections");
 
         return level;
     }
@@ -1605,14 +1453,6 @@ public class GameController {
                 spySystem1, spySystem2, saboteur, vpnSystem, vpnSystem2,
                 antiTrojan, antiTrojan2, distributor, merger));
 
-        // Debug: Print port counts to verify the fix
-        int totalInputPorts = 0;
-        int totalOutputPorts = 0;
-        for (model.System system : level.getSystems()) {
-            totalInputPorts += system.getInputPorts().size();
-            totalOutputPorts += system.getOutputPorts().size();
-        }
-        java.lang.System.out.println("DEBUG: Level 5 created with " + totalInputPorts + " input ports and " + totalOutputPorts + " output ports (Total: " + (totalInputPorts + totalOutputPorts) + ")");
 
         // Complex packet schedule with all packet types (25 packets total)
         level.getPacketSchedule().add(new PacketInjection(5.0, PacketType.SMALL_MESSENGER, source));
@@ -1642,18 +1482,13 @@ public class GameController {
         level.getPacketSchedule().add(new PacketInjection(125.0, PacketType.SMALL_MESSENGER, source));
         level.getPacketSchedule().add(new PacketInjection(130.0, PacketType.CONFIDENTIAL, source));
 
-        java.lang.System.out.println("DEBUG: Hardcoded Level 5 created with " + level.getPacketSchedule().size() + " packet injections");
 
         return level;
     }
 
-    /**
-     * Starts the game. Ensures a level is loaded before starting.
-     */
     public void startGame() {
         // Ensure a level is loaded before starting the game
         if (gameState.getCurrentLevel() == null) {
-            java.lang.System.out.println("DEBUG: No level loaded, loading level1 by default");
             loadLevel("level1");
         }
 
@@ -1661,7 +1496,6 @@ public class GameController {
         if (gameState.getCurrentLevel() != null && gameState.getCurrentLevel().getPacketSchedule() != null) {
             int sz = gameState.getCurrentLevel().getPacketSchedule().size();
             if (sz == 3) {
-                java.lang.System.out.println("DEBUG: Detected 3-packet schedule; forcing JSON reload of level1");
                 loadLevel("level1");
             }
         }
@@ -1692,26 +1526,17 @@ public class GameController {
         });
     }
 
-    /**
-     * Pauses the game.
-     */
     public void pauseGame() {
         gameState.setPaused(true);
         soundManager.pauseBackgroundMusic();
     }
 
-    /**
-     * Resumes the game.
-     */
     public void resumeGame() {
         gameState.setPaused(false);
         lastUpdateTime = java.lang.System.nanoTime(); // Reset time to prevent delta time jump
         soundManager.resumeBackgroundMusic();
     }
 
-    /**
-     * Stops the game.
-     */
     public void stopGame() {
         isRunning = false;
         gameLoop.stop();
@@ -1720,100 +1545,58 @@ public class GameController {
         soundManager.stopBackgroundMusic();
     }
 
-    /**
-     * Gets the game view.
-     */
     public GameView getGameView() {
         return gameView;
     }
 
-    /**
-     * Gets the HUD view.
-     */
     public HUDView getHudView() {
         return hudView;
     }
 
-    /**
-     * Gets the level select view.
-     */
     public LevelSelectView getLevelSelectView() {
         return levelSelectView;
     }
 
-    /**
-     * Gets the settings view.
-     */
     public SettingsView getSettingsView() {
         return settingsView;
     }
 
-    /**
-     * Gets the game over view.
-     */
     public GameOverView getGameOverView() {
         return gameOverView;
     }
 
-    /**
-     * Gets the shop view.
-     */
     public ShopView getShopView() {
         return shopView;
     }
 
-    /**
-     * Gets the level complete view.
-     */
     public LevelCompleteView getLevelCompleteView() {
         return levelCompleteView;
     }
 
-    /**
-     * Gets the pause view.
-     */
     public view.PauseView getPauseView() {
         return pauseView;
     }
 
-    /**
-     * Gets the input handler.
-     */
     public InputHandler getInputHandler() {
         return inputHandler;
     }
 
-    /**
-     * Gets the game state.
-     */
     public GameState getGameState() {
         return gameState;
     }
 
-    /**
-     * Gets the sound manager.
-     */
     public SoundManager getSoundManager() {
         return soundManager;
     }
 
-    /**
-     * Gets the wiring controller.
-     */
     public WiringController getWiringController() {
         return wiringController;
     }
 
-    /**
-     * Gets the save manager.
-     */
     public GameSaveManager getSaveManager() {
         return saveManager;
     }
 
-    /**
-     * Enters editing mode - allows wiring and bend creation.
-     */
     public void enterEditingMode() {
         isEditingMode = true;
         isSimulationMode = false;
@@ -1848,18 +1631,13 @@ public class GameController {
         java.lang.System.out.println("Entered EDITING MODE - You can now edit wiring and bends");
     }
 
-    /**
-     * Enters simulation mode - starts packet movement and temporal progression.
-     */
     public void enterSimulationMode() {
-        java.lang.System.out.println("DEBUG: Attempting to enter simulation mode...");
 
         // Check 1: All ports must be connected
         if (wiringController != null && !wiringController.areAllPortsConnected(gameState)) {
             int[] portCounts = wiringController.getPortConnectivityCounts(gameState);
             java.lang.System.out.println("Cannot start simulation: not all ports are connected (" +
                     portCounts[0] + "/" + portCounts[1] + " ports connected). All ports must be consumed.");
-            java.lang.System.out.println("DEBUG: Port connectivity check failed - need to wire all ports first");
             showSimulationStartError("All ports must be connected to start simulation.");
             return;
         }
@@ -1867,7 +1645,6 @@ public class GameController {
         // Check 2: Reference systems must be ready
         if (!areReferenceSystemsReady()) {
             java.lang.System.out.println("Cannot start simulation: reference systems are not ready (connect a source and a destination)");
-            java.lang.System.out.println("DEBUG: Reference systems check failed - need to connect source to destination");
             showSimulationStartError("Reference systems not ready. Connect source to destination.");
             return;
         }
@@ -1875,7 +1652,6 @@ public class GameController {
         // Check 3: No wires should pass over systems
         if (doAnyWiresPassOverSystems()) {
             java.lang.System.out.println("Cannot start simulation: some wires pass over systems");
-            java.lang.System.out.println("DEBUG: Wire-system collision check failed - wires cannot pass over systems");
             showSimulationStartError("Some wires pass over systems. Move wires away from systems.");
             return;
         }
@@ -1897,12 +1673,8 @@ public class GameController {
         gameLoop.start();
         soundManager.playBackgroundMusic();
 
-        java.lang.System.out.println("Entered SIMULATION MODE - Press P to pause, arrow keys for temporal navigation");
     }
 
-    /**
-     * Enters simulating mode - enables temporal navigation.
-     */
     public void enterSimulatingMode() {
         if (!isEditingMode) return;
 
@@ -1918,7 +1690,6 @@ public class GameController {
 
         // Store initial coins before entering simulate mode
         initialCoinsBeforeSimulate = gameState.getCoins();
-        System.out.println("Stored initial coins: " + initialCoinsBeforeSimulate);
 
         isSimulatingMode = true;
         isEditingMode = false;
@@ -1931,9 +1702,6 @@ public class GameController {
         System.out.println("Entered SIMULATING MODE - Use time slider for temporal navigation");
     }
 
-    /**
-     * Exits simulating mode - returns to editing mode.
-     */
     public void exitSimulatingMode() {
         if (!isSimulatingMode) return;
 
@@ -1955,30 +1723,18 @@ public class GameController {
         System.out.println("Exited SIMULATING MODE - Returned to editing mode with initial state");
     }
 
-    /**
-     * Checks if currently in editing mode.
-     */
     public boolean isEditingMode() {
         return isEditingMode;
     }
 
-    /**
-     * Checks if currently in simulating mode (temporal navigation).
-     */
     public boolean isSimulatingMode() {
         return isSimulatingMode;
     }
 
-    /**
-     * Checks if currently in simulation mode.
-     */
     public boolean isSimulationMode() {
         return isSimulationMode;
     }
 
-    /**
-     * Checks if simulation can be started (Run button is green).
-     */
     public boolean canStartSimulation() {
         if (isSimulationMode) return false; // Already running
         
@@ -1989,10 +1745,6 @@ public class GameController {
         return allIndicatorsOn && refSystemsReady && noWireCollisions;
     }
 
-    /**
-     * Updates packet positions based on temporal progress (for temporal navigation).
-     * Only works when Run button is ready but simulation hasn't started yet.
-     */
     public void updatePacketPositionsForTime(double targetTime) {
         // Only allow temporal navigation when in simulating mode
         if (!isSimulatingMode) {
@@ -2028,9 +1780,6 @@ public class GameController {
         });
     }
     
-    /**
-     * Exits temporal navigation mode and prepares for normal simulation.
-     */
     public void exitTemporalNavigation() {
         // Reset to beginning but preserve initial coins
         resetSimulationToBeginning();
@@ -2046,13 +1795,8 @@ public class GameController {
             hudView.update();
         });
         
-        System.out.println("Exited temporal navigation mode");
     }
 
-    /**
-     * Resets simulation to the beginning (time 0) - for temporal navigation.
-     * Preserves initial coins and only resets simulation state.
-     */
     private void resetSimulationToBeginning() {
         // Reset time
         gameState.setTemporalProgress(0.0);
@@ -2089,13 +1833,8 @@ public class GameController {
             }
         }
         
-        System.out.println("Simulation reset to beginning - temporal navigation");
     }
     
-    /**
-     * Resets simulation completely - for starting new simulation.
-     * Resets everything including coins.
-     */
     private void resetSimulationCompletely() {
         // Reset time
         gameState.setTemporalProgress(0.0);
@@ -2128,9 +1867,6 @@ public class GameController {
         System.out.println("Simulation reset completely - starting new simulation");
     }
     
-    /**
-     * Resets packet statistics for temporal navigation.
-     */
     private void resetPacketStatistics() {
         // Reset lost packets count
         gameState.setLostPacketsCount(0);
@@ -2145,9 +1881,6 @@ public class GameController {
         }
     }
     
-    /**
-     * Resets packet statistics completely for new simulation.
-     */
     private void resetPacketStatisticsCompletely() {
         // Reset lost packets count
         gameState.setLostPacketsCount(0);
@@ -2162,9 +1895,6 @@ public class GameController {
         }
     }
     
-    /**
-     * Runs simulation forward to the specified time using fast simulation.
-     */
     private void runSimulationToTime(double targetTime) {
         if (targetTime <= 0) return;
         
@@ -2204,9 +1934,6 @@ public class GameController {
         System.out.println("Fast simulation completed at time " + String.format("%.2f", currentTime) + "s in " + stepCount + " steps");
     }
     
-    /**
-     * Calculates correct coins based on delivered packets for temporal navigation.
-     */
     private void calculateCorrectCoins(int initialCoins) {
         if (gameState.getCurrentLevel() == null) return;
         
@@ -2232,16 +1959,10 @@ public class GameController {
         System.out.println("Temporal navigation coins: initial=" + initialCoins + " + delivered=" + deliveredCoins + " = total=" + totalCoins);
     }
     
-    /**
-     * Updates a single simulation step (without view updates).
-     */
     private void updateSimulationStep(double deltaTime) {
         updateSimulationStep(deltaTime, 1.0); // Default acceleration factor
     }
     
-    /**
-     * Updates a single simulation step with acceleration factor (for fast simulation).
-     */
     private void updateSimulationStep(double deltaTime, double accelerationFactor) {
         // Process packet injections with acceleration
         processPacketInjections(deltaTime, accelerationFactor);
@@ -2281,23 +2002,14 @@ public class GameController {
         removeDestroyedPacketsFromWiresImmediate();
     }
 
-    /**
-     * Updates packet movement for all packets.
-     */
     private void updatePacketMovement(double deltaTime) {
         updatePacketMovement(deltaTime, 1.0); // Default acceleration factor
     }
     
-    /**
-     * Updates packet movement for all packets with acceleration factor.
-     */
     private void updatePacketMovement(double deltaTime, double accelerationFactor) {
         updateWirePacketMovement(deltaTime, accelerationFactor);
     }
 
-    /**
-     * Handles temporal rewind by resetting game state and recalculating up to target time.
-     */
     private void handleTemporalRewind(double targetTime) {
         java.lang.System.out.println("Handling temporal rewind to " + String.format("%.2f", targetTime) + "s");
 
@@ -2317,9 +2029,6 @@ public class GameController {
         simulateToTime(targetTime);
     }
 
-    /**
-     * Handles temporal fast-forward by simulating intermediate steps.
-     */
     private void handleTemporalFastForward(double targetTime, double timeDelta) {
         java.lang.System.out.println("Handling temporal fast-forward by " + String.format("%.2f", timeDelta) + "s");
 
@@ -2354,9 +2063,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Resets all packet injection states so they can be re-injected during rewind.
-     */
     private void resetPacketInjectionStates() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2366,9 +2072,6 @@ public class GameController {
         java.lang.System.out.println("Reset " + gameState.getCurrentLevel().getPacketSchedule().size() + " packet injection states");
     }
 
-    /**
-     * Clears all packets from wire connections.
-     */
     private void clearPacketsFromWires() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2377,12 +2080,8 @@ public class GameController {
             clearedCount += connection.getPacketsOnWire().size();
             connection.clearPackets();
         }
-        java.lang.System.out.println("Cleared " + clearedCount + " packets from wires");
     }
 
-    /**
-     * Clears all packets from system ports and storage.
-     */
     private void clearPacketsFromSystems() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2408,12 +2107,8 @@ public class GameController {
             clearedCount += system.getStorage().size();
             system.clearStorage();
         }
-        java.lang.System.out.println("Cleared " + clearedCount + " packets from systems");
     }
 
-    /**
-     * Simulates the game from time 0 to the specified target time.
-     */
     private void simulateToTime(double targetTime) {
         java.lang.System.out.println("Simulating from 0.0s to " + String.format("%.2f", targetTime) + "s");
 
@@ -2446,10 +2141,6 @@ public class GameController {
         java.lang.System.out.println("Simulation complete. Active packets: " + gameState.getActivePackets().size());
     }
 
-    /**
-     * Processes packet injections for a specific time (for temporal navigation).
-     * Enhanced to work with the new temporal navigation system.
-     */
     private void processPacketInjectionsForTime(double targetTime) {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2479,9 +2170,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Gets all packets currently on wires for collision detection.
-     */
     private List<Packet> getPacketsOnWires() {
         List<Packet> wirePackets = new ArrayList<>();
         if (gameState.getCurrentLevel() == null) return wirePackets;
@@ -2494,9 +2182,6 @@ public class GameController {
         return wirePackets;
     }
 
-    /**
-     * Removes destroyed packets from all wire connections to free up wire space.
-     */
     private void removeDestroyedPacketsFromWires(List<Packet> packetsToRemove) {
         if (gameState.getCurrentLevel() == null || packetsToRemove.isEmpty()) return;
 
@@ -2511,21 +2196,14 @@ public class GameController {
                 totalRemoved += removedFromWire;
                 
                 if (removedFromWire > 0) {
-                    System.out.println("DEBUG: Removed " + removedFromWire + " destroyed packets from wire " + 
-                                     connection.getId().substring(0, 8) + " (remaining: " + afterCount + ")");
                 }
             }
         }
         
         if (totalRemoved > 0) {
-            System.out.println("DEBUG: Total " + totalRemoved + " destroyed packets removed from wires - wires now free for new packets");
         }
     }
 
-    /**
-     * Immediately removes destroyed packets from wires after collision detection.
-     * This ensures wires are freed up immediately when packets are destroyed by noise.
-     */
     private void removeDestroyedPacketsFromWiresImmediate() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2542,9 +2220,6 @@ public class GameController {
                     if (packet.shouldBeLost() && packet.isActive()) {
                         packet.setActive(false);
                         destroyedPackets.add(packet);
-                        System.out.println("DEBUG: IMMEDIATE - Marked packet " + packet.getPacketType() + 
-                                         " as inactive due to noise damage (noise: " + packet.getNoiseLevel() + 
-                                         ", size: " + packet.getSize() + ")");
                     }
                 }
                 
@@ -2556,8 +2231,6 @@ public class GameController {
                 totalRemoved += removedFromWire;
                 
                 if (removedFromWire > 0) {
-                    System.out.println("DEBUG: IMMEDIATE - Removed " + removedFromWire + " destroyed packets from wire " + 
-                                     connection.getId().substring(0, 8) + " (remaining: " + afterCount + ")");
                 }
             }
         }
@@ -2568,18 +2241,12 @@ public class GameController {
                 gameState.incrementLostPackets();
             }
             gameState.getActivePackets().removeAll(destroyedPackets);
-            System.out.println("DEBUG: IMMEDIATE - Removed " + destroyedPackets.size() + " destroyed packets from active list and counted as lost");
         }
         
         if (totalRemoved > 0) {
-            System.out.println("DEBUG: IMMEDIATE - Total " + totalRemoved + " destroyed packets removed from wires - wires now free!");
         }
     }
 
-    /**
-     * Processes system transfers - moves packets from input ports into systems and from systems to next wires.
-     * This is the key missing piece that aligns with the specifications.
-     */
     private void processSystemTransfers() {
         if (gameState.getCurrentLevel() == null) return;
 
@@ -2595,18 +2262,12 @@ public class GameController {
                     // Attempt immediate transfer to the connected wire
                     boolean moved = tryTransferPortPacketToWire(outputPort);
                     if (moved) {
-                        java.lang.System.out.println("DEBUG: Packet pushed from output port to wire for system " +
-                                system.getClass().getSimpleName());
                     }
                 }
             }
         }
     }
 
-    /**
-     * Processes packets from system storage to available output ports and then to wires.
-     * Implements the specification requirement: "Transfers packets to compatible, empty output ports"
-     */
     private void processStorageToOutputs(model.System system) {
         if (system.getStorage().isEmpty()) return;
 
@@ -2628,18 +2289,13 @@ public class GameController {
                 boolean isCompatible = availablePort.isCompatibleWithPacket(packet);
                 if (!isCompatible && packet instanceof MessengerPacket) {
                     ((MessengerPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for storage->port incompatible exit");
                 } else if (!isCompatible && packet instanceof ProtectedPacket) {
                     ((ProtectedPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for storage->port protected packet incompatible exit");
                 }
 
                 // Try to immediately transfer to wire (if wire is available)
                 tryTransferPortPacketToWire(availablePort);
 
-                java.lang.System.out.println("DEBUG: Packet transferred from storage to " + 
-                        (isCompatible ? "compatible" : "incompatible") + " output port in " +
-                        system.getClass().getSimpleName());
 
                 // Only process one packet per update cycle to prevent overwhelming
                 break;
@@ -2647,10 +2303,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Finds an available output port that has a connected wire with capacity.
-     * This aligns with Phase 1 spec: "Transfers packets to compatible, empty output ports"
-     */
     private Port findAvailableOutputPortWithWire(model.System system, Packet packet) {
         // First try to find compatible ports
         for (Port outputPort : system.getOutputPorts()) {
@@ -2671,9 +2323,6 @@ public class GameController {
         return null;
     }
 
-    /**
-     * Checks if a port has an available outgoing wire connection.
-     */
     private boolean hasAvailableOutgoingWire(Port port) {
         if (gameState.getCurrentLevel() == null) return false;
 
@@ -2688,9 +2337,6 @@ public class GameController {
         return false;
     }
 
-    /**
-     * Attempts to transfer a packet from a port to its connected wire.
-     */
     private boolean tryTransferPortPacketToWire(Port port) {
         if (port.getCurrentPacket() == null) return false;
         if (gameState.getCurrentLevel() == null) return false;
@@ -2703,8 +2349,6 @@ public class GameController {
                 Packet packet = port.releasePacket();
                 boolean accepted = connection.acceptPacket(packet);
                 if (accepted) {
-                    java.lang.System.out.println("DEBUG: Packet transferred from output port to wire " +
-                            connection.getId());
                     return true;
                 }
             }
@@ -2712,9 +2356,6 @@ public class GameController {
         return false;
     }
 
-    /**
-     * Attempts to place a newly injected packet onto a connected outgoing wire from the given source system.
-     */
     private boolean tryPlacePacketOnOutgoingWire(Packet packet, model.System sourceSystem) {
         if (sourceSystem == null || gameState.getCurrentLevel() == null) return false;
 
@@ -2737,8 +2378,6 @@ public class GameController {
         portsToTry.addAll(compatibleConnectedPorts);
         portsToTry.addAll(anyConnectedPorts);
         
-        java.lang.System.out.println("DEBUG: tryPlacePacketOnOutgoingWire for " + packet.getPacketType() + 
-                " - compatible: " + compatibleConnectedPorts.size() + ", any: " + anyConnectedPorts.size());
         
         for (Port out : portsToTry) {
 
@@ -2786,43 +2425,24 @@ public class GameController {
                 }
                 boolean accepted = connection.acceptPacket(packet);
                 if (accepted) {
-                    java.lang.System.out.println("Packet successfully placed on wire from " + sourceSystem.getClass().getSimpleName());
                     return true;
                 }
             }
         }
 
-        java.lang.System.out.println("Failed to place packet - no available wires from " + sourceSystem.getClass().getSimpleName());
         return false;
     }
 
-    /**
-     * Debug helper to understand why packet placement failed.
-     */
     private void debugPacketPlacementFailure(model.System sourceSystem) {
-        java.lang.System.out.println("DEBUG: Analyzing packet placement failure for " + sourceSystem.getClass().getSimpleName());
-        java.lang.System.out.println("DEBUG: Output ports: " + sourceSystem.getOutputPorts().size());
-
-        for (int i = 0; i < sourceSystem.getOutputPorts().size(); i++) {
-            Port port = sourceSystem.getOutputPorts().get(i);
-            java.lang.System.out.println("DEBUG: Port " + i + " connected: " + port.isConnected() +
-                    ", shape: " + port.getShape());
-        }
-
-        java.lang.System.out.println("DEBUG: Total wire connections in level: " +
-                gameState.getCurrentLevel().getWireConnections().size());
 
         int activeConnections = 0;
         for (WireConnection conn : gameState.getCurrentLevel().getWireConnections()) {
             if (conn.isActive()) {
                 activeConnections++;
                 if (conn.getSourcePort().getParentSystem() == sourceSystem) {
-                    java.lang.System.out.println("DEBUG: Found connection from this system, can accept: " +
-                            conn.canAcceptPacket() + ", packets on wire: " + conn.getPacketsOnWire().size());
                 }
             }
         }
-        java.lang.System.out.println("DEBUG: Active connections: " + activeConnections);
     }
 
     public void setMainApp(MainApp mainApp) {
@@ -2833,9 +2453,6 @@ public class GameController {
         return mainApp;
     }
 
-    /**
-     * Toggles the shop view.
-     */
     public void toggleShop() {
         java.lang.System.out.println("toggleShop called");
         if (shopView != null) {
@@ -2862,9 +2479,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Activates an ability for the current level.
-     */
     public boolean activateAbility(AbilityType abilityType) {
         if (abilityCooldowns.containsKey(abilityType)) {
             return false; // Still on cooldown
@@ -2884,9 +2498,6 @@ public class GameController {
         return false;
     }
 
-    /**
-     * Gets the cooldown duration for an ability.
-     */
     private double getAbilityCooldownDuration(AbilityType abilityType) {
         switch (abilityType) {
             case O_ATAR: return 10.0; // 10 seconds
@@ -2899,9 +2510,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Updates ability cooldowns.
-     */
     private void updateAbilityCooldowns(double deltaTime) {
         List<AbilityType> expiredCooldowns = new ArrayList<>();
 
@@ -2919,37 +2527,22 @@ public class GameController {
         }
     }
 
-    /**
-     * Gets the list of active abilities.
-     */
     public List<AbilityType> getActiveAbilities() {
         return new ArrayList<>(activeAbilities);
     }
 
-    /**
-     * Gets the remaining cooldown for an ability.
-     */
     public double getAbilityCooldown(AbilityType abilityType) {
         return abilityCooldowns.getOrDefault(abilityType, 0.0);
     }
 
-    /**
-     * Checks if an ability is available (not on cooldown).
-     */
     public boolean isAbilityAvailable(AbilityType abilityType) {
         return !abilityCooldowns.containsKey(abilityType);
     }
 
-    /**
-     * Checks if an ability is currently active.
-     */
     public boolean isAbilityActive(AbilityType abilityType) {
         return activeAbilities.contains(abilityType);
     }
 
-    /**
-     * Applies ability effects to the game state.
-     */
     public void applyAbilityEffects() {
         // Apply Phase 1 abilities
         if (isAbilityActive(AbilityType.O_ATAR)) {
@@ -2975,9 +2568,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Activates a Phase 2 ability at a specific point.
-     */
     public boolean activateAbilityAtPoint(AbilityType abilityType, Point2D point) {
         if (abilityManager == null) {
             return false;
@@ -2986,30 +2576,18 @@ public class GameController {
         return abilityManager.activateAbility(abilityType, point);
     }
 
-    /**
-     * Checks if a system can be moved (for Sisyphus ability).
-     */
     public boolean canMoveSystemWithAbility(model.System system) {
         return abilityManager != null && abilityManager.canMoveSystem(system);
     }
 
-    /**
-     * Moves a system using ability (for Sisyphus).
-     */
     public boolean moveSystemWithAbility(model.System system, Point2D newPosition) {
         return abilityManager != null && abilityManager.moveSystem(system, newPosition);
     }
 
-    /**
-     * Handles save file check on game start.
-     */
     public boolean checkForSaveFile() {
         return saveManager.hasSaveFile();
     }
 
-    /**
-     * Loads a saved game.
-     */
     public boolean loadSavedGame() {
         try {
             GameState savedState = saveManager.loadGame();
@@ -3021,24 +2599,14 @@ public class GameController {
         }
     }
 
-    /**
-     * Deletes the save file.
-     */
     public void deleteSaveFile() {
         saveManager.deleteSaveFile();
     }
 
-    /**
-     * Enables or disables auto-save functionality.
-     */
     public void setAutoSaveEnabled(boolean enabled) {
         saveManager.setAutoSaveEnabled(enabled);
     }
 
-    /**
-     * Toggles the smooth wire curves setting.
-     * Only allowed in editing mode to prevent changes during simulation.
-     */
     public void toggleSmoothWires() {
         if (!isEditingMode) {
             java.lang.System.out.println("Cannot change wire curve mode during simulation. Return to editing mode first.");
@@ -3077,9 +2645,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Checks if smooth wire curves are enabled.
-     */
     public boolean isSmoothWires() {
         if (gameState != null) {
             Object setting = gameState.getGameSettings().get("smoothWireCurves");
@@ -3090,9 +2655,6 @@ public class GameController {
         return true; // Default to smooth curves
     }
 
-    /**
-     * Checks if any wires pass over systems (excluding their connected endpoints).
-     */
     public boolean doAnyWiresPassOverSystems() {
         if (gameState == null || gameState.getCurrentLevel() == null) {
             return false;
@@ -3103,16 +2665,13 @@ public class GameController {
 
         for (WireConnection wire : wireConnections) {
             if (wire.isActive() && wire.passesOverSystems(systems)) {
-                java.lang.System.out.println("DEBUG: Wire " + wire.getId() + " passes over systems");
                 return true;
             }
         }
         return false;
     }
 
-    /**
-     * Shows an error message for simulation start failures.
-     */
+
     private void showSimulationStartError(String message) {
         // For now, just print to console. Later can be enhanced with UI dialog
         java.lang.System.out.println("SIMULATION START ERROR: " + message);

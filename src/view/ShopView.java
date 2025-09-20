@@ -13,10 +13,6 @@ import javafx.scene.text.FontWeight;
 import controller.GameController;
 import model.AbilityType;
 
-/**
- * Shop view for purchasing abilities and upgrades.
- * Enhanced for Phase 2 with new abilities and improved UI.
- */
 public class ShopView {
     private GameController gameController;
     private javafx.scene.layout.Pane root;
@@ -212,3 +208,4 @@ public class ShopView {
         return isVisible;
     }
 }
+

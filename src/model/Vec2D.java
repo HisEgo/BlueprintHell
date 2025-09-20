@@ -2,10 +2,6 @@ package model;
 
 import java.util.Objects;
 
-/**
- * Represents a 2D vector with x and y components.
- * POJO class for serialization support.
- */
 public class Vec2D {
     private double x;
     private double y;
@@ -85,3 +81,4 @@ public class Vec2D {
         return "Vec2D{" + "x=" + x + ", y=" + y + '}';
     }
 }
+

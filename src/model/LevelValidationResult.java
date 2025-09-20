@@ -25,65 +25,38 @@ public class LevelValidationResult {
         this.shapeIssues = shapeIssues;
     }
 
-    /**
-     * Checks if the level design is valid for complete port connectivity.
-     */
     public boolean isValid() {
         return balancedPorts && compatibleShapes;
     }
 
-    /**
-     * Gets whether the total number of input and output ports are balanced.
-     */
     public boolean isBalancedPorts() {
         return balancedPorts;
     }
 
-    /**
-     * Gets whether all port shapes have matching input/output counts.
-     */
     public boolean isCompatibleShapes() {
         return compatibleShapes;
     }
 
-    /**
-     * Gets the total number of input ports.
-     */
     public int getTotalInputPorts() {
         return totalInputPorts;
     }
 
-    /**
-     * Gets the total number of output ports.
-     */
     public int getTotalOutputPorts() {
         return totalOutputPorts;
     }
 
-    /**
-     * Gets the count of input ports by shape.
-     */
     public Map<PortShape, Integer> getInputPortShapes() {
         return inputPortShapes;
     }
 
-    /**
-     * Gets the count of output ports by shape.
-     */
     public Map<PortShape, Integer> getOutputPortShapes() {
         return outputPortShapes;
     }
 
-    /**
-     * Gets a description of any shape compatibility issues.
-     */
     public String getShapeIssues() {
         return shapeIssues;
     }
 
-    /**
-     * Gets a human-readable summary of the validation result.
-     */
     public String getSummary() {
         if (isValid()) {
             return String.format("Level design is valid. Total ports: %d input, %d output",
@@ -101,4 +74,5 @@ public class LevelValidationResult {
         return summary.toString();
     }
 }
+
 

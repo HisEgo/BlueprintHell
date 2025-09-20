@@ -3,19 +3,12 @@ package controller;
 import model.*;
 import java.util.*;
 
-/**
- * Handles wire connection logic and validation.
- */
 public class WiringController {
 
     public WiringController() {
     }
 
-    /**
-     * Creates a wire connection between two ports.
-     */
     public boolean createWireConnection(Port sourcePort, Port destinationPort, GameState gameState) {
-        
 
         // Check if connection is valid
         if (!isValidConnection(sourcePort, destinationPort, gameState)) {
@@ -25,7 +18,6 @@ public class WiringController {
 
         // Calculate wire length
         double wireLength = calculateWireLength(sourcePort, destinationPort);
-        
 
         // Check if enough wire length is available
         if (wireLength > gameState.getRemainingWireLength()) {
@@ -35,7 +27,6 @@ public class WiringController {
 
         // Create wire connection
         WireConnection connection = new WireConnection(sourcePort, destinationPort, wireLength);
-        
 
         gameState.addWireConnection(connection);
 
@@ -50,15 +41,10 @@ public class WiringController {
         // Update remaining wire length
         gameState.setRemainingWireLength(gameState.getRemainingWireLength() - wireLength);
 
-        
         return true;
     }
 
-    /**
-     * Checks if a connection is valid.
-     */
     private boolean isValidConnection(Port sourcePort, Port destinationPort, GameState gameState) {
-        
 
         // Check if ports are from the same system
         if (sourcePort.getParentSystem() == destinationPort.getParentSystem()) {
@@ -97,29 +83,19 @@ public class WiringController {
             return false;
         }
 
-        
         return true;
     }
 
-    /**
-     * Calculates wire length between two ports.
-     */
     private double calculateWireLength(Port sourcePort, Port destinationPort) {
         Point2D sourcePos = sourcePort.getPosition();
         Point2D destPos = destinationPort.getPosition();
         return sourcePos.distanceTo(destPos);
     }
 
-    /**
-     * Calculates wire length including all bends.
-     */
     private double calculateWireLengthWithBends(WireConnection connection) {
         return connection.getTotalLength();
     }
 
-    /**
-     * Checks if the network is a connected graph.
-     */
     public boolean isNetworkConnected(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         if (systems.isEmpty()) {
@@ -134,10 +110,6 @@ public class WiringController {
         return visited.size() == systems.size();
     }
 
-    /**
-     * Counts how many systems are reachable from the first system via active wires.
-     * This is useful for UI to display "reachable X/Y" without forcing full connectivity.
-     */
     public int getReachableSystemCount(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         if (systems.isEmpty()) {
@@ -149,10 +121,6 @@ public class WiringController {
         return visited.size();
     }
 
-    /**
-     * Checks if all ports in the network are connected.
-     * This ensures that every port on every system has a wire connection.
-     */
     public boolean areAllPortsConnected(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         if (systems.isEmpty()) {
@@ -160,7 +128,6 @@ public class WiringController {
             return false;
         }
 
-        
         for (model.System system : systems) {
             // Skip systems that don't have any ports (like HUD display elements)
             List<Port> allPorts = system.getAllPorts();
@@ -169,7 +136,6 @@ public class WiringController {
                 continue;
             }
 
-            
             for (Port port : allPorts) {
                 
                 if (!port.isConnected()) {
@@ -179,14 +145,9 @@ public class WiringController {
             }
         }
 
-        
         return true; // All ports are connected
     }
 
-    /**
-     * Gets the count of connected ports vs total ports in the network.
-     * Useful for UI to display port connectivity status.
-     */
     public int[] getPortConnectivityCounts(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         int totalPorts = 0;
@@ -210,10 +171,6 @@ public class WiringController {
         return new int[]{connectedPorts, totalPorts};
     }
 
-    /**
-     * Gets a list of unconnected ports in the network.
-     * Useful for providing user feedback about what needs to be completed.
-     */
     public List<Port> getUnconnectedPorts(GameState gameState) {
         List<Port> unconnectedPorts = new ArrayList<>();
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
@@ -235,11 +192,6 @@ public class WiringController {
         return unconnectedPorts;
     }
 
-    /**
-     * Validates level design for port connectivity feasibility.
-     * Checks if it's mathematically possible to connect all ports.
-     * Returns a validation result with details about any issues found.
-     */
     public LevelValidationResult validateLevelDesign(GameState gameState) {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
         int totalInputPorts = 0;
@@ -293,9 +245,6 @@ public class WiringController {
         );
     }
 
-    /**
-     * Depth-first search to check network connectivity.
-     */
     private void dfs(model.System system, Set<String> visited, GameState gameState) {
         visited.add(system.getId());
 
@@ -317,9 +266,6 @@ public class WiringController {
         }
     }
 
-    /**
-     * Validates that the network becomes a connected graph after adding a connection.
-     */
     public boolean willCreateConnectedGraph(Port sourcePort, Port destinationPort, GameState gameState) {
         // Temporarily add the connection
         WireConnection tempConnection = new WireConnection(sourcePort, destinationPort, 0.0);
@@ -334,20 +280,10 @@ public class WiringController {
         return isConnected;
     }
 
-    /**
-     * Adds a bend to a wire connection with system validation.
-     */
     public boolean addBendToWire(WireConnection connection, Point2D bendPosition, GameState gameState) {
         return addBendToWire(connection, bendPosition, gameState, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Adds a bend to a wire connection with system validation.
-     * @param connection Wire connection to add bend to
-     * @param bendPosition Position where to add the bend
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
-     */
     public boolean addBendToWire(WireConnection connection, Point2D bendPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
@@ -388,21 +324,10 @@ public class WiringController {
         return false;
     }
 
-    /**
-     * Moves a bend on a wire connection with system validation.
-     */
     public boolean moveBendOnWire(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState) {
         return moveBendOnWire(connection, bendIndex, newPosition, gameState, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Moves a bend on a wire connection with system validation.
-     * @param connection Wire connection to move bend on
-     * @param bendIndex Index of the bend to move
-     * @param newPosition New position for the bend
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
-     */
     public boolean moveBendOnWire(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
@@ -439,10 +364,6 @@ public class WiringController {
         return false;
     }
 
-    /**
-     * Moves a bend on a wire with maximum freedom (no length constraints).
-     * This method allows completely free bend movement for the best user experience.
-     */
     public boolean moveBendFreely(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState) {
         if (connection == null || !connection.isActive()) {
             return false;
@@ -461,16 +382,10 @@ public class WiringController {
         return moveBendOnWire(connection, bendIndex, newPosition, gameState, useSmoothCurves);
     }
 
-    /**
-     * Removes a wire connection and restores its length to the available wire pool.
-     * Phase 2: Prevents deletion of connections from previous levels.
-     */
     public boolean removeWireConnection(WireConnection connection, GameState gameState) {
         if (connection == null || !connection.isActive()) {
             return false;
         }
-
-
 
         // Get current curve setting
         boolean useSmoothCurves = true; // Default to smooth curves
@@ -482,8 +397,6 @@ public class WiringController {
         // Get the total length of the wire including bends (using current curve setting)
         double wireLength = connection.getTotalLength(useSmoothCurves);
         double storedWireLength = connection.getWireLength(); // Original stored length
-        
-        
 
         // Disconnect the ports
         Port sourcePort = connection.getSourcePort();
@@ -511,8 +424,6 @@ public class WiringController {
         double currentLength = gameState.getRemainingWireLength();
         double lengthToRestore = wireLength; // Use calculated length to match what was actually consumed
         gameState.setRemainingWireLength(currentLength + lengthToRestore);
-        
-        
 
         // Deactivate the connection
         connection.setActive(false);
@@ -520,10 +431,6 @@ public class WiringController {
         return true;
     }
 
-    /**
-     * Merges two compatible wire connections into one.
-     * This functionality allows connecting wires that share a common system.
-     */
     public boolean mergeWireConnections(WireConnection wire1, WireConnection wire2, GameState gameState) {
         if (wire1 == null || wire2 == null || !wire1.isActive() || !wire2.isActive()) {
             return false;
@@ -576,9 +483,6 @@ public class WiringController {
         return true;
     }
 
-    /**
-     * Finds a common port between two wire connections.
-     */
     private Port findCommonPort(WireConnection wire1, WireConnection wire2) {
         if (wire1.getSourcePort() == wire2.getSourcePort() ||
                 wire1.getSourcePort() == wire2.getDestinationPort()) {
@@ -591,9 +495,6 @@ public class WiringController {
         return null;
     }
 
-    /**
-     * Gets the port that is not the specified port from a wire connection.
-     */
     private Port getOtherPort(WireConnection connection, Port excludePort) {
         if (connection.getSourcePort() == excludePort) {
             return connection.getDestinationPort();
@@ -603,10 +504,6 @@ public class WiringController {
         return null;
     }
 
-    /**
-     * Validates that a system can be moved to a new position without breaking constraints.
-     * Checks wire length budget and prevents wires from passing over systems.
-     */
     public boolean canMoveSystem(model.System system, Point2D newPosition, GameState gameState) {
         if (system instanceof ReferenceSystem) {
             return false; // Cannot move reference systems
@@ -667,10 +564,6 @@ public class WiringController {
         return canMove;
     }
 
-    /**
-     * Moves a system to a new position and updates wire lengths accordingly.
-     * Should only be called after canMoveSystem() returns true.
-     */
     public boolean moveSystem(model.System system, Point2D newPosition, GameState gameState) {
         if (!canMoveSystem(system, newPosition, gameState)) {
             return false;
@@ -719,21 +612,10 @@ public class WiringController {
         return true;
     }
 
-    /**
-     * Gets the total wire length used by all active connections.
-     * Useful for HUD display and wire length management.
-     * Uses smooth curves by default for backward compatibility.
-     */
     public double getTotalWireLengthUsed(GameState gameState) {
         return getTotalWireLengthUsed(gameState, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Gets the total wire length used by all active connections.
-     * Useful for HUD display and wire length management.
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
-     */
     public double getTotalWireLengthUsed(GameState gameState, boolean useSmoothCurves) {
         double totalUsed = 0.0;
         for (WireConnection connection : gameState.getWireConnections()) {
@@ -747,41 +629,18 @@ public class WiringController {
         return totalUsed;
     }
 
-    /**
-     * Gets the total wire length available in the level.
-     * This is the sum of remaining wire length and used wire length.
-     * Uses smooth curves by default for backward compatibility.
-     */
     public double getTotalWireLengthAvailable(GameState gameState) {
         return gameState.getRemainingWireLength() + getTotalWireLengthUsed(gameState);
     }
 
-    /**
-     * Gets the total wire length available in the level.
-     * This is the sum of remaining wire length and used wire length.
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
-     */
     public double getTotalWireLengthAvailable(GameState gameState, boolean useSmoothCurves) {
         return gameState.getRemainingWireLength() + getTotalWireLengthUsed(gameState, useSmoothCurves);
     }
 
-    /**
-     * Checks if there's enough wire length available to add a bend at the specified position.
-     * This method calculates the potential length increase without actually adding the bend.
-     */
     public boolean canAddBend(WireConnection connection, Point2D bendPosition, GameState gameState) {
         return canAddBend(connection, bendPosition, gameState, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Checks if there's enough wire length available to add a bend at the specified position.
-     * This method calculates the potential length increase without actually adding the bend.
-     * @param connection Wire connection to check
-     * @param bendPosition Position where to add the bend
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
-     */
     public boolean canAddBend(WireConnection connection, Point2D bendPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive()) {
             return false;
@@ -806,23 +665,10 @@ public class WiringController {
         return lengthIncrease <= gameState.getRemainingWireLength();
     }
 
-    /**
-     * Checks if moving a bend to a new position would require additional wire length.
-     * This method calculates the potential length change without actually moving the bend.
-     */
     public boolean canMoveBend(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState) {
         return canMoveBend(connection, bendIndex, newPosition, gameState, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Checks if moving a bend to a new position would require additional wire length.
-     * This method calculates the potential length change without actually moving the bend.
-     * @param connection Wire connection to check
-     * @param bendIndex Index of the bend to move
-     * @param newPosition New position for the bend
-     * @param gameState Current game state
-     * @param useSmoothCurves If true, uses smooth curves for length calculation; if false, uses rigid polyline
-     */
     public boolean canMoveBend(WireConnection connection, int bendIndex, Point2D newPosition, GameState gameState, boolean useSmoothCurves) {
         if (connection == null || !connection.isActive() || bendIndex < 0 || bendIndex >= connection.getBends().size()) {
             return false;
@@ -852,3 +698,4 @@ public class WiringController {
         return true;
     }
 }
+

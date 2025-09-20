@@ -2,9 +2,6 @@ package controller;
 
 import model.*;
 
-/**
- * Manages game flow, transitions, and win/lose conditions.
- */
 public class GameFlowController {
     private GameController gameController;
 
@@ -12,9 +9,6 @@ public class GameFlowController {
         this.gameController = gameController;
     }
 
-    /**
-     * Checks game flow conditions and handles transitions.
-     */
     public void checkGameFlow() {
         GameState gameState = gameController.getGameState();
 
@@ -31,9 +25,6 @@ public class GameFlowController {
         }
     }
 
-    /**
-     * Handles game over condition.
-     */
     private void handleGameOver() {
         GameState gameState = gameController.getGameState();
         gameState.setGameOver(true);
@@ -48,9 +39,6 @@ public class GameFlowController {
         }
     }
 
-    /**
-     * Handles level completion.
-     */
     private void handleLevelComplete() {
         GameState gameState = gameController.getGameState();
         gameState.setLevelComplete(true);
@@ -70,9 +58,6 @@ public class GameFlowController {
         }
     }
 
-    /**
-     * Transitions to the next level with a fresh start.
-     */
     public void nextLevel() {
         GameState gameState = gameController.getGameState();
         GameLevel currentLevel = gameState.getCurrentLevel();
@@ -84,7 +69,6 @@ public class GameFlowController {
             if (nextLevelId != null) {
                 // Always start with no connections (fresh mode)
                 gameController.loadLevel(nextLevelId);
-                java.lang.System.out.println("DEBUG: Loading next level with fresh start");
 
                 gameController.startGame();
 
@@ -103,9 +87,6 @@ public class GameFlowController {
         }
     }
 
-    /**
-     * Gets the next level ID based on the current level.
-     */
     private String getNextLevelId(String currentLevelId) {
         switch (currentLevelId) {
             case "level1": return "level2";
@@ -117,9 +98,6 @@ public class GameFlowController {
         }
     }
 
-    /**
-     * Restarts the current level.
-     */
     public void restartLevel() {
         GameState gameState = gameController.getGameState();
         GameLevel currentLevel = gameState.getCurrentLevel();

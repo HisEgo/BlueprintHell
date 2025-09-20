@@ -1,9 +1,5 @@
 package model;
 
-/**
- * Represents a bend point on a wire that can be moved to navigate around obstacles.
- * Each bend costs 1 coin to create and can be moved within a specific radius.
- */
 public class WireBend {
     private Point2D position;
     private double maxMoveRadius;
@@ -43,9 +39,6 @@ public class WireBend {
         isMovable = movable;
     }
 
-    /**
-     * Moves the bend to a new position within the allowed radius.
-     */
     public boolean moveTo(Point2D newPosition, Point2D originalPosition) {
         if (!isMovable) return false;
 
@@ -57,9 +50,6 @@ public class WireBend {
         return false;
     }
 
-    /**
-     * Checks if a position is within the move radius of the original position.
-     */
     public boolean isWithinMoveRadius(Point2D newPosition, Point2D originalPosition) {
         double distance = originalPosition.distanceTo(newPosition);
         return distance <= maxMoveRadius;
@@ -74,3 +64,4 @@ public class WireBend {
                 '}';
     }
 }
+

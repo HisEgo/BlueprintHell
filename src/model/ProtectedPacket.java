@@ -4,11 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Random;
 import controller.MovementController.AccelerationType;
 
-/**
- * Protected packets that randomly choose movement mechanics from messenger packet types.
- * Created when messenger packets pass through VPN systems.
- * Their specific type is unknown to the network and they are visually hidden.
- */
 public class ProtectedPacket extends Packet {
     private PacketType originalType;
     private PacketType currentMovementType; // Randomly chosen movement behavior
@@ -39,12 +34,13 @@ public class ProtectedPacket extends Packet {
         this.setNoiseLevel(originalPacket.getNoiseLevel());
         this.setTravelTime(originalPacket.getTravelTime());
         this.setMaxTravelTime(originalPacket.getMaxTravelTime());
+        
+        // Protected packets are twice the size of original
+        if (originalPacket.getPacketType() != null) {
+            setSize(originalPacket.getPacketType().getBaseSize() * 2);
+        }
     }
 
-    /**
-     * Randomly selects a movement type from available messenger packet types.
-     * This determines how the protected packet moves on each wire.
-     */
     private PacketType selectRandomMovementType() {
         PacketType[] messengerTypes = {
                 PacketType.SMALL_MESSENGER,  // Size 1: acceleration/deceleration behavior
@@ -55,32 +51,18 @@ public class ProtectedPacket extends Packet {
         return messengerTypes[random.nextInt(messengerTypes.length)];
     }
 
-    /**
-     * Re-randomizes movement type for each new wire connection.
-     * Phase 2 spec: "randomly chosen from one of the messenger packet types" on each wire.
-     */
     public void randomizeMovementTypeForNewWire() {
         this.currentMovementType = selectRandomMovementType();
     }
 
-    /**
-     * Gets the current movement type that determines movement mechanics.
-     */
     public PacketType getCurrentMovementType() {
         return currentMovementType;
     }
 
-    /**
-     * Gets the original packet type before protection.
-     */
     public PacketType getOriginalType() {
         return originalType;
     }
 
-    /**
-     * Calculates movement speed based on the randomly chosen movement type and port compatibility.
-     * Follows Phase 2 specifications for messenger packet movement.
-     */
     public double calculateMovementSpeed(boolean isCompatiblePort) {
         double baseSpeed = 100.0;
 
@@ -103,9 +85,6 @@ public class ProtectedPacket extends Packet {
         }
     }
 
-    /**
-     * Gets the acceleration type based on current movement type.
-     */
     public AccelerationType getAccelerationType(boolean isCompatiblePort) {
         switch (currentMovementType) {
             case SMALL_MESSENGER:
@@ -125,29 +104,18 @@ public class ProtectedPacket extends Packet {
         }
     }
 
-    /**
-     * Updates movement vector based on port compatibility using random movement type.
-     * Phase 2 spec: messenger packets exit at 2x speed from incompatible ports.
-     */
     public void updateMovementForPort(boolean isCompatiblePort) {
         double speed = calculateMovementSpeed(isCompatiblePort);
         Vec2D direction = getMovementVector().normalize();
         setMovementVector(direction.scale(speed));
     }
 
-    /**
-     * Applies the exit speed multiplier when leaving a system through an incompatible port.
-     * Phase 2 spec: messenger packets exit at 2x speed from incompatible ports.
-     */
     public void applyExitSpeedMultiplier(boolean wasIncompatiblePort) {
         if (wasIncompatiblePort) {
             setMovementVector(getMovementVector().scale(2.0));
         }
     }
 
-    /**
-     * Handles collision behavior based on current movement type.
-     */
     @Override
     public void applyShockwave(Vec2D effectVector) {
         super.applyShockwave(effectVector);
@@ -158,15 +126,30 @@ public class ProtectedPacket extends Packet {
         }
     }
 
-    /**
-     * Converts back to original type (used when VPN system fails).
-     */
     public Packet revertToOriginal() {
-        MessengerPacket reverted = new MessengerPacket(originalType, getCurrentPosition(), getMovementVector());
+        if (originalType.isMessenger()) {
+            MessengerPacket reverted = new MessengerPacket(originalType, getCurrentPosition(), getMovementVector());
+            reverted.setNoiseLevel(getNoiseLevel());
+            reverted.setTravelTime(getTravelTime());
+            reverted.setMaxTravelTime(getMaxTravelTime());
+            reverted.setSize(originalType.getBaseSize()); // Restore original size
+            return reverted;
+        } else if (originalType.isConfidential()) {
+            // For confidential packets, create a new confidential packet
+            ConfidentialPacket reverted = new ConfidentialPacket(getCurrentPosition(), getMovementVector());
+            reverted.setNoiseLevel(getNoiseLevel());
+            reverted.setTravelTime(getTravelTime());
+            reverted.setMaxTravelTime(getMaxTravelTime());
+            reverted.setSize(originalType.getBaseSize()); // Restore original size
+            return reverted;
+        }
+        
+        // Fallback to messenger packet
+        MessengerPacket reverted = new MessengerPacket(PacketType.SQUARE_MESSENGER, getCurrentPosition(), getMovementVector());
         reverted.setNoiseLevel(getNoiseLevel());
         reverted.setTravelTime(getTravelTime());
         reverted.setMaxTravelTime(getMaxTravelTime());
-        reverted.setSize(originalType.getBaseSize()); // Restore original size
+        reverted.setSize(2); // Default size
         return reverted;
     }
 
@@ -176,9 +159,6 @@ public class ProtectedPacket extends Packet {
         return 5; // Protected packets always give 5 coins
     }
 
-    /**
-     * Override wire connection to randomize movement type.
-     */
     @Override
     public void setCurrentWire(WireConnection currentWire) {
         super.setCurrentWire(currentWire);

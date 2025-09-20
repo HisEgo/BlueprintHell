@@ -10,9 +10,6 @@ import java.util.Set;
 import java.util.HashSet;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Stores the game state at the beginning of a level for restart functionality.
- */
 class LevelStartState {
     private final int coins;
     private final int lostPacketsCount;
@@ -29,11 +26,6 @@ class LevelStartState {
     public double getRemainingWireLength() { return remainingWireLength; }
 }
 
-/**
- * Represents the current state of the game.
- * Tracks wire length, temporal progress, packet loss, coins, and active packets.
- * POJO class for serialization support.
- */
 public class GameState {
     private double remainingWireLength;
     private double temporalProgress;
@@ -172,9 +164,6 @@ public class GameState {
         this.gameSettings = gameSettings;
     }
 
-    /**
-     * Gets a double setting with fallback.
-     */
     @JsonIgnore
     public double getDoubleSetting(String key, double defaultValue) {
         Object v = gameSettings.get(key);
@@ -184,75 +173,45 @@ public class GameState {
         return defaultValue;
     }
 
-    /**
-     * Increments the lost packets counter.
-     */
     public void incrementLostPackets() {
         this.lostPacketsCount++;
     }
 
 
 
-    /**
-     * Gets the number of lost packets counted so far.
-     */
     public int getLostPacketsCount() {
         return lostPacketsCount;
     }
 
-    /**
-     * Sets the number of lost packets (for save/restore compatibility).
-     */
     public void setLostPacketsCount(int lostPacketsCount) {
         this.lostPacketsCount = lostPacketsCount;
     }
 
-    /**
-     * Returns whether system indicators should be drawn.
-     */
     public boolean isShowSystemIndicators() {
         return showSystemIndicators;
     }
 
-    /**
-     * Sets whether system indicators should be drawn.
-     */
     public void setShowSystemIndicators(boolean showSystemIndicators) {
         this.showSystemIndicators = showSystemIndicators;
     }
 
-    /**
-     * Adds a packet to the active packets list.
-     */
     public void addActivePacket(Packet packet) {
         activePackets.add(packet);
     }
 
-    /**
-     * Removes a packet from the active packets list.
-     */
     public void removeActivePacket(Packet packet) {
         activePackets.remove(packet);
     }
 
-    /**
-     * Gets the number of active packets.
-     */
     @JsonIgnore
     public int getActivePacketCount() {
         return activePackets.size();
     }
 
-    /**
-     * JSON serialization compatibility - adds activePacketCount property for save files.
-     */
     public void setActivePacketCount(int count) {
         // This is computed from activePackets.size(), so we ignore the setter
     }
 
-    /**
-     * Consumes wire length.
-     */
     public boolean consumeWireLength(double amount) {
         if (remainingWireLength >= amount) {
             remainingWireLength -= amount;
@@ -261,16 +220,10 @@ public class GameState {
         return false;
     }
 
-    /**
-     * Adds coins to the player's balance.
-     */
     public void addCoins(int amount) {
         coins += amount;
     }
 
-    /**
-     * Spends coins if the player has enough.
-     */
     public boolean spendCoins(int amount) {
         if (coins >= amount) {
             coins -= amount;
@@ -279,9 +232,6 @@ public class GameState {
         return false;
     }
 
-    /**
-     * Updates the temporal progress.
-     */
     public void updateTemporalProgress(double deltaTime) {
         if (!isPaused && !isGameOver && !isLevelComplete) {
             temporalProgress += deltaTime;
@@ -290,18 +240,12 @@ public class GameState {
         }
     }
 
-    /**
-     * Updates the level timer (should only be called during simulation mode).
-     */
     public void updateLevelTimer(double deltaTime) {
         if (!isPaused && !isGameOver && !isLevelComplete) {
             levelTimer += deltaTime;
         }
     }
 
-    /**
-     * Calculates the packet loss percentage.
-     */
     public double calculatePacketLossPercentage() {
         if (currentLevel == null) return 0.0;
 
@@ -313,9 +257,6 @@ public class GameState {
         return (double) totalLost / totalInjected * 100.0;
     }
 
-    /**
-     * Gets the total number of packets injected into the level.
-     */
     public int getTotalInjectedPackets() {
         if (currentLevel == null) return 0;
         // Prefer new direct packetSchedule list when present
@@ -332,9 +273,6 @@ public class GameState {
         return total;
     }
 
-    /**
-     * Gets the total number of packets lost.
-     */
     public int getTotalLostPackets() {
         int lost = lostPacketsCount;
         
@@ -364,19 +302,12 @@ public class GameState {
 
 
 
-    /**
-     * Clears all active packets (for temporal navigation rewind).
-     */
     public void clearActivePackets() {
         activePackets.clear();
-        java.lang.System.out.println("Cleared all active packets from game state");
     }
 
 
 
-    /**
-     * Gets the total number of packets successfully delivered.
-     */
     public int getTotalDeliveredPackets() {
         int delivered = 0;
         for (ReferenceSystem destSystem : currentLevel.getDestinationSystems()) {
@@ -385,9 +316,6 @@ public class GameState {
         return delivered;
     }
 
-    /**
-     * Checks if the game should end due to packet loss exceeding 50% or time limit exceeded.
-     */
     public boolean shouldEndGame() {
         // Primary rule: excessive loss triggers Game Over
         boolean tooManyLost = calculatePacketLossPercentage() > 50.0;
@@ -431,9 +359,6 @@ public class GameState {
         return lastGameOverReason;
     }
 
-    /**
-     * Checks if the level should be completed.
-     */
     public boolean shouldCompleteLevel() {
         if (currentLevel == null) return false;
 
@@ -443,13 +368,6 @@ public class GameState {
         // Treat time elapsed as a valid level completion path
         boolean timeElapsed = levelTimer >= currentLevel.getLevelDuration();
 
-        // Debug output to understand what's happening
-        if (levelTimer > 0 && (int)levelTimer % 2 == 0) { // Print every 2 seconds
-            java.lang.System.out.println("DEBUG shouldCompleteLevel: levelTimer=" + levelTimer +
-                    ", levelDuration=" + currentLevel.getLevelDuration() +
-                    ", timeElapsed=" + timeElapsed +
-                    ", activePackets.size=" + activePackets.size());
-        }
 
         // Don't complete level if no packets have been injected yet
         boolean anyPacketsInjected = false;
@@ -507,9 +425,6 @@ public class GameState {
                 // Only complete if we've had enough time for all packets to be processed
                 // For level1, this should be around 50 seconds (the level duration)
                 if (levelTimer >= currentLevel.getLevelDuration() * 0.5) { // Allow completion after 50% of time
-                    java.lang.System.out.println("DEBUG: Early level completing after all packets processed: " +
-                            "levelTimer=" + levelTimer + ", levelDuration=" + currentLevel.getLevelDuration() +
-                            ", totalDelivered=" + getTotalDeliveredPackets() + ", totalLost=" + getTotalLostPackets());
                     return true;
                 }
             }
@@ -541,9 +456,6 @@ public class GameState {
         return earlyCompletion;
     }
 
-    /**
-     * Resets the game state for a new level.
-     */
     public void resetForLevel(GameLevel level) {
         this.currentLevel = level;
         this.remainingWireLength = level.getInitialWireLength();
@@ -559,25 +471,16 @@ public class GameState {
         this.showSystemIndicators = true; // Indicators are always ON
     }
 
-    /**
-     * Saves the current state as the level start state for restart functionality.
-     */
     public void saveLevelStartState() {
         this.levelStartState = new LevelStartState(coins, lostPacketsCount, remainingWireLength);
-        java.lang.System.out.println("DEBUG: Saved level start state - coins: " + coins + ", lost: " + lostPacketsCount + ", wireLength: " + remainingWireLength);
     }
     
-    /**
-     * Restores the state to what it was at the beginning of the level.
-     */
     public void restoreToLevelStart() {
         if (levelStartState != null) {
             this.coins = levelStartState.getCoins();
             this.lostPacketsCount = levelStartState.getLostPacketsCount();
             this.remainingWireLength = levelStartState.getRemainingWireLength();
-            java.lang.System.out.println("DEBUG: Restored level start state - coins: " + coins + ", lost: " + lostPacketsCount + ", wireLength: " + remainingWireLength);
         } else {
-            java.lang.System.out.println("DEBUG: No level start state to restore");
         }
         
         // Reset other level-specific state
@@ -591,13 +494,6 @@ public class GameState {
         this.lastGameOverReason = GameOverReason.NONE;
     }
 
-    /**
-     * Determines whether the network is topologically disconnected, i.e.,
-     * there is no directed path from any source reference system to any
-     * destination reference system using active, non-destroyed wires and
-     * non-failed systems. Temporary deactivation is ignored to avoid
-     * spurious Game Over due to short cooldowns.
-     */
     private boolean isNetworkTopologicallyDisconnected() {
         if (currentLevel == null) return false;
 
@@ -689,11 +585,6 @@ public class GameState {
         return false;
     }
 
-    /**
-     * Checks if the proportion of permanently failed (not temporarily deactivated)
-     * systems exceeds the configured threshold (default 50%). Reference systems are
-     * included in the calculation only if they have failed.
-     */
     private boolean hasExcessiveFailedSystems() {
         if (currentLevel == null) return false;
         List<model.System> systems = currentLevel.getSystems();
@@ -713,24 +604,15 @@ public class GameState {
         return percentFailed > threshold;
     }
 
-    /**
-     * Gets a game setting value.
-     */
     @SuppressWarnings("unchecked")
     public <T> T getSetting(String key, T defaultValue) {
         return (T) gameSettings.getOrDefault(key, defaultValue);
     }
 
-    /**
-     * Sets a game setting value.
-     */
     public void setSetting(String key, Object value) {
         gameSettings.put(key, value);
     }
 
-    /**
-     * Gets all systems in the current level.
-     */
     public List<System> getSystems() {
         if (currentLevel != null) {
             return currentLevel.getSystems();
@@ -738,9 +620,6 @@ public class GameState {
         return new ArrayList<>();
     }
 
-    /**
-     * Gets all wire connections in the current level.
-     */
     public List<WireConnection> getWireConnections() {
         if (currentLevel != null) {
             return currentLevel.getWireConnections();
@@ -748,27 +627,18 @@ public class GameState {
         return new ArrayList<>();
     }
 
-    /**
-     * Adds a wire connection to the current level.
-     */
     public void addWireConnection(WireConnection connection) {
         if (currentLevel != null) {
             currentLevel.addWireConnection(connection);
         }
     }
 
-    /**
-     * Removes a wire connection from the current level.
-     */
     public void removeWireConnection(WireConnection connection) {
         if (currentLevel != null) {
             currentLevel.removeWireConnection(connection);
         }
     }
 
-    /**
-     * Checks if a wire connection exists between two ports.
-     */
     public boolean hasWireConnection(Port port1, Port port2) {
         if (currentLevel == null) return false;
 

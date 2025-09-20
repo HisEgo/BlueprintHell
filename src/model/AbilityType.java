@@ -33,16 +33,10 @@ public enum AbilityType {
         return description;
     }
 
-    /**
-     * Checks if this is a Phase 1 ability.
-     */
     public boolean isPhase1Ability() {
         return this == O_ATAR || this == O_AIRYAMAN || this == O_ANAHITA;
     }
 
-    /**
-     * Checks if this is a Phase 2 ability.
-     */
     public boolean isPhase2Ability() {
         return this == SCROLL_OF_AERGIA || this == SCROLL_OF_SISYPHUS || this == SCROLL_OF_ELIPHAS;
     }
@@ -52,3 +46,4 @@ public enum AbilityType {
         return displayName;
     }
 }
+

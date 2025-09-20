@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-/**
- * Merger system that reassembles bit packets into bulk packets.
- * Behaves like a normal system for non-bit packets.
- */
 public class MergerSystem extends System {
     private Map<String, List<Packet>> bitPacketGroups;
 
@@ -34,9 +30,6 @@ public class MergerSystem extends System {
         }
     }
 
-    /**
-     * Processes a bit packet by adding it to a group and checking for completion.
-     */
     private void processBitPacket(Packet bitPacket) {
         String bulkId = bitPacket.getBulkPacketId();
         if (bulkId == null) {
@@ -56,9 +49,6 @@ public class MergerSystem extends System {
         }
     }
 
-    /**
-     * Checks if a bit packet group is complete.
-     */
     private boolean isGroupComplete(List<Packet> group) {
         if (group == null || group.isEmpty()) return false;
 
@@ -75,9 +65,6 @@ public class MergerSystem extends System {
         return activeCount >= 8; // Minimum bulk packet size
     }
 
-    /**
-     * Reassembles bit packets into a bulk packet.
-     */
     private void reassembleBulkPacket(List<Packet> group, String bulkId) {
         // Create a new bulk packet
         BulkPacket bulkPacket = new BulkPacket(
@@ -108,10 +95,8 @@ public class MergerSystem extends System {
         }
     }
 
-    /**
-     * Gets the number of bit packet groups being tracked.
-     */
     public int getBitPacketGroupCount() {
         return bitPacketGroups.size();
     }
 }
+

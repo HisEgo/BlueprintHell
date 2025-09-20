@@ -1,9 +1,5 @@
 package model;
 
-/**
- * A concrete implementation of System for normal network systems.
- * Behaves as a standard system that processes packets normally.
- */
 public class NormalSystem extends System {
 
     public NormalSystem() {
@@ -36,3 +32,4 @@ public class NormalSystem extends System {
         return totalValue;
     }
 }
+

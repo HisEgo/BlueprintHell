@@ -11,9 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import controller.GameController;
 
-/**
- * Pause menu overlay that allows resuming, restarting the level, or returning to the main menu.
- */
 public class PauseView {
     private final GameController gameController;
     private final StackPane root;
@@ -120,3 +117,4 @@ public class PauseView {
         return isVisible;
     }
 }
+

@@ -4,10 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import java.util.Objects;
 
-/**
- * Represents a port on a system that can accept or output packets.
- * POJO class for serialization support.
- */
 @JsonIdentityInfo(generator = ObjectIdGenerators.UUIDGenerator.class)
 public class Port {
     private PortShape shape;
@@ -78,10 +74,6 @@ public class Port {
         this.currentPacket = currentPacket;
     }
 
-    /**
-     * Checks if this port can accept the given packet.
-     * Note: Ports can accept any packet, but compatibility affects movement mechanics.
-     */
     public boolean canAcceptPacket(Packet packet) {
         if (currentPacket != null) return false; // Port is occupied
 
@@ -89,11 +81,6 @@ public class Port {
         return packet != null && packet.isActive();
     }
 
-    /**
-     * Checks if this port is compatible with the given packet for optimal movement.
-     * Used for determining movement mechanics (compatible vs incompatible port behavior).
-     * Phase 2 spec: Port compatibility is not meaningful for confidential and bulk packets.
-     */
     public boolean isCompatibleWithPacket(Packet packet) {
         if (packet.getPacketType() != null) {
             switch (packet.getPacketType()) {
@@ -133,9 +120,6 @@ public class Port {
         return false;
     }
 
-    /**
-     * Accepts a packet into this port.
-     */
     public boolean acceptPacket(Packet packet) {
         if (!canAcceptPacket(packet)) return false;
 
@@ -143,25 +127,16 @@ public class Port {
         return true;
     }
 
-    /**
-     * Releases the packet from this port.
-     */
     public Packet releasePacket() {
         Packet packet = currentPacket;
         currentPacket = null;
         return packet;
     }
 
-    /**
-     * Checks if this port is empty and available.
-     */
     public boolean isEmpty() {
         return currentPacket == null;
     }
 
-    /**
-     * Gets the system connected to this port through a wire connection.
-     */
     public System getConnectedSystem() {
         if (!isConnected || parentSystem == null || parentSystem.getParentLevel() == null) {
             return null;
@@ -202,10 +177,6 @@ public class Port {
         return Objects.hash(parentSystem, position, isInput);
     }
 
-    /**
-     * Updates this port's position relative to its parent system.
-     * Used when the system is moved.
-     */
     public void updatePositionRelativeToSystem() {
         if (parentSystem != null) {
             Point2D systemPos = parentSystem.getPosition();
@@ -221,21 +192,12 @@ public class Port {
         }
     }
 
-    /**
-     * Gets the relative offset from the system center.
-     */
     private Vec2D relativeOffset = new Vec2D(0, 0);
 
-    /**
-     * Sets the relative offset from the system center.
-     */
     public void setRelativeOffset(Vec2D offset) {
         this.relativeOffset = offset;
     }
 
-    /**
-     * Gets the relative offset from the system center.
-     */
     public Vec2D getRelativeOffset() {
         return relativeOffset;
     }
@@ -251,3 +213,4 @@ public class Port {
                 '}';
     }
 }
+

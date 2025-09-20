@@ -9,10 +9,6 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.ArrayDeque;
 
-/**
- * Represents a snapshot of the game state at a specific point in time.
- * Used for temporal navigation to store and restore game states.
- */
 public class TemporalState {
     private final double time;
     private final List<Packet> activePackets;
@@ -86,9 +82,6 @@ public class TemporalState {
         }
     }
 
-    /**
-     * Creates a deep copy of a packet for temporal state storage.
-     */
     private Packet createPacketCopy(Packet original) {
         // Create packet using the same type as original
         Packet copy = createPacketByType(original.getPacketType(), original.getCurrentPosition(), original.getMovementVector());
@@ -114,9 +107,6 @@ public class TemporalState {
         return copy;
     }
 
-    /**
-     * Creates a packet instance based on packet type.
-     */
     private Packet createPacketByType(PacketType packetType, Point2D position, Vec2D movementVector) {
         if (packetType == null) {
             return new MessengerPacket(PacketType.SQUARE_MESSENGER, position, movementVector);
@@ -148,9 +138,6 @@ public class TemporalState {
         }
     }
 
-    /**
-     * Restores this temporal state to the game state and level.
-     */
     public void restoreTo(GameState gameState, GameLevel level) {
         // Restore basic game state
         gameState.setTemporalProgress(this.temporalProgress);
@@ -248,3 +235,4 @@ public class TemporalState {
     public boolean isGameOver() { return isGameOver; }
     public boolean isLevelComplete() { return isLevelComplete; }
 }
+

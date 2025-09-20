@@ -45,52 +45,31 @@ public enum PacketType {
         return baseCoinValue;
     }
 
-    /**
-     * Checks if this packet type is a messenger packet.
-     */
     public boolean isMessenger() {
         return this == SMALL_MESSENGER || this == SQUARE_MESSENGER ||
                 this == TRIANGLE_MESSENGER;
     }
 
-    /**
-     * Checks if this packet type is a protected packet.
-     */
     public boolean isProtected() {
         return this == PROTECTED || this == CONFIDENTIAL_PROTECTED;
     }
 
-    /**
-     * Checks if this packet type is a confidential packet.
-     */
     public boolean isConfidential() {
         return this == CONFIDENTIAL || this == CONFIDENTIAL_PROTECTED;
     }
 
-    /**
-     * Checks if this packet type is a bulk packet.
-     */
     public boolean isBulk() {
         return this == BULK_SMALL || this == BULK_LARGE;
     }
 
-    /**
-     * Checks if this packet type is a bit packet.
-     */
     public boolean isBitPacket() {
         return this == BIT_PACKET;
     }
 
-    /**
-     * Checks if this packet type is a trojan packet.
-     */
     public boolean isTrojan() {
         return this == TROJAN;
     }
 
-    /**
-     * Gets the original messenger type for protected packets.
-     */
     public PacketType getOriginalType() {
         if (this == PROTECTED) {
             // Return a random messenger type
@@ -102,9 +81,6 @@ public enum PacketType {
         return this;
     }
 
-    /**
-     * Converts a protected packet back to its original type.
-     */
     public PacketType convertFromProtected() {
         if (this == PROTECTED) {
             return getOriginalType();
@@ -119,3 +95,4 @@ public enum PacketType {
         return displayName;
     }
 }
+

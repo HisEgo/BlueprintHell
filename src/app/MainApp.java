@@ -15,15 +15,8 @@ import model.GameLevel;
 
 import java.awt.*;
 
-/**
- * Main application class for the Network Simulation Game.
- * Launches with an undecorated, non-resizable, non-movable window.
- */
 public class MainApp {
     
-    /**
-     * Inner Application class to handle JavaFX lifecycle.
-     */
     public static class AppLauncher extends Application {
         private static MainApp mainApp;
         
@@ -38,9 +31,6 @@ public class MainApp {
         }
     }
     
-    /**
-     * Launch method to start the application.
-     */
     public static void launch(Class<? extends MainApp> appClass, String[] args) {
         Application.launch(AppLauncher.class, args);
     }
@@ -65,9 +55,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Initializes the application components.
-     */
     private void initializeApplication() {
         // Initialize game state and controller
         gameState = new GameState();
@@ -87,9 +74,6 @@ public class MainApp {
         configurePrimaryStage();
     }
 
-    /**
-     * Configures the primary stage with undecorated style and fullscreen.
-     */
     private void configurePrimaryStage() {
         primaryStage.initStyle(StageStyle.UNDECORATED);
         primaryStage.setResizable(false);
@@ -109,9 +93,6 @@ public class MainApp {
         });
     }
 
-    /**
-     * Shows the main menu.
-     */
     public void showMainMenu() {
         // Use setRoot instead of creating a new Scene to avoid the "already set as root" error
         if (primaryStage.getScene() == null) {
@@ -123,9 +104,6 @@ public class MainApp {
         primaryStage.show();
     }
 
-    /**
-     * Starts a new game with the specified level.
-     */
     public void startGame(String levelId) {
         try {
             java.lang.System.out.println("MainApp.startGame called with levelId: " + levelId);
@@ -139,9 +117,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Starts a fresh game with the specified level (no wire connections preserved).
-     */
     public void startFreshGame(String levelId) {
         try {
             java.lang.System.out.println("MainApp.startFreshGame called with levelId: " + levelId);
@@ -158,9 +133,6 @@ public class MainApp {
 
 
 
-    /**
-     * Shows dialog asking if user wants to continue previous game.
-     */
     private void showContinuePreviousGameDialog(String newLevelId) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Continue Previous Game");
@@ -181,9 +153,6 @@ public class MainApp {
         });
     }
 
-    /**
-     * Continues game from save file.
-     */
     private void continueFromSaveFile() {
         try {
             if (gameController.loadSavedGame()) {
@@ -201,9 +170,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Starts a new game with the specified level.
-     */
     private void startNewGame(String levelId) {
         try {
             // Load the level first
@@ -250,9 +216,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Shows the static game state for a few seconds before resuming the game.
-     */
     private void showStaticGameStateAndResume() {
         try {
             // Switch to game view first
@@ -289,9 +252,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Shows the level selection screen.
-     */
     public void showLevelSelect() {
         try {
             if (primaryStage.getScene() == null) {
@@ -305,9 +265,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Shows the game settings screen.
-     */
     public void showSettings() {
         try {
             if (primaryStage.getScene() == null) {
@@ -321,9 +278,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Returns to the main menu.
-     */
     public void returnToMainMenu() {
         // Disable auto-save when manually returning to main menu
         if (gameController != null) {
@@ -334,9 +288,6 @@ public class MainApp {
         showMainMenu();
     }
 
-    /**
-     * Restarts the current level.
-     */
     public void restartCurrentLevel() {
         if (gameController != null && gameController.getGameState() != null) {
             GameLevel currentLevel = gameController.getGameState().getCurrentLevel();
@@ -358,7 +309,6 @@ public class MainApp {
                     primaryStage.show();
                     primaryStage.requestFocus();
                     primaryStage.toFront();
-                    System.out.println("DEBUG: Switched to game view after restart");
                 } catch (Exception e) {
                     System.err.println("Failed to switch to game view after restart: " + e.getMessage());
                 }
@@ -366,10 +316,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Restarts the current level immediately, bypassing any save-file prompts.
-     * Used by in-game pause menu restart.
-     */
     public void restartCurrentLevelNow() {
         if (gameController != null && gameController.getGameState() != null) {
             GameLevel currentLevel = gameController.getGameState().getCurrentLevel();
@@ -393,7 +339,6 @@ public class MainApp {
                     primaryStage.show();
                     primaryStage.requestFocus();
                     primaryStage.toFront();
-                    System.out.println("DEBUG: Switched to game view after pause menu restart");
                 } catch (Exception e) {
                     System.err.println("Failed to switch to game view after pause menu restart: " + e.getMessage());
                 }
@@ -401,9 +346,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Minimizes other open applications.
-     */
     private void minimizeOtherApplications() {
         try {
             // First, ensure our game window is focused and visible
@@ -430,9 +372,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Minimizes applications on Windows using Robot class.
-     */
     private void minimizeWindowsApplications() {
         try {
             // Use Robot to press Windows + D to show desktop (more reliable than Windows + M)
@@ -453,9 +392,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Minimizes applications on macOS.
-     */
     private void minimizeMacApplications() {
         try {
             // Use Robot to press Command + H to hide applications
@@ -476,9 +412,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Minimizes applications on Linux.
-     */
     private void minimizeLinuxApplications() {
         try {
             // Use Robot to press Super + D to show desktop (most Linux DEs)
@@ -499,9 +432,6 @@ public class MainApp {
         }
     }
 
-    /**
-     * Shows an exit confirmation dialog.
-     */
     private void showExitConfirmation() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Exit Game");
@@ -522,9 +452,6 @@ public class MainApp {
         });
     }
 
-    /**
-     * Shows an error dialog.
-     */
     private void showErrorDialog(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
@@ -533,23 +460,14 @@ public class MainApp {
         alert.showAndWait();
     }
 
-    /**
-     * Gets the game controller.
-     */
     public GameController getGameController() {
         return gameController;
     }
 
-    /**
-     * Gets the game state.
-     */
     public GameState getGameState() {
         return gameState;
     }
 
-    /**
-     * Gets the primary stage.
-     */
     public Stage getPrimaryStage() {
         return primaryStage;
     }

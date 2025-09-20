@@ -23,58 +23,34 @@ public enum SystemType {
         return displayName;
     }
 
-    /**
-     * Checks if this system type is a reference system.
-     */
     public boolean isReference() {
         return this == REFERENCE;
     }
 
-    /**
-     * Checks if this system type is a spy system.
-     */
     public boolean isSpy() {
         return this == SPY;
     }
 
-    /**
-     * Checks if this system type is a saboteur system.
-     */
     public boolean isSaboteur() {
         return this == SABOTEUR;
     }
 
-    /**
-     * Checks if this system type is a VPN system.
-     */
     public boolean isVPN() {
         return this == VPN;
     }
 
-    /**
-     * Checks if this system type is an anti-trojan system.
-     */
     public boolean isAntiTrojan() {
         return this == ANTI_TROJAN;
     }
 
-    /**
-     * Checks if this system type is a distributor system.
-     */
     public boolean isDistributor() {
         return this == DISTRIBUTOR;
     }
 
-    /**
-     * Checks if this system type is a merger system.
-     */
     public boolean isMerger() {
         return this == MERGER;
     }
 
-    /**
-     * Checks if this system type can be moved by the player.
-     */
     public boolean isMovable() {
         return this != REFERENCE; // Only reference systems cannot be moved
     }
@@ -84,3 +60,4 @@ public enum SystemType {
         return displayName;
     }
 }
+

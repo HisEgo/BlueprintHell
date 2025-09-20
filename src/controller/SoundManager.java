@@ -7,10 +7,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Manages sound effects and background music for the game.
- * Implements complete audio functionality with fallback mechanisms.
- */
 public class SoundManager {
     private MediaPlayer backgroundMusic;
     private Map<String, AudioClip> soundEffects;
@@ -199,3 +195,4 @@ public class SoundManager {
         soundEffects.clear();
     }
 }
+

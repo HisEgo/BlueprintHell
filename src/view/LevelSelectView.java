@@ -12,10 +12,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import controller.GameController;
 
-/**
- * Level selection view for choosing game levels.
- * Enhanced for Phase 2 with 5 consecutive levels and increasing difficulty.
- */
 public class LevelSelectView {
     private GameController gameController;
     private StackPane root;
@@ -149,3 +145,4 @@ public class LevelSelectView {
         return root;
     }
 }
+

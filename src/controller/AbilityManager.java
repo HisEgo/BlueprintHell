@@ -3,10 +3,6 @@ package controller;
 import model.*;
 import java.util.*;
 
-/**
- * Manages active abilities and their effects on the game world.
- * Handles point selection, duration tracking, and ability-specific mechanics.
- */
 public class AbilityManager {
 
     // Active ability effects with their expiration times
@@ -27,9 +23,6 @@ public class AbilityManager {
         this.awaitingPointSelection = false;
     }
 
-    /**
-     * Activates an ability, starting point selection if needed.
-     */
     public boolean activateAbility(AbilityType abilityType, Point2D clickPoint) {
         switch (abilityType) {
             case SCROLL_OF_AERGIA:
@@ -43,9 +36,6 @@ public class AbilityManager {
         }
     }
 
-    /**
-     * Activates Scroll of Aergia - sets acceleration to zero at a point.
-     */
     private boolean activateAergia(Point2D clickPoint) {
         WireConnection wire = findWireAtPoint(clickPoint);
         if (wire == null) {
@@ -65,9 +55,6 @@ public class AbilityManager {
         return true;
     }
 
-    /**
-     * Activates Scroll of Sisyphus - enables system movement.
-     */
     private boolean activateSisyphus(Point2D clickPoint) {
         // Find system at click point
         model.System targetSystem = findSystemAtPoint(clickPoint);
@@ -84,9 +71,6 @@ public class AbilityManager {
         return true;
     }
 
-    /**
-     * Activates Scroll of Eliphas - realigns packet centers continuously.
-     */
     private boolean activateEliphas(Point2D clickPoint) {
         WireConnection wire = findWireAtPoint(clickPoint);
         if (wire == null) {
@@ -105,9 +89,6 @@ public class AbilityManager {
         return true;
     }
 
-    /**
-     * Updates all active ability effects.
-     */
     public void update(double deltaTime) {
         List<String> expiredEffects = new ArrayList<>();
 
@@ -127,18 +108,12 @@ public class AbilityManager {
         }
     }
 
-    /**
-     * Applies all active ability effects to packets.
-     */
     public void applyEffects(List<Packet> packets) {
         for (AbilityEffect effect : activeEffects.values()) {
             effect.applyToPackets(packets);
         }
     }
 
-    /**
-     * Checks if a system can be moved (Sisyphus effect active).
-     */
     public boolean canMoveSystem(model.System system) {
         for (AbilityEffect effect : activeEffects.values()) {
             if (effect instanceof SisyphusEffect) {
@@ -151,9 +126,6 @@ public class AbilityManager {
         return false;
     }
 
-    /**
-     * Moves a system if Sisyphus effect allows it.
-     */
     public boolean moveSystem(model.System system, Point2D newPosition) {
         if (!canMoveSystem(system)) {
             return false;
@@ -191,9 +163,6 @@ public class AbilityManager {
         return true;
     }
 
-    /**
-     * Finds the wire closest to a click point.
-     */
     private WireConnection findWireAtPoint(Point2D clickPoint) {
         if (gameController.getGameState() == null || gameController.getGameState().getWireConnections() == null) {
             return null;
@@ -215,9 +184,6 @@ public class AbilityManager {
         return closestWire;
     }
 
-    /**
-     * Finds the system at a click point.
-     */
     private model.System findSystemAtPoint(Point2D clickPoint) {
         if (gameController.getGameState() == null || gameController.getGameState().getCurrentLevel() == null) {
             return null;
@@ -235,18 +201,13 @@ public class AbilityManager {
         return null;
     }
 
-    /**
-     * Gets all active effects for debugging/UI purposes.
-     */
     public List<AbilityEffect> getActiveEffects() {
         return new ArrayList<>(activeEffects.values());
     }
 
-    /**
-     * Clears all active effects.
-     */
     public void clearAllEffects() {
         activeEffects.clear();
     }
 }
+
 

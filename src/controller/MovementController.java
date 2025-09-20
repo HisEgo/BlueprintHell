@@ -3,10 +3,6 @@ package controller;
 import model.*;
 import java.util.List;
 
-/**
- * Controls packet movement with acceleration and deceleration.
- * Enhanced for uniform motion on straight and curved wire paths.
- */
 public class MovementController {
 
     // Movement constants for smooth motion
@@ -24,33 +20,14 @@ public class MovementController {
     public MovementController() {
     }
 
-    /**
-     * Updates packet positions with smooth movement.
-     * Handles both wire-based and free movement.
-     */
     public void updatePackets(List<Packet> packets, double deltaTime) {
         updatePackets(packets, deltaTime, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates packet positions with smooth movement.
-     * Handles both wire-based and free movement.
-     * @param packets List of packets to update
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
-     */
     public void updatePackets(List<Packet> packets, double deltaTime, boolean useSmoothCurves) {
         updatePackets(packets, deltaTime, useSmoothCurves, 1.0); // Default acceleration factor
     }
-    
-    /**
-     * Updates packet positions with smooth movement and acceleration factor.
-     * Handles both wire-based and free movement.
-     * @param packets List of packets to update
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
-     * @param accelerationFactor Speed multiplier for fast simulation
-     */
+
     public void updatePackets(List<Packet> packets, double deltaTime, boolean useSmoothCurves, double accelerationFactor) {
         double acceleratedDeltaTime = deltaTime * accelerationFactor;
         for (Packet packet : packets) {
@@ -60,21 +37,10 @@ public class MovementController {
         }
     }
 
-    /**
-     * Updates a single packet's movement.
-     * Handles wire-based movement with uniform motion on curved paths.
-     */
     private void updatePacketMovement(Packet packet, double deltaTime) {
         updatePacketMovement(packet, deltaTime, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates a single packet's movement.
-     * Handles wire-based movement with uniform motion on both curved and rigid paths.
-     * @param packet Packet to update
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
-     */
     private void updatePacketMovement(Packet packet, double deltaTime, boolean useSmoothCurves) {
         if (packet.isOnWire()) {
             // Use path-based movement for packets on wires
@@ -85,23 +51,10 @@ public class MovementController {
         }
     }
 
-    /**
-     * Updates movement for packets traveling along wire paths.
-     * Ensures uniform appearance of motion on both straight and curved wires.
-     * Enhanced for Phase 2 with packet-specific acceleration profiles.
-     */
     private void updateWireBasedMovement(Packet packet, double deltaTime) {
         updateWireBasedMovement(packet, deltaTime, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates movement for packets traveling along wire paths.
-     * Ensures uniform appearance of motion on both straight and curved wires.
-     * Enhanced for Phase 2 with packet-specific acceleration profiles.
-     * @param packet Packet to update
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for wire movement; if false, uses rigid polyline
-     */
     private void updateWireBasedMovement(Packet packet, double deltaTime, boolean useSmoothCurves) {
         WireConnection wire = packet.getCurrentWire();
         if (wire == null) {
@@ -144,20 +97,10 @@ public class MovementController {
         }
     }
 
-    /**
-     * Updates movement vector based on path direction for visual effects.
-     */
     private void updateMovementVectorFromPath(Packet packet, WireConnection wire, double deltaTime) {
         updateMovementVectorFromPath(packet, wire, deltaTime, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates movement vector based on path direction for visual effects.
-     * @param packet Packet to update
-     * @param wire Wire connection the packet is traveling on
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
-     */
     private void updateMovementVectorFromPath(Packet packet, WireConnection wire, double deltaTime, boolean useSmoothCurves) {
         double currentProgress = packet.getPathProgress();
         double speed = packet.getBaseSpeed();
@@ -182,9 +125,6 @@ public class MovementController {
         }
     }
 
-    /**
-     * Updates movement for packets not on wires (free movement).
-     */
     private void updateFreeMovement(Packet packet, double deltaTime) {
         // Apply acceleration/deceleration for smooth movement
         Vec2D currentVelocity = packet.getMovementVector();
@@ -198,11 +138,6 @@ public class MovementController {
         packet.updatePosition(deltaTime);
     }
 
-    /**
-     * Calculates target speed based on packet properties and environment.
-     * Consolidated speed calculation to avoid multiple scaling conflicts.
-     * Includes ability effects like Scroll of Aergia and Phase 2 long wire acceleration.
-     */
     private double calculateTargetSpeed(Packet packet) {
         // Start with packet-specific base speed from Phase 2 specifications
         double baseSpeed = getPacketBaseSpeed(packet);
@@ -229,9 +164,6 @@ public class MovementController {
         return Math.max(MIN_SPEED, Math.min(MAX_SPEED * 1.5, baseSpeed));
     }
 
-    /**
-     * Gets the base speed for a packet based on its type and Phase 2 specifications.
-     */
     private double getPacketBaseSpeed(Packet packet) {
         if (packet.getPacketType() == null) {
             return 60.0; // Default speed
@@ -259,19 +191,12 @@ public class MovementController {
         }
     }
 
-    /**
-     * Applies environmental factors like noise level to the speed.
-     */
     private double applyEnvironmentalFactors(Packet packet, double baseSpeed) {
         // Adjust speed based on noise level (higher noise reduces speed)
         double noiseMultiplier = 1.0 - Math.min(0.5, packet.getNoiseLevel() / 10.0);
         return baseSpeed * noiseMultiplier;
     }
 
-    /**
-     * Determines if a packet should accelerate on a long wire based on its movement protocol.
-     * Phase 2 requirement: packets accelerate on long wires depending on their movement protocols.
-     */
     private boolean shouldAccelerateOnLongWire(Packet packet, WireConnection wire) {
         if (wire == null || wire.getTotalLength() <= LONG_WIRE_THRESHOLD) {
             return false;
@@ -304,10 +229,6 @@ public class MovementController {
         }
     }
 
-    /**
-     * Applies ability effects to packet movement.
-     * Should be called from GameController when abilities are active.
-     */
     public void applyAbilityEffects(Packet packet, List<model.AbilityType> activeAbilities) {
         if (activeAbilities == null) return;
 
@@ -327,19 +248,12 @@ public class MovementController {
         }
     }
 
-    /**
-     * Checks if a packet is at a selected point for Scroll of Aergia ability.
-     * This is a placeholder implementation - could be enhanced to track specific points.
-     */
     private boolean isPacketAtSelectedPoint(Packet packet) {
         // For now, apply to packets at certain progress points
         double progress = packet.getPathProgress();
         return progress > 0.25 && progress < 0.75; // Middle section of wire
     }
 
-    /**
-     * Checks if a packet has reached its destination along the wire.
-     */
     public boolean hasPacketReachedDestination(Packet packet) {
         if (packet.isOnWire()) {
             return packet.getPathProgress() >= 1.0;
@@ -349,9 +263,6 @@ public class MovementController {
         return false;
     }
 
-    /**
-     * Calculates acceleration for smooth movement (used in free movement).
-     */
     private Vec2D calculateAcceleration(Packet packet) {
         Vec2D currentVelocity = packet.getMovementVector();
         double currentSpeed = currentVelocity.magnitude();
@@ -374,9 +285,6 @@ public class MovementController {
         return new Vec2D(0, 0);
     }
 
-    /**
-     * Initializes a packet for wire-based movement.
-     */
     public void initializePacketOnWire(Packet packet, WireConnection wire) {
         packet.setCurrentWire(wire);
         packet.setPathProgress(0.0);
@@ -384,10 +292,6 @@ public class MovementController {
         packet.updatePositionOnWire();
     }
 
-    /**
-     * Checks if a packet's speed exceeds the threshold that would damage systems.
-     * Phase 2 requirement: High-speed packets can deactivate destination systems.
-     */
     public boolean isPacketSpeedDamaging(Packet packet) {
         if (packet == null || !packet.isActive()) {
             return false;
@@ -397,25 +301,15 @@ public class MovementController {
         return packetSpeed > SPEED_THRESHOLD_FOR_SYSTEM_DAMAGE;
     }
 
-    /**
-     * Gets the speed threshold for system damage.
-     */
     public double getSpeedThresholdForSystemDamage() {
         return SPEED_THRESHOLD_FOR_SYSTEM_DAMAGE;
     }
 
-    /**
-     * Removes a packet from wire-based movement.
-     */
     public void removePacketFromWire(Packet packet) {
         packet.setCurrentWire(null);
         packet.setPathProgress(0.0);
     }
 
-    /**
-     * Gets the acceleration profile for a packet based on its type and port compatibility.
-     * Phase 2 requirement: Different packet types have specific acceleration behaviors.
-     */
     private AccelerationProfile getAccelerationProfile(Packet packet, WireConnection wire) {
         PacketType packetType = packet.getPacketType();
         boolean isCompatiblePort = isPortCompatible(packet, wire);
@@ -429,9 +323,6 @@ public class MovementController {
         return getAccelerationProfileForType(packetType, isCompatiblePort);
     }
 
-    /**
-     * Gets acceleration profile for a specific packet type and port compatibility.
-     */
     private AccelerationProfile getAccelerationProfileForType(PacketType packetType, boolean isCompatiblePort) {
         if (packetType == null) {
             return new AccelerationProfile(AccelerationType.CONSTANT_VELOCITY, DEFAULT_ACCELERATION);
@@ -473,9 +364,6 @@ public class MovementController {
         }
     }
 
-    /**
-     * Applies the acceleration profile to update packet speed.
-     */
     private double applyAccelerationProfile(Packet packet, double currentSpeed, double targetSpeed,
                                             AccelerationProfile profile, double deltaTime) {
         switch (profile.getType()) {
@@ -508,9 +396,6 @@ public class MovementController {
         }
     }
 
-    /**
-     * Checks if a packet is compatible with the source port of a wire.
-     */
     private boolean isPortCompatible(Packet packet, WireConnection wire) {
         if (wire == null || wire.getSourcePort() == null) {
             return true; // Default to compatible if no port info
@@ -519,9 +404,6 @@ public class MovementController {
         return wire.getSourcePort().isCompatibleWithPacket(packet);
     }
 
-    /**
-     * Enum for different acceleration types.
-     */
     public enum AccelerationType {
         CONSTANT_VELOCITY,      // Maintains constant speed
         CONSTANT_ACCELERATION,  // Continuously accelerates at constant rate
@@ -529,9 +411,6 @@ public class MovementController {
         DECELERATION          // Continuously decelerates
     }
 
-    /**
-     * Class representing an acceleration profile for packet movement.
-     */
     public static class AccelerationProfile {
         private final AccelerationType type;
         private final double acceleration;
@@ -550,3 +429,4 @@ public class MovementController {
         }
     }
 }
+

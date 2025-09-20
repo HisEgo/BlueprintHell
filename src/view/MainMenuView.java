@@ -13,10 +13,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import app.MainApp;
 
-
-/**
- * Main menu view with navigation buttons.
- */
 public class MainMenuView {
     private MainApp mainApp;
     private StackPane root;
@@ -32,9 +28,6 @@ public class MainMenuView {
         initializeUI();
     }
 
-    /**
-     * Initializes the user interface.
-     */
     private void initializeUI() {
         // Create root container
         root = new StackPane();
@@ -77,15 +70,10 @@ public class MainMenuView {
         root.getChildren().addAll(background, menuContainer);
     }
 
-    /**
-     * Creates the menu buttons.
-     */
     private void createButtons() {
         // Fresh Start button - starts with no wire connections
         freshStartButton = createMenuButton("Fresh Start");
         freshStartButton.setOnAction(e -> mainApp.startFreshGame("level1"));
-
-
 
         // Game Levels button
         gameLevelsButton = createMenuButton("Game Levels");
@@ -102,9 +90,6 @@ public class MainMenuView {
                         javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST)));
     }
 
-    /**
-     * Creates a styled menu button.
-     */
     private Button createMenuButton(String text) {
         Button button = new Button(text);
         button.setPrefWidth(200);
@@ -142,10 +127,8 @@ public class MainMenuView {
         return button;
     }
 
-    /**
-     * Gets the root node of this view.
-     */
     public StackPane getRoot() {
         return root;
     }
 }
+

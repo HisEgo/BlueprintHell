@@ -15,10 +15,6 @@ import java.util.Map;
 import java.util.List;
 import model.WireBend;
 
-/**
- * Handles keyboard and mouse input for the game.
- * Supports custom key bindings with duplicate prevention.
- */
 public class InputHandler {
     private GameController gameController;
     private boolean isWiringMode;
@@ -78,9 +74,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Remaps a key binding.
-     */
     public boolean remapKey(String action, KeyCode newKey) {
         // Check if the new key is already assigned to another action
         if (reverseKeyBindings.containsKey(newKey)) {
@@ -103,16 +96,10 @@ public class InputHandler {
         return true;
     }
 
-    /**
-     * Gets the current key binding for an action.
-     */
     public KeyCode getKeyBinding(String action) {
         return keyBindings.get(action);
     }
 
-    /**
-     * Resets key bindings to defaults.
-     */
     public void resetKeyBindings() {
         this.keyBindings = new HashMap<>(DEFAULT_BINDINGS);
         this.reverseKeyBindings.clear();
@@ -121,16 +108,10 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Gets all current key bindings.
-     */
     public Map<String, KeyCode> getAllKeyBindings() {
         return new HashMap<>(keyBindings);
     }
 
-    /**
-     * Handles key press events.
-     */
     public void handleKeyPress(KeyEvent event) {
         KeyCode code = event.getCode();
         
@@ -172,7 +153,6 @@ public class InputHandler {
                 selectedWire = null;
                 firstSelectedWireForMerge = null;
                 selectedBendIndex = -1;
-                java.lang.System.out.println("DEBUG: Bend creation mode toggled: " + (isBendCreationMode ? "ON" : "OFF"));
                 break;
             case "wire_merge_mode":
                 // Toggle wire merge mode
@@ -252,9 +232,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles key release events.
-     */
     public void handleKeyRelease(KeyEvent event) {
         KeyCode code = event.getCode();
 
@@ -280,9 +257,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse press events.
-     */
     public void handleMousePress(MouseEvent event) {
         if (gameController == null) return;
 
@@ -326,9 +300,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse drag events.
-     */
     public void handleMouseDrag(MouseEvent event) {
         // Only allow wiring and bend operations in editing mode
         if (gameController.isEditingMode()) {
@@ -359,9 +330,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse release events.
-     */
     public void handleMouseRelease(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
             if (isWiringMode && selectedPort != null) {
@@ -390,10 +358,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles temporal navigation with improved step sizes and visual feedback.
-     * Now uses smaller steps for more precise navigation.
-     */
     private void handleTemporalNavigation(int direction) {
         if (gameController != null && gameController.isSimulationMode()) {
             double currentProgress = gameController.getGameState().getTemporalProgress();
@@ -423,28 +387,18 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Toggles the shop view.
-     */
     private void toggleShop() {
         if (gameController != null) {
             gameController.toggleShop();
         }
     }
 
-    /**
-     * Starts the simulation (Run button functionality).
-     */
     private void startSimulation() {
         if (gameController != null) {
             gameController.enterSimulationMode();
         }
     }
 
-    /**
-     * Toggles system indicators on/off globally.
-     * Indicators are drawn only if this global flag is ON and the system is fully connected.
-     */
     private void toggleSystemIndicators() {
         if (gameController == null || gameController.getGameState() == null) {
             java.lang.System.out.println("ERROR: Cannot toggle indicators - gameController or gameState is null");
@@ -466,9 +420,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Toggles pause/resume.
-     */
     private void handlePauseOrMenu() {
         if (gameController == null) return;
         // If in simulation, toggle pause and show/hide pause overlay
@@ -494,9 +445,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse press in wiring mode.
-     */
     private void handleWiringMousePress(MouseEvent event) {
         // Find port at mouse position
         Port port = findPortAtPosition(event.getX(), event.getY());
@@ -515,9 +463,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse press in bend creation mode.
-     */
     private void handleBendCreationMousePress(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
@@ -565,10 +510,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Finds a wire with a bend at the given position.
-     * Improved to find the CLOSEST bend instead of the first bend found.
-     */
     private WireConnection findWireWithBendAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
@@ -594,10 +535,6 @@ public class InputHandler {
         return closestWire;
     }
 
-    /**
-     * Finds the index of a bend at the given position.
-     * Improved to find the CLOSEST bend instead of the first bend found.
-     */
     private int findBendIndexAtPosition(WireConnection connection, Point2D position) {
         int closestBendIndex = -1;
         double closestDistance = Double.MAX_VALUE;
@@ -614,25 +551,16 @@ public class InputHandler {
         return closestBendIndex;
     }
 
-    /**
-     * Handles mouse release in wiring mode.
-     */
     private void handleWiringMouseRelease(MouseEvent event) {
         // Clear wire preview
         clearWirePreview();
     }
 
-    /**
-     * Handles regular mouse press (non-wiring mode).
-     */
     private void handleRegularMousePress(MouseEvent event) {
         // Handle system selection, menu clicks, etc.
         
     }
 
-    /**
-     * Handles right-click wire removal.
-     */
     private void handleRightClickWireRemoval(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
@@ -662,9 +590,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles mouse press in wire merge mode.
-     */
     private void handleWireMergeMousePress(MouseEvent event) {
         // Convert screen coordinates to world coordinates for proper wire detection
         Point2D worldClickPos = gameController.getGameView().screenToWorld(event.getX(), event.getY());
@@ -706,9 +631,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Finds a port at the given screen position.
-     */
     private Port findPortAtPosition(double x, double y) {
         if (gameController == null || gameController.getGameState() == null) {
             
@@ -753,9 +675,6 @@ public class InputHandler {
         return distance <= 15.0; // 15 pixel radius for port detection
     }
 
-    /**
-     * Creates a wire connection between two ports.
-     */
     private void createWireConnection(Port port1, Port port2) {
         
 
@@ -868,9 +787,6 @@ public class InputHandler {
     // Holds last human-readable reason set by canCreateConnection
     private String lastConnectionFailureReason = null;
 
-    /**
-     * Shows wire preview during dragging.
-     */
     private void showWirePreview(MouseEvent event) {
         if (selectedPort != null && gameController != null && gameController.getGameView() != null) {
             Point2D start = selectedPort.getPosition();
@@ -885,39 +801,24 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Clears wire preview.
-     */
     private void clearWirePreview() {
         if (gameController != null && gameController.getGameView() != null) {
             gameController.getGameView().clearWirePreview();
         }
     }
 
-    /**
-     * Gets whether wiring mode is active.
-     */
     public boolean isWiringMode() {
         return isWiringMode;
     }
 
-    /**
-     * Gets whether bend creation mode is active.
-     */
     public boolean isBendCreationMode() {
         return isBendCreationMode;
     }
 
-    /**
-     * Gets whether wire merge mode is active.
-     */
     public boolean isWireMergeMode() {
         return isWireMergeMode;
     }
 
-    /**
-     * Starts ability targeting mode for Phase 2 abilities.
-     */
     public void startAbilityTargeting(AbilityType abilityType) {
         this.isAbilityTargetingMode = true;
         this.pendingAbility = abilityType;
@@ -934,9 +835,6 @@ public class InputHandler {
         java.lang.System.out.println(message);
     }
 
-    /**
-     * Gets the targeting message for an ability.
-     */
     private String getAbilityTargetingMessage(AbilityType abilityType) {
         switch (abilityType) {
             case SCROLL_OF_AERGIA:
@@ -950,9 +848,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Handles ability targeting click.
-     */
     private void handleAbilityTargeting(MouseEvent event) {
         if (!isAbilityTargetingMode || pendingAbility == null) {
             return;
@@ -972,52 +867,30 @@ public class InputHandler {
         pendingAbility = null;
     }
 
-    /**
-     * Gets whether ability targeting mode is active.
-     */
     public boolean isAbilityTargetingMode() {
         return isAbilityTargetingMode;
     }
 
-    /**
-     * Gets the pending ability for targeting.
-     */
     public AbilityType getPendingAbility() {
         return pendingAbility;
     }
 
-    /**
-     * Gets the currently selected port.
-     */
     public Port getSelectedPort() {
         return selectedPort;
     }
 
-    /**
-     * Gets the currently selected wire.
-     */
     public WireConnection getSelectedWire() {
         return selectedWire;
     }
 
-    /**
-     * Gets the first selected wire for merging.
-     */
     public WireConnection getFirstSelectedWireForMerge() {
         return firstSelectedWireForMerge;
     }
 
-    /**
-     * Gets the currently selected bend index.
-     */
     public int getSelectedBendIndex() {
         return selectedBendIndex;
     }
 
-    /**
-     * Finds a wire at the given screen position.
-     * Improved to find the CLOSEST wire instead of the first wire found.
-     */
     private WireConnection findWireAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
@@ -1046,10 +919,6 @@ public class InputHandler {
         return closestWire;
     }
 
-    /**
-     * Calculates the minimum distance from a position to a wire.
-     * Returns the closest distance to any segment of the wire.
-     */
     private double getDistanceToWire(Point2D position, WireConnection connection) {
         // Use the same smooth curve path that's used for rendering
         boolean useSmoothCurves = true;
@@ -1077,9 +946,6 @@ public class InputHandler {
         return minDistance;
     }
 
-    /**
-     * Checks if a position is near a wire path.
-     */
     private boolean isPositionNearWire(Point2D position, WireConnection connection) {
         // Use the same smooth curve path that's used for rendering to ensure click detection matches visual appearance
         boolean useSmoothCurves = true; // Default to smooth curves for consistency with rendering
@@ -1105,18 +971,12 @@ public class InputHandler {
         return false;
     }
 
-    /**
-     * Checks if a position is near a line segment.
-     */
     private boolean isPositionNearLineSegment(Point2D position, Point2D lineStart, Point2D lineEnd) {
         double distance = distanceToLineSegment(position, lineStart, lineEnd);
         boolean isNear = distance <= 20.0; // Reduced to 20.0 for more precise selection
         return isNear;
     }
 
-    /**
-     * Calculates the distance from a point to a line segment.
-     */
     private double distanceToLineSegment(Point2D point, Point2D lineStart, Point2D lineEnd) {
         double A = point.getX() - lineStart.getX();
         double B = point.getY() - lineStart.getY();
@@ -1148,9 +1008,6 @@ public class InputHandler {
         return point.distanceTo(closest);
     }
 
-    /**
-     * Handles mouse press events for system movement.
-     */
     private void handleSystemMovementMousePress(MouseEvent event) {
         System system = findSystemAtPosition(event.getX(), event.getY());
         if (system != null && !(system instanceof model.ReferenceSystem)) {
@@ -1161,9 +1018,6 @@ public class InputHandler {
         }
     }
 
-    /**
-     * Finds a system at the given screen position.
-     */
     private System findSystemAtPosition(double x, double y) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
@@ -1179,23 +1033,14 @@ public class InputHandler {
         return null;
     }
 
-    /**
-     * Gets whether system movement mode is active.
-     */
     public boolean isSystemMovementMode() {
         return isSystemMovementMode;
     }
 
-    /**
-     * Gets the currently selected system.
-     */
     public System getSelectedSystem() {
         return selectedSystem;
     }
 
-    /**
-     * Gets whether the space key is currently pressed.
-     */
     public boolean isSpacePressed() {
         return isSpacePressed;
     }

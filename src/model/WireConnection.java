@@ -7,12 +7,6 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-/**
- * Represents a wire connection between two ports.
- * Tracks wire length consumption and connection state.
- * POJO class for serialization support.
- * Enhanced for Phase 2 with bend support and realistic wiring.
- */
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class WireConnection {
     private String id;
@@ -164,24 +158,14 @@ public class WireConnection {
         this.bulkPacketPassages = bulkPacketPassages;
     }
 
-    /**
-     * Gets the remaining wire length available for this connection.
-     * For normal connections, this should be 0 since the full length is consumed.
-     */
     public double getRemainingLength() {
         return wireLength - consumedLength;
     }
 
-    /**
-     * Checks if this connection has enough wire length remaining.
-     */
     public boolean hasSufficientLength() {
         return getRemainingLength() > 0;
     }
 
-    /**
-     * Consumes wire length for this connection.
-     */
     public boolean consumeLength(double amount) {
         if (consumedLength + amount > wireLength) {
             return false; // Not enough wire length
@@ -191,9 +175,6 @@ public class WireConnection {
         return true;
     }
 
-    /**
-     * Calculates the actual distance between the two ports.
-     */
     public double getActualDistance() {
         if (sourcePort == null || destinationPort == null) {
             return 0.0;
@@ -202,9 +183,6 @@ public class WireConnection {
         return sourcePort.getPosition().distanceTo(destinationPort.getPosition());
     }
 
-    /**
-     * Checks if this connection is valid (both ports exist and are compatible).
-     */
     public boolean isValid() {
         if (sourcePort == null || destinationPort == null) {
             return false;
@@ -224,10 +202,6 @@ public class WireConnection {
         return sourcePort.getShape().isCompatibleWith(destinationPort.getShape());
     }
 
-    /**
-     * Transfers packets from source to destination port, respecting wire capacity.
-     * Fixed to handle proper wire direction and destination port logic.
-     */
     public boolean transferPacket() {
         if (!isActive || !isValid()) {
             return false;
@@ -255,9 +229,6 @@ public class WireConnection {
                         packet.setCoinAwardPending(true);
                         String systemType = wireOutputPort.getParentSystem() != null ?
                                 wireOutputPort.getParentSystem().getClass().getSimpleName() : "Unknown";
-                        java.lang.System.out.println("DEBUG: Packet " + packet.getClass().getSimpleName() +
-                                " transferred from wire " + id.substring(0,8) + " to " + systemType +
-                                " input port (remaining packets: " + packetsOnWire.size() + ")");
 
                         // If destination is a ReferenceSystem, finalize delivery immediately
                         model.System destSystem = wireOutputPort.getParentSystem();
@@ -278,39 +249,24 @@ public class WireConnection {
         return false;
     }
 
-    /**
-     * Gets all packets currently on this wire.
-     */
     public List<Packet> getPacketsOnWire() {
         return new ArrayList<>(packetsOnWire);
     }
 
-    /**
-     * Sets packets on this wire.
-     */
     public void setPacketsOnWire(List<Packet> packets) {
         this.packetsOnWire = new ArrayList<>(packets);
     }
 
-    /**
-     * Checks if this wire is currently occupied by any packets.
-     */
     public boolean isOccupied() {
         return !packetsOnWire.isEmpty() && packetsOnWire.stream().anyMatch(Packet::isActive);
     }
 
-    /**
-     * Checks if this wire can accept a new packet.
-     */
     public boolean canAcceptPacket() {
         // Only allow accepting a packet when no active packet is currently on this wire
         boolean hasActiveOnWire = packetsOnWire.stream().anyMatch(Packet::isActive);
         return !hasActiveOnWire && isActive && !isDestroyed;
     }
 
-    /**
-     * Accepts a packet onto this wire if it's available.
-     */
     public boolean acceptPacket(Packet packet) {
         if (!canAcceptPacket()) {
             return false;
@@ -341,9 +297,6 @@ public class WireConnection {
         return true;
     }
 
-    /**
-     * Removes a specific packet from this wire when it reaches the destination.
-     */
     public Packet releasePacket(Packet packet) {
         if (packetsOnWire.remove(packet)) {
             return packet;
@@ -351,16 +304,10 @@ public class WireConnection {
         return null;
     }
 
-    /**
-     * Clears all packets from this wire (for temporal navigation rewind).
-     */
     public void clearPackets() {
         packetsOnWire.clear();
     }
 
-    /**
-     * Checks if a specific packet on this wire has reached its destination.
-     */
     public boolean hasPacketReachedDestination(Packet packet) {
         if (!packetsOnWire.contains(packet) || destinationPort == null) {
             return false;
@@ -373,20 +320,10 @@ public class WireConnection {
         return packetPos.distanceTo(destPos) <= 5.0;
     }
 
-    /**
-     * Updates the packet movement along this wire using path-based movement.
-     * Ensures packets are properly initialized for wire-based movement.
-     */
     public void updatePacketMovement(double deltaTime) {
         updatePacketMovement(deltaTime, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Updates the packet movement along this wire using path-based movement.
-     * Ensures packets are properly initialized for wire-based movement.
-     * @param deltaTime Time elapsed since last update
-     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
-     */
     public void updatePacketMovement(double deltaTime, boolean useSmoothCurves) {
         if (!isOccupied()) {
             return;
@@ -425,10 +362,6 @@ public class WireConnection {
         packetsOnWire.removeAll(packetsToRemove);
     }
 
-    /**
-     * Initializes a packet for path-based movement on this wire.
-     * Enhanced to support curved paths with bends.
-     */
     private void initializePacketOnWire(Packet packet) {
         packet.setCurrentWire(this);
         packet.setPathProgress(0.0);
@@ -461,18 +394,10 @@ public class WireConnection {
         }
     }
 
-    /**
-     * Constrains a specific packet to follow the wire path, including bends.
-     */
     private void constrainPacketToWire(Packet packet) {
         constrainPacketToWire(packet, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Constrains a specific packet to follow the wire path, including bends.
-     * @param packet Packet to constrain
-     * @param useSmoothCurves If true, uses smooth curves for path calculation; if false, uses rigid polyline
-     */
     private void constrainPacketToWire(Packet packet, boolean useSmoothCurves) {
         if (sourcePort == null || destinationPort == null) {
             return;
@@ -510,7 +435,6 @@ public class WireConnection {
                 // Mark packet as lost per Phase 1 spec: "A packet goes off the wire path"
                 packet.setLost(true);
                 packet.setActive(false);
-                java.lang.System.out.println("DEBUG: Packet went off-wire (deviation=" + deviation + ") and is marked lost");
                 return;
             }
             // Snap gently to the path when within tolerance
@@ -518,9 +442,6 @@ public class WireConnection {
         }
     }
 
-    /**
-     * Finds the closest point on the wire path to the given position.
-     */
     private Point2D findClosestPointOnPath(Point2D position, List<Point2D> pathPoints) {
         if (pathPoints.size() < 2) {
             return null;
@@ -546,9 +467,6 @@ public class WireConnection {
         return closestPoint;
     }
 
-    /**
-     * Gets the closest point on a line segment to a given point.
-     */
     private Point2D getClosestPointOnLineSegment(Point2D point, Point2D lineStart, Point2D lineEnd) {
         Vec2D lineVec = new Vec2D(lineEnd.getX() - lineStart.getX(), lineEnd.getY() - lineStart.getY());
         Vec2D pointVec = new Vec2D(point.getX() - lineStart.getX(), point.getY() - lineStart.getY());
@@ -567,9 +485,6 @@ public class WireConnection {
         );
     }
 
-    /**
-     * Gets the direction vector from source to destination.
-     */
     public Vec2D getDirectionVector() {
         if (sourcePort == null || destinationPort == null) {
             return new Vec2D();
@@ -609,11 +524,6 @@ public class WireConnection {
                 '}';
     }
 
-    /**
-     * Adds a bend to this wire connection.
-     * Validates that the bend doesn't cause the wire to pass over systems.
-     * Ensures the bend is positioned exactly on the wire path for perfect alignment.
-     */
     public boolean addBend(Point2D position, List<System> systems) {
         if (bends.size() >= 3) {
             return false; // Maximum 3 bends allowed
@@ -642,14 +552,6 @@ public class WireConnection {
         return true;
     }
 
-    /**
-     * Finds the closest point on a line segment to a given point.
-     * This ensures bends are always positioned exactly on the wire path.
-     * @param point The point to find the closest position to
-     * @param lineStart Start of the line segment
-     * @param lineEnd End of the line segment
-     * @return The closest point on the line segment
-     */
     private Point2D findClosestPointOnLineSegment(Point2D point, Point2D lineStart, Point2D lineEnd) {
         double A = point.getX() - lineStart.getX();
         double B = point.getY() - lineStart.getY();
@@ -676,10 +578,6 @@ public class WireConnection {
         return new Point2D(x, y);
     }
 
-    /**
-     * Adds a bend to this wire connection (legacy method without validation).
-     * @deprecated Use addBend(Point2D position, List<System> systems) instead
-     */
     @Deprecated
     public boolean addBend(Point2D position) {
         if (bends.size() >= 3) {
@@ -691,10 +589,6 @@ public class WireConnection {
         return true;
     }
 
-    /**
-     * Moves a bend to a new position.
-     * Validates that the new position doesn't cause the wire to pass over systems.
-     */
     public boolean moveBend(int bendIndex, Point2D newPosition, List<System> systems) {
         if (bendIndex < 0 || bendIndex >= bends.size()) {
             return false;
@@ -732,11 +626,6 @@ public class WireConnection {
         return moveSuccess;
     }
 
-    /**
-     * Moves a bend to a new position with more permissive validation for better user experience.
-     * This method allows more freedom in bend positioning while still maintaining basic constraints.
-     * Ensures the bend stays aligned with the wire path for perfect visual alignment.
-     */
     public boolean moveBendPermissive(int bendIndex, Point2D newPosition, List<System> systems) {
         if (bendIndex < 0 || bendIndex >= bends.size()) {
             return false;
@@ -770,10 +659,6 @@ public class WireConnection {
         return bend.moveTo(newPosition, originalPosition);
     }
 
-    /**
-     * Moves a bend to a new position (legacy method without validation).
-     * @deprecated Use moveBend(int bendIndex, Point2D newPosition, List<System> systems) instead
-     */
     @Deprecated
     public boolean moveBend(int bendIndex, Point2D newPosition) {
         if (bendIndex < 0 || bendIndex >= bends.size()) {
@@ -785,9 +670,6 @@ public class WireConnection {
         return bend.moveTo(newPosition, originalPosition);
     }
 
-    /**
-     * Calculates the total length of the wire including bends.
-     */
     public double calculateTotalLength() {
         if (sourcePort == null || destinationPort == null) {
             return 0.0;
@@ -814,9 +696,6 @@ public class WireConnection {
         return totalLength;
     }
 
-    /**
-     * Checks if adding a bend at the specified position would cause the wire to pass over systems.
-     */
     public boolean wouldBendPassOverSystems(Point2D bendPosition, List<System> systems) {
         if (sourcePort == null || destinationPort == null) {
             return false;
@@ -829,10 +708,6 @@ public class WireConnection {
         return wouldSegmentWithBendIntersectSystems(sourcePos, bendPosition, destPos, systems);
     }
 
-    /**
-     * Finds the index of the path segment closest to a given position.
-     * Returns an index i such that the segment is between pathPoints[i] and pathPoints[i+1].
-     */
     private int findNearestSegmentIndex(Point2D position, List<Point2D> pathPoints) {
         int nearestIndex = 0;
         double minDistance = Double.MAX_VALUE;
@@ -849,10 +724,6 @@ public class WireConnection {
         return nearestIndex;
     }
 
-    /**
-     * Validates whether inserting/moving a bend within a specific segment causes intersections
-     * with any system rectangles (excluding the wire's own endpoint systems).
-     */
     private boolean wouldSegmentWithBendIntersectSystems(
             Point2D segmentStart,
             Point2D bendPosition,
@@ -876,9 +747,6 @@ public class WireConnection {
         return false;
     }
 
-    /**
-     * Checks if this wire passes over any systems.
-     */
     public boolean passesOverSystems(List<System> systems) {
         if (sourcePort == null || destinationPort == null) {
             return false;
@@ -902,10 +770,6 @@ public class WireConnection {
                 
                 // Check if this segment intersects with system bounds
                 if (lineIntersectsRectangle(segmentStart, segmentEnd, systemBounds)) {
-                    // Debug: Print collision detection details
-                    java.lang.System.out.println("DEBUG: Wire " + id.substring(0,8) + " segment intersects with " + 
-                        system.getClass().getSimpleName() + " at (" + segmentStart.getX() + "," + segmentStart.getY() + 
-                        ") to (" + segmentEnd.getX() + "," + segmentEnd.getY() + ")");
                     return true;
                 }
             }
@@ -914,10 +778,6 @@ public class WireConnection {
         return false;
     }
 
-    /**
-     * Checks if a line segment intersects with a rectangle.
-     * Uses a more robust algorithm that handles edge cases better.
-     */
     private boolean lineIntersectsRectangle(Point2D lineStart, Point2D lineEnd,
                                             java.awt.geom.Rectangle2D rect) {
         double x1 = lineStart.getX();
@@ -969,16 +829,10 @@ public class WireConnection {
         return false;
     }
 
-    /**
-     * Checks if a point is inside a rectangle.
-     */
     private boolean pointInRectangle(double px, double py, double rx, double ry, double rw, double rh) {
         return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
     }
 
-    /**
-     * Checks if two line segments intersect.
-     */
     private boolean lineSegmentIntersection(double x1, double y1, double x2, double y2,
                                           double x3, double y3, double x4, double y4) {
         double denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
@@ -995,9 +849,6 @@ public class WireConnection {
         return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     }
 
-    /**
-     * Increments bulk packet passage count and checks if wire should be destroyed.
-     */
     public boolean incrementBulkPacketPassage() {
         bulkPacketPassages++;
         if (bulkPacketPassages >= MAX_BULK_PASSAGES) {
@@ -1008,19 +859,10 @@ public class WireConnection {
         return false;
     }
 
-    /**
-     * Gets the path points for the wire connection.
-     * @return List of points representing the wire path
-     */
     public List<Point2D> getPathPoints() {
         return getPathPoints(true); // Use smooth curves so packets follow curved wire paths
     }
 
-    /**
-     * Gets the path points for the wire connection with optional smooth curve interpolation.
-     * @param useSmoothCurves If true, generates smooth Bézier curves; if false, uses rigid polyline
-     * @return List of points representing the wire path
-     */
     public List<Point2D> getPathPoints(boolean useSmoothCurves) {
         if (!useSmoothCurves) {
             // Original rigid polyline behavior
@@ -1045,11 +887,6 @@ public class WireConnection {
         }
     }
 
-    /**
-     * Generates smooth curved path points using Bézier curve interpolation.
-     * This creates natural, fluid wire paths instead of rigid angular bends.
-     * @return List of smoothly interpolated path points
-     */
     private List<Point2D> generateSmoothPathPoints() {
         List<Point2D> controlPoints = new ArrayList<>();
 
@@ -1076,11 +913,6 @@ public class WireConnection {
         return generateBezierCurve(controlPoints);
     }
 
-    /**
-     * Generates smooth curved path points that ensure bends are always perfectly aligned with the wire.
-     * This creates a hybrid approach: smooth curves between bends, but bends are always on the exact path.
-     * @return List of smoothly interpolated path points with perfect bend alignment
-     */
     private List<Point2D> generateSmoothPathPointsWithBendAlignment() {
         if (bends.isEmpty()) {
             // No bends - just return straight line
@@ -1134,13 +966,6 @@ public class WireConnection {
         return alignedPath;
     }
 
-    /**
-     * Generates a smooth curve segment between two points using quadratic Bézier interpolation.
-     * This creates natural curves while ensuring the endpoints are exact.
-     * @param start Start point
-     * @param end End point
-     * @return List of interpolated points for the curve segment
-     */
     private List<Point2D> generateSmoothCurveSegment(Point2D start, Point2D end) {
         // Calculate a control point that creates a natural curve
         double distance = start.distanceTo(end);
@@ -1170,12 +995,6 @@ public class WireConnection {
         return generateQuadraticBezierCurve(start, controlPoint, end);
     }
 
-    /**
-     * Generates a smooth Bézier curve through the given control points.
-     * Uses quadratic Bézier curves for 3 points, cubic for 4+ points.
-     * @param controlPoints The control points to interpolate through
-     * @return List of smoothly interpolated path points
-     */
     private List<Point2D> generateBezierCurve(List<Point2D> controlPoints) {
         List<Point2D> curvePoints = new ArrayList<>();
 
@@ -1191,13 +1010,6 @@ public class WireConnection {
         }
     }
 
-    /**
-     * Generates a quadratic Bézier curve between three control points.
-     * @param p0 Start point
-     * @param p1 Control point
-     * @param p2 End point
-     * @return List of interpolated curve points
-     */
     private List<Point2D> generateQuadraticBezierCurve(Point2D p0, Point2D p1, Point2D p2) {
         List<Point2D> curvePoints = new ArrayList<>();
 
@@ -1213,11 +1025,6 @@ public class WireConnection {
         return curvePoints;
     }
 
-    /**
-     * Generates a multi-segment Bézier curve with smooth transitions between segments.
-     * @param controlPoints The control points to interpolate through
-     * @return List of smoothly interpolated path points
-     */
     private List<Point2D> generateMultiSegmentBezierCurve(List<Point2D> controlPoints) {
         List<Point2D> curvePoints = new ArrayList<>();
 
@@ -1233,12 +1040,6 @@ public class WireConnection {
         return generateCatmullRomSpline(controlPoints);
     }
 
-    /**
-     * Generates a Catmull-Rom spline through the control points for very smooth curves.
-     * This creates natural, fluid curves that pass through all control points.
-     * @param controlPoints The control points to interpolate through
-     * @return List of smoothly interpolated path points
-     */
     private List<Point2D> generateCatmullRomSpline(List<Point2D> controlPoints) {
         List<Point2D> curvePoints = new ArrayList<>();
 
@@ -1286,14 +1087,6 @@ public class WireConnection {
         return curvePoints;
     }
 
-    /**
-     * Generates a Catmull-Rom spline segment between four control points.
-     * @param p0 Previous control point
-     * @param p1 Current control point (start of segment)
-     * @param p2 Next control point (end of segment)
-     * @param p3 Following control point
-     * @return List of interpolated points for this segment
-     */
     private List<Point2D> generateCatmullRomSegment(Point2D p0, Point2D p1, Point2D p2, Point2D p3) {
         List<Point2D> segment = new ArrayList<>();
 
@@ -1310,15 +1103,6 @@ public class WireConnection {
         return segment;
     }
 
-    /**
-     * Interpolates a point on a Catmull-Rom spline at parameter t.
-     * @param p0 Previous control point
-     * @param p1 Current control point
-     * @param p2 Next control point
-     * @param p3 Following control point
-     * @param t Parameter value (0.0 to 1.0)
-     * @return Interpolated point on the spline
-     */
     private Point2D catmullRomInterpolate(Point2D p0, Point2D p1, Point2D p2, Point2D p3, double t) {
         // Catmull-Rom matrix coefficients
         double t2 = t * t;
@@ -1337,12 +1121,6 @@ public class WireConnection {
         return new Point2D(x, y);
     }
 
-    /**
-     * Extrapolates a point beyond the given segment for smooth boundary conditions.
-     * @param p1 First point
-     * @param p2 Second point
-     * @return Extrapolated point
-     */
     private Point2D extrapolatePoint(Point2D p1, Point2D p2) {
         // Simple linear extrapolation: extend the line from p1 to p2
         double dx = p2.getX() - p1.getX();
@@ -1351,13 +1129,6 @@ public class WireConnection {
         return new Point2D(p1.getX() - dx, p1.getY() - dy);
     }
 
-    /**
-     * Calculates optimal number of interpolation steps based on curve complexity.
-     * @param p0 Start point
-     * @param p1 Control point
-     * @param p2 End point
-     * @return Number of interpolation steps
-     */
     private int calculateOptimalSteps(Point2D p0, Point2D p1, Point2D p2) {
         // Calculate curve complexity based on control point deviation
         double straightLineLength = p0.distanceTo(p2);
@@ -1371,14 +1142,6 @@ public class WireConnection {
         return Math.max(10, baseSteps + additionalSteps); // Minimum 10 steps for smoothness
     }
 
-    /**
-     * Interpolates a point on a quadratic Bézier curve at parameter t.
-     * @param p0 Start point
-     * @param p1 Control point
-     * @param p2 End point
-     * @param t Parameter value (0.0 to 1.0)
-     * @return Interpolated point on the curve
-     */
     private Point2D quadraticBezierInterpolate(Point2D p0, Point2D p1, Point2D p2, double t) {
         // Quadratic Bézier formula: B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
         double oneMinusT = 1.0 - t;
@@ -1391,18 +1154,10 @@ public class WireConnection {
         return new Point2D(x, y);
     }
 
-    /**
-     * Calculates the total length of the wire including all bends.
-     * Uses smooth curves by default for backward compatibility.
-     */
     public double getTotalLength() {
         return getTotalLength(true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Calculates the total length of the wire including all bends.
-     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
-     */
     public double getTotalLength(boolean useSmoothCurves) {
         List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
         if (pathPoints.size() < 2) {
@@ -1419,21 +1174,10 @@ public class WireConnection {
         return totalLength;
     }
 
-    /**
-     * Gets the position at a specific progress along the wire path (0.0 to 1.0).
-     * This enables uniform motion along curved wire paths with bends.
-     * Uses smooth curves by default for backward compatibility.
-     */
     public Point2D getPositionAtProgress(double progress) {
         return getPositionAtProgress(progress, true); // Default to smooth curves for backward compatibility
     }
 
-    /**
-     * Gets the position at a specific progress along the wire path (0.0 to 1.0).
-     * This enables uniform motion along both curved and rigid wire paths with bends.
-     * @param progress Progress along the wire (0.0 to 1.0)
-     * @param useSmoothCurves If true, uses smooth curves; if false, uses rigid polyline
-     */
     public Point2D getPositionAtProgress(double progress, boolean useSmoothCurves) {
         List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
         if (pathPoints.size() < 2) {
@@ -1467,9 +1211,6 @@ public class WireConnection {
         return pathPoints.get(pathPoints.size() - 1);
     }
 
-    /**
-     * Interpolates between two points with the given progress (0.0 to 1.0).
-     */
     private Point2D interpolatePosition(Point2D start, Point2D end, double progress) {
         double x = start.getX() + (end.getX() - start.getX()) * progress;
         double y = start.getY() + (end.getY() - start.getY()) * progress;
@@ -1478,19 +1219,10 @@ public class WireConnection {
 
 
 
-    /**
-     * Clears all packets from this wire connection.
-     * Used during level transitions to prevent packet duplication.
-     */
     public void clearAllPackets() {
         packetsOnWire.clear();
-        java.lang.System.out.println("DEBUG: Cleared all packets from wire " + getId().substring(0, 8));
     }
 
-    /**
-     * Gets the closest point on this wire to a given point.
-     * Used for ability targeting.
-     */
     public Point2D getClosestPointOnWire(Point2D targetPoint) {
         List<Point2D> pathPoints = getPathPoints();
         if (pathPoints.isEmpty()) {
@@ -1518,9 +1250,6 @@ public class WireConnection {
         return closestPoint;
     }
 
-    /**
-     * Gets the progress value (0-1) for a given point on the wire.
-     */
     public double getProgressAtPoint(Point2D point) {
         List<Point2D> pathPoints = getPathPoints();
         if (pathPoints.isEmpty()) {
@@ -1554,17 +1283,11 @@ public class WireConnection {
         return 1.0; // Default to end if not found
     }
 
-    /**
-     * Gets the distance from a point to this wire.
-     */
     public double getDistanceToPoint(Point2D targetPoint) {
         Point2D closestPoint = getClosestPointOnWire(targetPoint);
         return closestPoint != null ? targetPoint.distanceTo(closestPoint) : Double.MAX_VALUE;
     }
 
-    /**
-     * Gets the closest point on a line segment to a target point.
-     */
     private Point2D getClosestPointOnSegment(Point2D start, Point2D end, Point2D target) {
         double segmentLength = start.distanceTo(end);
         if (segmentLength == 0) {
@@ -1583,11 +1306,6 @@ public class WireConnection {
         );
     }
 
-    /**
-     * Updates the port references for this wire connection.
-     * This is used during level loading to ensure wire connections
-     * reference the correct port instances in the current level.
-     */
     public void updatePortReferences(Port newSourcePort, Port newDestinationPort) {
         // Normalize direction: ensure source is OUTPUT and destination is INPUT
         Port normalizedSource = newSourcePort;
@@ -1608,10 +1326,6 @@ public class WireConnection {
         calculatePathPoints();
     }
 
-    /**
-     * Calculates the path points for this wire connection.
-     * Used when port references are updated.
-     */
     private void calculatePathPoints() {
         // For now, use a simple straight line path
         // This could be enhanced later to handle bends properly

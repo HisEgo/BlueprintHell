@@ -2,9 +2,6 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Triangle-shaped packet with size 3 and coin value 2.
- */
 public class TrianglePacket extends Packet {
 
     public TrianglePacket() {
@@ -25,3 +22,4 @@ public class TrianglePacket extends Packet {
         return 2;
     }
 }
+

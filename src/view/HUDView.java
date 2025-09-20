@@ -17,11 +17,6 @@ import model.WireConnection;
 
 import java.util.List;
 
-/**
- * Heads-Up Display showing game statistics and active abilities.
- * Enhanced for Phase 2 with active network abilities display.
- * Always visible - toggle functionality removed.
- */
 public class HUDView {
     private GameController gameController;
     private VBox root;
@@ -205,9 +200,6 @@ public class HUDView {
 
     // Show/Hide HUD methods removed - HUD is always visible
 
-    /**
-     * Ensures the HUD is visible and updated (simplified since HUD is always visible)
-     */
     public void forceShowAndUpdate() {
         // HUD is always visible, just ensure root is visible and force layout update
         root.setVisible(true);
@@ -215,25 +207,16 @@ public class HUDView {
         
     }
 
-    /**
-     * Get detailed HUD status for debugging
-     */
     public String getHUDStatus() {
         return String.format("HUD Status - shouldDisplay: %s, root.visible: %s, position: (%.1f, %.1f)",
                 shouldDisplay(), root.isVisible(), root.getLayoutX(), root.getLayoutY());
     }
 
-    /**
-     * Check if the HUD is actually visible on screen
-     */
     public boolean isActuallyVisible() {
         return shouldDisplay() && root.getScene() != null &&
                 root.getParent() != null && root.getBoundsInLocal().getWidth() > 0;
     }
 
-    /**
-     * Get comprehensive HUD debugging information
-     */
     public String getComprehensiveHUDStatus() {
         return String.format(
                 "HUD Debug - shouldDisplay: %s, root.visible: %s, inScene: %s, hasParent: %s, bounds: %s, position: (%.1f, %.1f)",
@@ -251,24 +234,16 @@ public class HUDView {
 
     // HUD indicator removed - HUD is always visible
 
-    /**
-     * Check if the HUD is visible (always true now)
-     */
     public boolean isVisible() {
         return true; // HUD is always visible
     }
 
-    /**
-     * Check if HUD should be visually displayed (always true now)
-     */
     public boolean shouldDisplay() {
         return true; // HUD is always visible
     }
 
-    /**
-     * Check if HUD is functionally active (always true now)
-     */
     public boolean isFunctionallyActive() {
         return true; // HUD is always functionally active
     }
 }
+

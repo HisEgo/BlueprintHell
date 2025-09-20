@@ -14,10 +14,6 @@ import model.*;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Main game view that renders all systems, wires, and packets.
- * Enhanced with dynamic viewport scaling to ensure all systems remain visible.
- */
 public class GameView {
     private GameController gameController;
     private StackPane root;
@@ -71,9 +67,6 @@ public class GameView {
         setupInputHandlers();
     }
 
-    /**
-     * Initializes the user interface.
-     */
     private void initializeUI() {
         root = new StackPane();
 
@@ -97,9 +90,6 @@ public class GameView {
         root.setStyle("-fx-background-color: #0a0a0a;");
     }
 
-    /**
-     * Creates the time slider for temporal navigation.
-     */
     private void createTimeSlider() {
         // Create slider label
         timeSliderLabel = new Label("Time: 0.0s / 60.0s");
@@ -126,13 +116,10 @@ public class GameView {
             }
         });
 
-        // Add to root pane
-        root.getChildren().addAll(timeSliderLabel, timeSlider);
+        // Add to root pane (hide timeSliderLabel as requested)
+        root.getChildren().addAll(timeSlider);
     }
 
-    /**
-     * Sets up input event handlers to connect with the InputHandler.
-     */
     private void setupInputHandlers() {
         // Set up keyboard event handlers on the root pane
         root.setOnKeyPressed(event -> {
@@ -205,12 +192,7 @@ public class GameView {
         // Make the root focusable so it can receive keyboard events
         root.setFocusTraversable(true);
         root.requestFocus(); // Request focus to ensure key events are received
-        java.lang.System.out.println("DEBUG: GameView - Root pane focusable: " + root.isFocusTraversable() + ", focused: " + root.isFocused());
 
-        // Add focus change listener to debug focus issues
-        root.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-            java.lang.System.out.println("DEBUG: GameView - Root pane focus changed from " + wasFocused + " to " + isNowFocused);
-        });
 
         // Make canvas focusable for mouse events but don't duplicate key handlers
         canvas.setFocusTraversable(true);
@@ -223,9 +205,6 @@ public class GameView {
     // Wire hover tracking for visual feedback
     private WireConnection hoveredWire = null;
 
-    /**
-     * Handles viewport panning via mouse drag.
-     */
     private void handleViewportPan(javafx.scene.input.MouseEvent event) {
         // Get current mouse position
         double currentX = event.getX();
@@ -247,9 +226,6 @@ public class GameView {
         autoScaleEnabled = false;
     }
 
-    /**
-     * Handles mouse move events for hover effects on wires and bends.
-     */
     private void handleMouseMove(javafx.scene.input.MouseEvent event) {
         // Convert screen coordinates to world coordinates
         Point2D worldPos = screenToWorld(event.getX(), event.getY());
@@ -280,9 +256,6 @@ public class GameView {
         canvas.setCursor(javafx.scene.Cursor.DEFAULT);
     }
 
-    /**
-     * Finds a wire at the given world position for hover detection.
-     */
     private WireConnection findWireAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
@@ -299,9 +272,6 @@ public class GameView {
         return null;
     }
 
-    /**
-     * Finds a wire with a bend at the given position for hover detection.
-     */
     private WireConnection findWireWithBendAtPosition(Point2D position) {
         if (gameController == null || gameController.getGameState() == null) {
             return null;
@@ -320,9 +290,6 @@ public class GameView {
         return null;
     }
 
-    /**
-     * Checks if a position is near a wire path for hover detection.
-     */
     private boolean isPositionNearWire(Point2D position, WireConnection connection) {
         // Use the same smooth curve path that's used for rendering
         boolean useSmoothCurves = true;
@@ -348,17 +315,11 @@ public class GameView {
         return false;
     }
 
-    /**
-     * Checks if a position is near a line segment for hover detection.
-     */
     private boolean isPositionNearLineSegment(Point2D position, Point2D lineStart, Point2D lineEnd) {
         double distance = distanceToLineSegment(position, lineStart, lineEnd);
         return distance <= 25.0; // Same detection radius as InputHandler
     }
 
-    /**
-     * Calculates the distance from a point to a line segment for hover detection.
-     */
     private double distanceToLineSegment(Point2D point, Point2D lineStart, Point2D lineEnd) {
         double A = point.getX() - lineStart.getX();
         double B = point.getY() - lineStart.getY();
@@ -389,9 +350,6 @@ public class GameView {
         return point.distanceTo(closest);
     }
 
-    /**
-     * Handles viewport-specific keyboard input.
-     */
     private void handleViewportKeyPress(javafx.scene.input.KeyEvent event) {
         switch (event.getCode()) {
             case R:
@@ -424,9 +382,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Handles viewport zooming via mouse wheel.
-     */
     private void handleViewportZoom(javafx.scene.input.ScrollEvent event) {
         double zoomFactor = 1.1;
         if (event.getDeltaY() < 0) {
@@ -457,9 +412,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Updates the view with current game state.
-     */
     public void update() {
         if (currentLevel == null) return;
 
@@ -514,9 +466,6 @@ public class GameView {
         updateTimeSlider();
     }
 
-    /**
-     * Updates the time slider based on current game state.
-     */
     private void updateTimeSlider() {
         if (timeSlider == null || timeSliderLabel == null) return;
 
@@ -548,9 +497,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Updates the viewport to ensure all systems are visible.
-     */
     private void updateViewport() {
         if (currentLevel == null || currentLevel.getSystems().isEmpty()) {
             return;
@@ -606,77 +552,47 @@ public class GameView {
         viewportCenter.setY(levelCenterY);
     }
 
-    /**
-     * Applies the viewport transformation to the graphics context.
-     */
     private void applyViewportTransform() {
         gc.translate(viewportOffset.getX(), viewportOffset.getY());
         gc.scale(viewportScale, viewportScale);
     }
 
-    /**
-     * Converts screen coordinates to world coordinates.
-     */
     public Point2D screenToWorld(double screenX, double screenY) {
         double worldX = (screenX - viewportOffset.getX()) / viewportScale;
         double worldY = (screenY - viewportOffset.getY()) / viewportScale;
         return new Point2D(worldX, worldY);
     }
 
-    /**
-     * Converts world coordinates to screen coordinates.
-     */
     public Point2D worldToScreen(double worldX, double worldY) {
         double screenX = worldX * viewportScale + viewportOffset.getX();
         double screenY = worldY * viewportScale + viewportOffset.getY();
         return new Point2D(screenX, screenY);
     }
 
-    /**
-     * Gets the current viewport scale.
-     */
     public double getViewportScale() {
         return viewportScale;
     }
 
-    /**
-     * Gets the current viewport offset.
-     */
     public Point2D getViewportOffset() {
         return viewportOffset;
     }
 
-    /**
-     * Sets whether auto-scaling is enabled.
-     */
     public void setAutoScaleEnabled(boolean enabled) {
         this.autoScaleEnabled = enabled;
     }
 
-    /**
-     * Manually sets the viewport scale.
-     */
     public void setViewportScale(double scale) {
         this.viewportScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
     }
 
-    /**
-     * Manually sets the viewport offset.
-     */
     public void setViewportOffset(Point2D offset) {
         this.viewportOffset = offset;
     }
 
-    /**
-     * Resets the viewport to show all systems.
-     */
     public void resetViewport() {
         updateViewport();
     }
 
-    /**
-     * Draws all systems in the current level.
-     */
     private void drawSystems() {
         if (currentLevel == null) return;
 
@@ -686,9 +602,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a single system.
-     */
     private void drawSystem(model.System system) {
         Point2D pos = system.getPosition();
 
@@ -779,10 +692,6 @@ public class GameView {
         drawPorts(system);
     }
 
-    /**
-     * Checks if all ports of a specific system are connected.
-     * This determines if the system indicator should be green.
-     */
     private boolean isSystemFullyConnected(model.System system) {
         if (gameController == null || gameController.getWiringController() == null) {
             return false;
@@ -798,9 +707,6 @@ public class GameView {
         return true; // All ports are connected
     }
 
-    /**
-     * Draws a status indicator for the system.
-     */
     private void drawSystemIndicator(model.System system) {
         Point2D pos = system.getPosition();
 
@@ -851,9 +757,6 @@ public class GameView {
         gc.fillText(indicatorSymbol, indicatorX - 2, indicatorY + 2);
     }
 
-    /**
-     * Draws ports for a system.
-     */
     private void drawPorts(model.System system) {
         // Ports are positioned during layoutPorts; just draw them here
         for (Port port : system.getInputPorts()) {
@@ -873,9 +776,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Computes rectangle half sizes based on port counts to avoid overlaps.
-     */
     private double[] computeHalfSizes(model.System system) {
         int inputCount = system.getInputPorts() != null ? system.getInputPorts().size() : 0;
         int outputCount = system.getOutputPorts() != null ? system.getOutputPorts().size() : 0;
@@ -889,9 +789,6 @@ public class GameView {
         return new double[]{neededHalfWidth, neededHalfHeight};
     }
 
-    /**
-     * Lays out ports evenly along left (inputs) and right (outputs) edges of the system rectangle.
-     */
     private void layoutPorts(model.System system, double halfWidth, double halfHeight) {
         Point2D center = system.getPosition();
         List<Port> inputs = system.getInputPorts();
@@ -926,9 +823,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a single port.
-     */
     private void drawPort(Port port, Color color) {
         Point2D pos = port.getPosition();
 
@@ -962,9 +856,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws wire connections with activity indicators.
-     */
     private void drawWireConnections() {
         if (currentLevel == null) return;
 
@@ -979,9 +870,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a single wire connection with enhanced visuals.
-     */
     private void drawWireConnection(WireConnection connection) {
         // Check if smooth curves are enabled in game settings
         boolean useSmoothCurves = true; // Default to smooth curves
@@ -1155,9 +1043,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws activity indicators along an active wire.
-     */
     private void drawWireActivityIndicators(WireConnection connection, List<Point2D> pathPoints) {
         if (pathPoints.size() < 2) return;
 
@@ -1175,9 +1060,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a progress indicator showing packet position on wire.
-     */
     private void drawPacketProgressOnWire(WireConnection connection, List<Point2D> pathPoints, Packet packet) {
         if (pathPoints.size() < 2 || packet == null) return;
 
@@ -1221,9 +1103,6 @@ public class GameView {
         gc.strokeRect(midPoint.getX() - 25, midPoint.getY() - 3, 50, 6);
     }
 
-    /**
-     * Gets a position along the wire path based on progress (0.0 to 1.0).
-     */
     private Point2D getPositionAlongWire(List<Point2D> pathPoints, double progress) {
         if (pathPoints.size() < 2) return null;
 
@@ -1258,9 +1137,6 @@ public class GameView {
         return pathPoints.get(pathPoints.size() - 1);
     }
 
-    /**
-     * Draws packet flow indicators for systems.
-     */
     private void drawSystemPacketIndicators(model.System system) {
 
         // Draw port activity indicators for both input and output ports
@@ -1294,9 +1170,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws all active packets.
-     */
     private void drawPackets() {
         for (Packet packet : gameController.getGameState().getActivePackets()) {
             if (packet.isActive()) {
@@ -1305,9 +1178,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a single packet with enhanced visualization.
-     */
     private void drawPacket(Packet packet) {
         Point2D pos = packet.getCurrentPosition();
         Vec2D velocity = packet.getMovementVector();
@@ -1410,9 +1280,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws the specific shape for different packet types.
-     */
     private void drawPacketShape(Packet packet, Point2D pos, double displaySize, Color packetColor, Color borderColor, Color trailColor, double speed) {
         // Determine packet type and draw appropriate shape
         PacketType type = packet.getPacketType();
@@ -1589,9 +1456,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws a hexagon shape for bulk packets.
-     */
     private void drawHexagon(GraphicsContext gc, double centerX, double centerY, double radius) {
         double[] xPoints = new double[6];
         double[] yPoints = new double[6];
@@ -1605,9 +1469,6 @@ public class GameView {
         gc.fillPolygon(xPoints, yPoints, 6);
     }
 
-    /**
-     * Draws an octagon shape for large bulk packets.
-     */
     private void drawOctagon(GraphicsContext gc, double centerX, double centerY, double radius) {
         double[] xPoints = new double[8];
         double[] yPoints = new double[8];
@@ -1621,9 +1482,6 @@ public class GameView {
         gc.fillPolygon(xPoints, yPoints, 8);
     }
 
-    /**
-     * Draws a motion trail behind the packet to show movement direction and speed.
-     */
     private void drawPacketTrail(Point2D pos, Vec2D velocity, Color trailColor, double packetSize) {
         double speed = velocity.magnitude();
         if (speed < 5) return; // Don't draw trail for very slow packets
@@ -1659,9 +1517,6 @@ public class GameView {
     }
 
 
-    /**
-     * Draws control instructions on the screen.
-     */
     private void drawControlInstructions() {
         gc.setFill(Color.WHITE);
         gc.setFont(javafx.scene.text.Font.font("Arial", 12));
@@ -1747,9 +1602,6 @@ public class GameView {
         showViewportInfo(y + 80);
     }
 
-    /**
-     * Shows the network connection status.
-     */
     private void showConnectionStatus(int y) {
         if (currentLevel == null) return;
 
@@ -1795,9 +1647,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Shows viewport information including scale and position.
-     */
     private void showViewportInfo(int y) {
         gc.setFill(Color.LIGHTGRAY);
         gc.setFont(javafx.scene.text.Font.font("Arial", 10));
@@ -1816,18 +1665,12 @@ public class GameView {
         gc.fillText("Auto-scale: " + (autoScaleEnabled ? "ON" : "OFF"), 10, y + 45);
     }
 
-    /**
-     * Displays a transient on-screen message near the top-left.
-     */
     public void showToast(String message, Color color) {
         if (message == null) return;
         gc.setFill(color != null ? color : Color.ORANGE);
         gc.fillText(message, 10, 40);
     }
 
-    /**
-     * Sets the current level and updates the view.
-     */
     public void setLevel(GameLevel level) {
         this.currentLevel = level;
 
@@ -1840,46 +1683,28 @@ public class GameView {
         update();
     }
 
-    /**
-     * Requests focus for the game view to enable keyboard input.
-     */
     public void requestFocus() {
         root.requestFocus();
         canvas.requestFocus();
         
     }
 
-    /**
-     * Gets the root node of this view.
-     */
     public StackPane getRoot() {
         return root;
     }
 
-    /**
-     * Gets the canvas.
-     */
     public Canvas getCanvas() {
         return canvas;
     }
 
-    /**
-     * Gets the current canvas size.
-     */
     public javafx.geometry.Dimension2D getCanvasSize() {
         return new javafx.geometry.Dimension2D(canvas.getWidth(), canvas.getHeight());
     }
 
-    /**
-     * Gets the root pane for adding overlays.
-     */
     public StackPane getRootPane() {
         return root;
     }
 
-    /**
-     * Adds the pause menu overlay to the scene graph.
-     */
     public void addPauseOverlay(javafx.scene.layout.Pane pauseOverlay) {
         if (!root.getChildren().contains(pauseOverlay)) {
             root.getChildren().add(pauseOverlay);
@@ -1887,9 +1712,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Adds the shop overlay to the scene graph.
-     */
     public void addShopOverlay(javafx.scene.layout.Pane shopOverlay) {
         if (!root.getChildren().contains(shopOverlay)) {
             root.getChildren().add(shopOverlay);
@@ -1897,9 +1719,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Adds the HUD overlay to the scene graph.
-     */
     public void addHUDOverlay(javafx.scene.layout.Pane hudOverlay) {
         if (!root.getChildren().contains(hudOverlay)) {
             // Ensure HUD is positioned correctly
@@ -1917,18 +1736,11 @@ public class GameView {
         }
     }
 
-    /**
-     * Adds the HUD indicator button to the scene graph.
-     * This button is always visible and allows users to show the HUD.
-     */
     public void addHUDIndicator(javafx.scene.control.Button hudIndicator) {
         // Method kept for compatibility but does nothing - HUD is always visible
         
     }
 
-    /**
-     * Shows wire preview during wiring mode with enhanced visual feedback.
-     */
     public void showWirePreview(Point2D start, Point2D end, boolean isValid) {
         wirePreviewStart = start;
         wirePreviewEnd = end;
@@ -1936,9 +1748,6 @@ public class GameView {
         showWirePreview = true; // Set flag to true to indicate preview is ready
     }
 
-    /**
-     * Clears wire preview.
-     */
     public void clearWirePreview() {
         wirePreviewStart = null;
         wirePreviewEnd = null;
@@ -1946,10 +1755,6 @@ public class GameView {
         showWirePreview = false; // Clear flag
     }
 
-    /**
-     * Renders the wire preview with enhanced visual feedback.
-     * This method is called during the main update loop when viewport transformation is active.
-     */
     private void renderWirePreview() {
         if (wirePreviewStart == null || wirePreviewEnd == null) {
             return;
@@ -1994,9 +1799,6 @@ public class GameView {
         gc.setLineDashes(null); // Reset to solid line
     }
 
-    /**
-     * Gets the number of wires currently occupied by packets.
-     */
     private int getOccupiedWireCount() {
         if (currentLevel == null) return 0;
 
@@ -2009,9 +1811,6 @@ public class GameView {
         return count;
     }
 
-    /**
-     * Gets the total number of active wires.
-     */
     private int getTotalWireCount() {
         if (currentLevel == null) return 0;
 
@@ -2024,9 +1823,6 @@ public class GameView {
         return count;
     }
 
-    /**
-     * Draws a visual indicator in the top-right corner showing the current wire rendering mode.
-     */
     private void showWireCurveModeIndicator(boolean smoothWires) {
         double indicatorWidth = 120;
         double indicatorHeight = 30;
@@ -2053,9 +1849,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Draws the Run button on canvas.
-     */
     private void drawRunButton() {
         // Show Run button only in editing mode, not in simulating mode
         if (!gameController.isEditingMode()) {
@@ -2102,9 +1895,6 @@ public class GameView {
         gc.fillText(buttonText, textX, textY);
     }
 
-    /**
-     * Draws error message on screen if there is one.
-     */
     private void drawErrorMessage() {
         if (currentErrorMessage == null) return;
 
@@ -2160,9 +1950,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Handles Run button click with validation and error messages.
-     */
     private void handleRunButtonClick() {
         // Only allow Run button in editing mode
         if (!gameController.isEditingMode()) {
@@ -2193,9 +1980,6 @@ public class GameView {
         gameController.enterSimulationMode();
     }
 
-    /**
-     * Handles Simulate button click to enter temporal navigation mode.
-     */
     private void handleSimulateButtonClick() {
         // Only allow Simulate button in editing mode
         if (!gameController.isEditingMode()) {
@@ -2226,9 +2010,6 @@ public class GameView {
         gameController.enterSimulatingMode();
     }
 
-    /**
-     * Handles Exit Simulate button click to exit temporal navigation mode.
-     */
     private void handleExitSimulateButtonClick() {
         if (!gameController.isSimulatingMode()) {
             return;
@@ -2238,9 +2019,6 @@ public class GameView {
         gameController.exitSimulatingMode();
     }
 
-    /**
-     * Checks if simulation can start based on all conditions.
-     */
     private boolean canStartSimulation() {
         if (!gameController.isEditingMode()) {
             return false;
@@ -2258,18 +2036,12 @@ public class GameView {
     private int errorMessageFrameCount = 0;
     private static final int ERROR_MESSAGE_DURATION_FRAMES = 180; // 3 seconds at 60fps
 
-    /**
-     * Shows simulation error message to user on screen.
-     */
     private void showSimulationError(String message) {
         java.lang.System.out.println("SIMULATION ERROR: " + message);
         currentErrorMessage = message;
         errorMessageFrameCount = 0;
     }
 
-    /**
-     * Draws the Simulate and Exit buttons on canvas.
-     */
     private void drawSimulateButtons() {
         // Show buttons in both editing and simulating modes
         if (!gameController.isEditingMode() && !gameController.isSimulatingMode()) {
@@ -2352,9 +2124,6 @@ public class GameView {
         }
     }
 
-    /**
-     * Checks if the given coordinates are within the Run button area.
-     */
     private boolean isRunButtonClicked(double x, double y) {
         if (!isRunButtonVisible) return false;
         
@@ -2362,9 +2131,6 @@ public class GameView {
                y >= runButtonY && y <= runButtonY + runButtonHeight;
     }
 
-    /**
-     * Checks if the given coordinates are within the Simulate button area.
-     */
     private boolean isSimulateButtonClicked(double x, double y) {
         if (!isSimulateButtonVisible) return false;
         
@@ -2372,9 +2138,6 @@ public class GameView {
                y >= simulateButtonY && y <= simulateButtonY + simulateButtonHeight;
     }
 
-    /**
-     * Checks if the given coordinates are within the Exit Simulate button area.
-     */
     private boolean isExitSimulateButtonClicked(double x, double y) {
         if (!isExitSimulateButtonVisible) return false;
         

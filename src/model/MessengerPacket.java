@@ -3,10 +3,6 @@ package model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import controller.MovementController.AccelerationType;
 
-/**
- * Messenger packets for normal message transfer across the network.
- * Implements different movement mechanics based on packet size and port compatibility.
- */
 public class MessengerPacket extends Packet {
 
     public MessengerPacket() {
@@ -23,9 +19,6 @@ public class MessengerPacket extends Packet {
         setPacketType(getPacketTypeBySize(size));
     }
 
-    /**
-     * Gets the appropriate packet type based on size.
-     */
     private PacketType getPacketTypeBySize(int size) {
         switch (size) {
             case 1: return PacketType.SMALL_MESSENGER;
@@ -41,10 +34,6 @@ public class MessengerPacket extends Packet {
         return getCoinValueByType();
     }
 
-    /**
-     * Calculates initial movement speed based on port compatibility and packet size.
-     * Phase 2 specification: Speed determines starting velocity, acceleration handled separately.
-     */
     public double calculateMovementSpeed(boolean isCompatiblePort) {
         PacketType type = getPacketType();
         if (type == null) return 100.0; // Default speed
@@ -74,11 +63,6 @@ public class MessengerPacket extends Packet {
         }
     }
 
-    /**
-     * Updates movement vector based on port compatibility.
-     * Phase 2 spec: "If a messenger packet enters a system through an incompatible port,
-     * it will exit the system at twice its normal speed."
-     */
     public void updateMovementForPort(boolean isCompatiblePort) {
         double speed = calculateMovementSpeed(isCompatiblePort);
         Vec2D direction = getMovementVector().normalize();
@@ -90,20 +74,12 @@ public class MessengerPacket extends Packet {
         }
     }
 
-    /**
-     * Applies the exit speed multiplier when leaving a system through an incompatible port.
-     * Phase 2 spec: messenger packets exit at 2x speed from incompatible ports.
-     */
     public void applyExitSpeedMultiplier(boolean wasIncompatiblePort) {
         if (wasIncompatiblePort) {
             setMovementVector(getMovementVector().scale(2.0));
         }
     }
 
-    /**
-     * Gets the acceleration type based on packet size and port compatibility.
-     * Phase 2 specification requirements.
-     */
     public AccelerationType getAccelerationType(boolean isCompatiblePort) {
         PacketType type = getPacketType();
         if (type == null) return AccelerationType.CONSTANT_VELOCITY;
@@ -126,10 +102,6 @@ public class MessengerPacket extends Packet {
         }
     }
 
-    /**
-     * Handles collision behavior for small messenger packets.
-     * Phase 2 spec: Size 1 packets reverse direction after collision and return to source.
-     */
     @Override
     public void applyShockwave(Vec2D effectVector) {
         super.applyShockwave(effectVector);
@@ -140,11 +112,6 @@ public class MessengerPacket extends Packet {
         }
     }
 
-    /**
-     * Initiates collision reversal behavior for size 1 packets.
-     * Phase 2 spec: "If this packet collides with another packet after starting its journey on a wire,
-     * it will reverse its direction to return to the source system and then attempt to reach the destination again."
-     */
     private void initiateCollisionReversal() {
         // Mark packet as reversing
         setReversing(true);
@@ -154,14 +121,8 @@ public class MessengerPacket extends Packet {
 
         // Set flag to attempt reaching destination again after returning to source
         setRetryDestination(true);
-
-        java.lang.System.out.println("DEBUG: Size 1 messenger packet initiating collision reversal - returning to source");
     }
 
-    /**
-     * Checks if this packet should reverse direction after collision.
-     * Only applies to size 1 messenger packets per Phase 2 specification.
-     */
     public boolean shouldReverseOnCollision() {
         return getPacketType() == PacketType.SMALL_MESSENGER;
     }

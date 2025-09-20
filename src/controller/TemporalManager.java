@@ -6,10 +6,6 @@ import java.lang.System;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Manages temporal navigation by storing and restoring game states at different time points.
- * This ensures that temporal navigation produces consistent results with normal simulation.
- */
 public class TemporalManager {
     private final Map<Double, TemporalState> temporalStates;
     private final double stateSaveInterval;
@@ -25,9 +21,6 @@ public class TemporalManager {
         this.stateTimes = new ArrayList<>();
     }
 
-    /**
-     * Saves the current game state if enough time has passed since last save.
-     */
     public void saveStateIfNeeded(double currentTime, GameState gameState, GameLevel level) {
         if (currentTime - lastSavedTime >= stateSaveInterval) {
             saveState(currentTime, gameState, level);
@@ -35,9 +28,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Saves the current game state at the specified time.
-     */
     public void saveState(double time, GameState gameState, GameLevel level) {
         // Round time to nearest interval for consistent storage
         double roundedTime = Math.round(time / stateSaveInterval) * stateSaveInterval;
@@ -53,10 +43,6 @@ public class TemporalManager {
         System.out.println("Saved temporal state at time " + String.format("%.2f", roundedTime) + "s");
     }
 
-    /**
-     * Restores the game state to the specified time.
-     * If exact time is not available, restores to the closest earlier time.
-     */
     public boolean restoreToTime(double targetTime, GameState gameState, GameLevel level) {
         // Find the closest state at or before the target time
         Double closestTime = findClosestStateTime(targetTime);
@@ -83,9 +69,6 @@ public class TemporalManager {
         return true;
     }
 
-    /**
-     * Finds the closest state time at or before the target time.
-     */
     private Double findClosestStateTime(double targetTime) {
         Double closestTime = null;
         
@@ -100,10 +83,6 @@ public class TemporalManager {
         return closestTime;
     }
 
-    /**
-     * Simulates forward from a saved state to the target time.
-     * This is a simplified simulation - in practice, this should integrate with GameController's simulation logic.
-     */
     private void simulateForwardFromState(double fromTime, double toTime, GameState gameState, GameLevel level) {
         System.out.println("Simulating forward from " + String.format("%.2f", fromTime) + "s to " + String.format("%.2f", toTime) + "s");
         
@@ -135,9 +114,6 @@ public class TemporalManager {
         gameState.setTemporalProgress(originalTemporalProgress);
     }
 
-    /**
-     * Processes packet injections for a specific time.
-     */
     private void processPacketInjectionsForTime(double targetTime, GameState gameState, GameLevel level) {
         if (level == null) return;
 
@@ -155,9 +131,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Updates packet movement for a time step.
-     */
     private void updatePacketMovement(double deltaTime, GameState gameState) {
         // This would integrate with MovementController
         // For now, we'll do basic position updates
@@ -179,9 +152,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Updates wire packet movement for a time step.
-     */
     private void updateWirePacketMovement(double deltaTime, GameState gameState, GameLevel level) {
         // This would integrate with the existing wire movement logic
         // For now, we'll do basic updates
@@ -203,9 +173,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Processes wire connections for packet transfers.
-     */
     private void processWireConnections(GameState gameState, GameLevel level) {
         // This would integrate with existing wire connection logic
         // For now, we'll do basic processing
@@ -219,9 +186,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Processes system transfers for packet processing.
-     */
     private void processSystemTransfers(GameState gameState, GameLevel level) {
         // This would integrate with existing system transfer logic
         // For now, we'll do basic processing
@@ -231,9 +195,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Cleans up old temporal states to prevent memory issues.
-     */
     private void cleanupOldStates() {
         if (stateTimes.size() > maxStatesToKeep) {
             // Remove oldest states
@@ -246,9 +207,6 @@ public class TemporalManager {
         }
     }
 
-    /**
-     * Clears all temporal states (useful when starting a new level).
-     */
     public void clearAllStates() {
         temporalStates.clear();
         stateTimes.clear();
@@ -256,16 +214,10 @@ public class TemporalManager {
         System.out.println("Cleared all temporal states");
     }
 
-    /**
-     * Gets the number of stored temporal states.
-     */
     public int getStateCount() {
         return temporalStates.size();
     }
 
-    /**
-     * Gets the time range of stored states.
-     */
     public String getTimeRange() {
         if (stateTimes.isEmpty()) {
             return "No states stored";
@@ -276,3 +228,4 @@ public class TemporalManager {
         return String.format("%.2fs - %.2fs", minTime, maxTime);
     }
 }
+

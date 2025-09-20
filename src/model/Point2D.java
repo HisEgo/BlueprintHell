@@ -2,10 +2,6 @@ package model;
 
 import java.util.Objects;
 
-/**
- * Represents a 2D point with x and y coordinates.
- * POJO class for serialization support.
- */
 public class Point2D {
     private double x;
     private double y;
@@ -49,9 +45,6 @@ public class Point2D {
         return new Point2D(this.x - other.x, this.y - other.y);
     }
 
-    /**
-     * Converts this point to a normalized vector.
-     */
     public Vec2D normalize() {
         double magnitude = Math.sqrt(x * x + y * y);
         if (magnitude == 0) {
@@ -78,3 +71,4 @@ public class Point2D {
         return "Point2D{" + "x=" + x + ", y=" + y + '}';
     }
 }
+

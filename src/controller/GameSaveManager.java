@@ -11,10 +11,6 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.lang.System;
 
-/**
- * Manages real-time game saving and loading with validation and synchronization.
- * Implements secure save mechanisms to prevent cheating.
- */
 public class GameSaveManager {
     private static final String SAVE_FILE_PATH = "game_save.json";
     private static final String SAVE_BACKUP_PATH = "game_save_backup.json";
@@ -45,9 +41,6 @@ public class GameSaveManager {
         registerShutdownHook();
     }
 
-    /**
-     * Saves the current game state with synchronization.
-     */
     public boolean saveGame(GameState gameState) {
         if (isSaving) {
             return false; // Prevent concurrent saves
@@ -93,9 +86,6 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Loads a saved game with validation.
-     */
     public GameState loadGame() throws GameLoadException {
         saveLock.readLock().lock();
         try {
@@ -124,16 +114,10 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Checks if a save file exists.
-     */
     public boolean hasSaveFile() {
         return Files.exists(Paths.get(SAVE_FILE_PATH));
     }
 
-    /**
-     * Deletes the save file.
-     */
     public boolean deleteSaveFile() {
         try {
             Files.deleteIfExists(Paths.get(SAVE_FILE_PATH));
@@ -145,33 +129,20 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Updates the save timer and saves if needed.
-     */
     public void updateSaveTimer(GameState gameState, double currentTime) {
         if (autoSaveEnabled && currentTime - lastSaveTime >= SAVE_INTERVAL) {
             saveGame(gameState);
         }
     }
 
-    /**
-     * Enables or disables auto-save functionality.
-     * Should be disabled when player manually exits the game.
-     */
     public void setAutoSaveEnabled(boolean enabled) {
         this.autoSaveEnabled = enabled;
     }
 
-    /**
-     * Checks if auto-save is currently enabled.
-     */
     public boolean isAutoSaveEnabled() {
         return autoSaveEnabled;
     }
 
-    /**
-     * Creates save data from game state.
-     */
     private GameSaveData createSaveData(GameState gameState) {
         GameSaveData saveData = new GameSaveData();
         saveData.setVersion(SAVE_VERSION);
@@ -181,9 +152,6 @@ public class GameSaveManager {
         return saveData;
     }
 
-    /**
-     * Calculates a checksum for the game state.
-     */
     private String calculateChecksum(GameState gameState) {
         // Enhanced checksum calculation including all game components
         int checksum = 0;
@@ -219,9 +187,6 @@ public class GameSaveManager {
         return Integer.toHexString(checksum);
     }
 
-    /**
-     * Calculates validation hash for save data.
-     */
     private String calculateValidationHash(GameSaveData saveData) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -235,9 +200,6 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Validates save data integrity.
-     */
     private boolean validateSaveData(GameSaveData saveData) {
         // Check version compatibility
         if (!SAVE_VERSION.equals(saveData.getVersion())) {
@@ -261,27 +223,18 @@ public class GameSaveManager {
         return expectedHash.equals(saveData.getValidationHash());
     }
 
-    /**
-     * Reconstructs game state from save data.
-     */
     private GameState reconstructGameState(GameSaveData saveData) {
         // For now, return the saved game state directly
         // In a full implementation, you might need to reconstruct objects
         return saveData.getGameState();
     }
 
-    /**
-     * Exception thrown when game loading fails.
-     */
     public static class GameLoadException extends Exception {
         public GameLoadException(String message) {
             super(message);
         }
     }
 
-    /**
-     * Registers a shutdown hook to clean up temporary files on application exit.
-     */
     private static synchronized void registerShutdownHook() {
         if (!shutdownHookRegistered) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -291,9 +244,6 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Cleans up any leftover temporary files in the system temp directory.
-     */
     private static void cleanupTemporaryFiles() {
         try {
             Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
@@ -313,16 +263,10 @@ public class GameSaveManager {
         }
     }
 
-    /**
-     * Manually triggers cleanup of temporary files (can be called during runtime).
-     */
     public static void cleanupTemporaryFilesNow() {
         cleanupTemporaryFiles();
     }
 
-    /**
-     * Inner class for save data structure.
-     */
     public static class GameSaveData {
         private String version;
         private long timestamp;

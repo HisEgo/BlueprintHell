@@ -1,9 +1,5 @@
 package model;
 
-/**
- * Anti-Trojan system that detects and converts trojan packets within a specific radius.
- * Deactivates after each successful operation.
- */
 public class AntiTrojanSystem extends System {
     private static final double DETECTION_RADIUS = 100.0; // Detection radius in pixels
     private static final double DEACTIVATION_TIME = 5.0; // Deactivation time in seconds
@@ -28,9 +24,6 @@ public class AntiTrojanSystem extends System {
         }
     }
 
-    /**
-     * Detects and converts trojan packets within the detection radius.
-     */
     public void detectAndConvertTrojans() {
         // Access packets through parent level
         GameLevel level = getParentLevel();
@@ -77,27 +70,19 @@ public class AntiTrojanSystem extends System {
         }
     }
 
-    /**
-     * Checks if a packet is within detection radius.
-     */
     public boolean isWithinDetectionRadius(Packet packet) {
         double distance = getPosition().distanceTo(packet.getCurrentPosition());
         return distance <= DETECTION_RADIUS;
     }
 
-    /**
-     * Converts a trojan packet to a messenger packet.
-     */
     public void convertTrojanPacket(Packet packet) {
         if (packet.getPacketType() != null && packet.getPacketType().isTrojan()) {
             packet.convertFromTrojan();
         }
     }
 
-    /**
-     * Gets the detection radius.
-     */
     public double getDetectionRadius() {
         return DETECTION_RADIUS;
     }
 }
+

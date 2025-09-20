@@ -1,15 +1,10 @@
 package model;
 
-
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Bulk packets for large data transfer across the network.
- * Implements special mechanics like destroying other packets and wire damage.
- */
 public class BulkPacket extends Packet {
     private int wirePassageCount;
     private static final int MAX_WIRE_PASSAGES = 3;
@@ -31,38 +26,23 @@ public class BulkPacket extends Packet {
         return getCoinValueByType();
     }
 
-    /**
-     * Increments wire passage count and checks if wire should be destroyed.
-     */
     public boolean incrementWirePassage() {
         wirePassageCount++;
         return wirePassageCount >= MAX_WIRE_PASSAGES;
     }
 
-    /**
-     * Gets the current wire passage count.
-     */
     public int getWirePassageCount() {
         return wirePassageCount;
     }
 
-    /**
-     * Sets the wire passage count.
-     */
     public void setWirePassageCount(int count) {
         this.wirePassageCount = count;
     }
 
-    /**
-     * Checks if this bulk packet should destroy the wire.
-     */
     public boolean shouldDestroyWire() {
         return wirePassageCount >= MAX_WIRE_PASSAGES;
     }
 
-    /**
-     * Destroys all other packets in a system.
-     */
     public void destroyOtherPackets(List<Packet> systemPackets) {
         for (Packet packet : systemPackets) {
             if (packet != this && packet.isActive()) {
@@ -71,9 +51,6 @@ public class BulkPacket extends Packet {
         }
     }
 
-    /**
-     * Splits this bulk packet into bit packets.
-     */
     public List<Packet> splitIntoBitPackets() {
         List<Packet> bitPackets = new ArrayList<>();
         String bulkId = UUID.randomUUID().toString();
@@ -93,9 +70,6 @@ public class BulkPacket extends Packet {
         return bitPackets;
     }
 
-    /**
-     * Calculates movement speed based on wire type (straight vs bend).
-     */
     public double calculateMovementSpeed(boolean isOnBend) {
         if (getPacketType() == PacketType.BULK_SMALL) {
             // Size 8: Constant velocity on straight, acceleration on bends
@@ -107,9 +81,6 @@ public class BulkPacket extends Packet {
         return 100.0;
     }
 
-    /**
-     * Applies deflection effect for large bulk packets.
-     */
     public void applyDeflection(double distanceTraveled) {
         if (getPacketType() == PacketType.BULK_LARGE) {
             // Apply deflection every 50 units of distance
@@ -128,9 +99,6 @@ public class BulkPacket extends Packet {
         }
     }
 
-    /**
-     * Randomly changes a port type when entering a system.
-     */
     public PortShape changePortType(PortShape currentPortType) {
         PortShape[] availableTypes = {PortShape.SQUARE, PortShape.TRIANGLE};
         return availableTypes[(int)(Math.random() * availableTypes.length)];

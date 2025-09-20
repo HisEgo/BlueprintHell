@@ -3,10 +3,6 @@ package model;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Spy system that allows packets to exit from any other spy system.
- * Destroys confidential packets and cannot affect protected packets.
- */
 public class SpySystem extends System {
 
     public SpySystem() {
@@ -20,59 +16,73 @@ public class SpySystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        java.lang.System.out.println("SPY SYSTEM: Processing packet " + packet.getPacketType() + " in Spy" + java.lang.System.identityHashCode(this));
+        
         // Destroy confidential packets immediately per spec
         if (packet.getPacketType() != null && packet.getPacketType().isConfidential()) {
+            java.lang.System.out.println("SPY SYSTEM: Destroying confidential packet " + packet.getPacketType());
             packet.setActive(false);
             packet.setLost(true); // Mark as lost for proper counting
             return;
         }
 
         // Protected packets revert to original type when passing through spy (cannot be destroyed)
-        if ((packet.getPacketType() != null && packet.getPacketType().isProtected()) || packet instanceof ProtectedPacket) {
+        if (packet instanceof ProtectedPacket) {
+            ProtectedPacket protectedPacket = (ProtectedPacket) packet;
+            Packet revertedPacket = protectedPacket.revertToOriginal();
+            // Replace the protected packet with reverted packet
+            replacePacketInSystem(packet, revertedPacket);
+            packet = revertedPacket;
+            // After reverting, continue normal processing in this system
+            super.processPacket(packet);
+            return;
+        } else if (packet.getPacketType() != null && packet.getPacketType().isProtected()) {
             packet.convertFromProtected();
             // After reverting, continue normal processing in this system
             super.processPacket(packet);
             return;
         }
 
-        // For other packets, attempt teleport to any spy system (including this one)
+        // For other packets, teleport to any spy system (including this one)
         List<SpySystem> allSpySystems = findAllSpySystems();
+        
         if (!allSpySystems.isEmpty()) {
-            SpySystem targetSpy = allSpySystems.get((int) (Math.random() * allSpySystems.size()));
-            if (targetSpy == this) {
-                // If selected this spy system, process normally
-                super.processPacket(packet);
-            } else {
-                // Teleport to another spy system
-                teleportPacketToSpySystem(packet, targetSpy);
-            }
+            int randomIndex = (int) (Math.random() * allSpySystems.size());
+            SpySystem targetSpy = allSpySystems.get(randomIndex);
+            
+            // Debug: Show which spy system was selected for teleportation
+            java.lang.System.out.println("SPY TELEPORT: Packet " + packet.getPacketType() + " teleporting from Spy" + 
+                    java.lang.System.identityHashCode(this) + " to Spy" + java.lang.System.identityHashCode(targetSpy) + 
+                    " (total spies: " + allSpySystems.size() + ", same system: " + (targetSpy == this) + ")");
+            
+            // Always teleport, even if it's the same system
+            teleportPacketToSpySystem(packet, targetSpy);
             return;
         }
 
-        // If no other spy systems exist, process as a normal system
+        // If no spy systems exist (shouldn't happen), process as a normal system
         super.processPacket(packet);
     }
 
-    /**
-     * Finds all spy systems in the network (including this one).
-     */
     private List<SpySystem> findAllSpySystems() {
-        List<SpySystem> allSpies = new ArrayList<>();
+        List<SpySystem> allSpySystems = new ArrayList<>();
         GameLevel level = getParentLevel();
+        java.lang.System.out.println("SPY DEBUG: getParentLevel() returned: " + level);
         if (level == null) {
-            return allSpies;
+            java.lang.System.out.println("SPY DEBUG: parentLevel is null!");
+            return allSpySystems;
         }
+        java.lang.System.out.println("SPY DEBUG: Level has " + level.getSystems().size() + " systems");
         for (System system : level.getSystems()) {
             if (system instanceof SpySystem) {
-                allSpies.add((SpySystem) system);
+                allSpySystems.add((SpySystem) system);
+                java.lang.System.out.println("SPY DEBUG: Found spy system: " + java.lang.System.identityHashCode(system));
             }
         }
-        return allSpies;
+        java.lang.System.out.println("SPY DEBUG: Total spy systems found: " + allSpySystems.size());
+        return allSpySystems;
     }
 
-    /**
-     * Finds other spy systems in the network (excluding this one).
-     */
     private List<SpySystem> findOtherSpySystems() {
         List<SpySystem> others = new ArrayList<>();
         GameLevel level = getParentLevel();
@@ -87,35 +97,68 @@ public class SpySystem extends System {
         return others;
     }
 
-    /**
-     * Teleports a packet to another spy system.
-     */
     private void teleportPacketToSpySystem(Packet packet, SpySystem targetSpy) {
         if (packet == null || targetSpy == null) {
             return;
         }
 
-        // Prefer an empty, compatible output port
-        for (Port port : targetSpy.getOutputPorts()) {
-            if (port.isEmpty() && port.isCompatibleWithPacket(packet)) {
-                port.acceptPacket(packet);
-                return;
-            }
-        }
-
-        // Fallback: place on any empty output port
-        for (Port port : targetSpy.getOutputPorts()) {
-            if (port.isEmpty()) {
-                port.acceptPacket(packet);
-                return;
-            }
-        }
-
-        // If no output ports are available, try system storage; otherwise mark lost
-        if (targetSpy.hasStorageSpace()) {
-            targetSpy.getStorage().add(packet);
+        // Find the best output port on the target spy system
+        Port bestPort = targetSpy.findBestOutputPortForPacket(packet);
+        
+        if (bestPort != null) {
+            java.lang.System.out.println("SPY TELEPORT: Packet placed on output port of Spy" + java.lang.System.identityHashCode(targetSpy));
+            bestPort.acceptPacket(packet);
         } else {
-            packet.setActive(false);
+            // If no output ports available, store in target system
+            if (targetSpy.hasStorageSpace()) {
+                java.lang.System.out.println("SPY TELEPORT: Packet stored in Spy" + java.lang.System.identityHashCode(targetSpy) + " storage");
+                targetSpy.getStorage().add(packet);
+            } else {
+                // If no storage space, packet is lost
+                java.lang.System.out.println("SPY TELEPORT: Packet lost - no space in Spy" + java.lang.System.identityHashCode(targetSpy));
+                packet.setActive(false);
+            }
+        }
+    }
+
+    private Port findBestOutputPortForPacket(Packet packet) {
+        // Priority 1: Compatible empty port
+        for (Port port : getOutputPorts()) {
+            if (port.isEmpty() && port.isCompatibleWithPacket(packet)) {
+                return port;
+            }
+        }
+
+        // Priority 2: Any empty port
+        for (Port port : getOutputPorts()) {
+            if (port.isEmpty()) {
+                return port;
+            }
+        }
+
+        // No available ports
+        return null;
+    }
+
+    private void replacePacketInSystem(Packet oldPacket, Packet newPacket) {
+        // Replace in storage
+        if (getStorage().contains(oldPacket)) {
+            getStorage().remove(oldPacket);
+            getStorage().add(newPacket);
+        }
+
+        // Replace in input ports
+        for (Port port : getInputPorts()) {
+            if (port.getCurrentPacket() == oldPacket) {
+                port.setCurrentPacket(newPacket);
+            }
+        }
+
+        // Replace in output ports
+        for (Port port : getOutputPorts()) {
+            if (port.getCurrentPacket() == oldPacket) {
+                port.setCurrentPacket(newPacket);
+            }
         }
     }
 }

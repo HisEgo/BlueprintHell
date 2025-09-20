@@ -2,9 +2,6 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Square-shaped packet with size 2 and coin value 1.
- */
 public class SquarePacket extends Packet {
 
     public SquarePacket() {
