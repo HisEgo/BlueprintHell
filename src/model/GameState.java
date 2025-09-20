@@ -369,7 +369,6 @@ public class GameState {
      */
     public void clearActivePackets() {
         activePackets.clear();
-        java.lang.System.out.println("Cleared all active packets from game state");
     }
 
 
@@ -443,13 +442,6 @@ public class GameState {
         // Treat time elapsed as a valid level completion path
         boolean timeElapsed = levelTimer >= currentLevel.getLevelDuration();
 
-        // Debug output to understand what's happening
-        if (levelTimer > 0 && (int)levelTimer % 2 == 0) { // Print every 2 seconds
-            java.lang.System.out.println("DEBUG shouldCompleteLevel: levelTimer=" + levelTimer +
-                    ", levelDuration=" + currentLevel.getLevelDuration() +
-                    ", timeElapsed=" + timeElapsed +
-                    ", activePackets.size=" + activePackets.size());
-        }
 
         // Don't complete level if no packets have been injected yet
         boolean anyPacketsInjected = false;
@@ -507,9 +499,6 @@ public class GameState {
                 // Only complete if we've had enough time for all packets to be processed
                 // For level1, this should be around 50 seconds (the level duration)
                 if (levelTimer >= currentLevel.getLevelDuration() * 0.5) { // Allow completion after 50% of time
-                    java.lang.System.out.println("DEBUG: Early level completing after all packets processed: " +
-                            "levelTimer=" + levelTimer + ", levelDuration=" + currentLevel.getLevelDuration() +
-                            ", totalDelivered=" + getTotalDeliveredPackets() + ", totalLost=" + getTotalLostPackets());
                     return true;
                 }
             }
@@ -564,7 +553,6 @@ public class GameState {
      */
     public void saveLevelStartState() {
         this.levelStartState = new LevelStartState(coins, lostPacketsCount, remainingWireLength);
-        java.lang.System.out.println("DEBUG: Saved level start state - coins: " + coins + ", lost: " + lostPacketsCount + ", wireLength: " + remainingWireLength);
     }
     
     /**
@@ -575,9 +563,7 @@ public class GameState {
             this.coins = levelStartState.getCoins();
             this.lostPacketsCount = levelStartState.getLostPacketsCount();
             this.remainingWireLength = levelStartState.getRemainingWireLength();
-            java.lang.System.out.println("DEBUG: Restored level start state - coins: " + coins + ", lost: " + lostPacketsCount + ", wireLength: " + remainingWireLength);
         } else {
-            java.lang.System.out.println("DEBUG: No level start state to restore");
         }
         
         // Reset other level-specific state

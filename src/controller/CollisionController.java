@@ -129,7 +129,6 @@ public class CollisionController {
                 double threshold = packet1.getSize() + packet2.getSize();
 
                 if (distance <= threshold) {
-                    java.lang.System.out.println("COLLISION DETECTED between packets at " + packet1.getCurrentPosition() + " and " + packet2.getCurrentPosition());
 
                     // Add cooldown for this pair
                     collisionCooldowns.put(pairId, currentTime + COLLISION_COOLDOWN);
@@ -223,7 +222,6 @@ public class CollisionController {
             packet1.setCurrentPosition(new Point2D(pos1.getX() + offset.getX(), pos1.getY() + offset.getY()));
             packet2.setCurrentPosition(new Point2D(pos2.getX() - offset.getX(), pos2.getY() - offset.getY()));
 
-            java.lang.System.out.println("DEBUG: Separated packets - distance was " + distance + ", moved apart by " + minSeparation);
         }
     }
 
@@ -258,7 +256,6 @@ public class CollisionController {
                 (packet1.getCurrentPosition().getY() + packet2.getCurrentPosition().getY()) / 2
         );
 
-        java.lang.System.out.println("SHOCKWAVE: collision at " + collisionPoint + ", packets to check: " + allPackets.size());
 
         for (Packet packet : allPackets) {
             if (packet == packet1 || packet == packet2) {
@@ -266,12 +263,10 @@ public class CollisionController {
             }
 
             double distance = collisionPoint.distanceTo(packet.getCurrentPosition());
-            java.lang.System.out.println("SHOCKWAVE: checking packet at " + packet.getCurrentPosition() + ", distance: " + distance + ", radius: 100.0");
 
             // Limit shockwave radius to 100 pixels
             if (distance <= 100.0) {
                 double strength = 1.0 - (distance / 100.0);
-                java.lang.System.out.println("SHOCKWAVE: applying effect to packet at " + packet.getCurrentPosition() + ", strength: " + strength);
 
                 // Skip applying shockwave to size 1 packets that have already been reversed
                 if (packet.getSize() == 1 && packet.isReversing()) {

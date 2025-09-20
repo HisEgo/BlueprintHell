@@ -37,7 +37,6 @@ public class ConfidentialPacket extends Packet {
             // Reduce speed by 50% to avoid simultaneous presence
             Vec2D currentMovement = getMovementVector();
             setMovementVector(currentMovement.scale(0.5));
-            java.lang.System.out.println("DEBUG: Confidential packet reducing speed to avoid system occupancy");
         }
     }
 
@@ -84,9 +83,6 @@ public class ConfidentialPacket extends Packet {
             } else {
                 setMovementVector(getMovementVector().add(adjustment));
             }
-
-            java.lang.System.out.println("DEBUG: Protected confidential packet adjusting distance (min distance: " +
-                    String.format("%.1f", minDistance) + ", target: " + targetDistance + ")");
         }
     }
 

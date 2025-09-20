@@ -358,7 +358,6 @@ public class MainApp {
                     primaryStage.show();
                     primaryStage.requestFocus();
                     primaryStage.toFront();
-                    System.out.println("DEBUG: Switched to game view after restart");
                 } catch (Exception e) {
                     System.err.println("Failed to switch to game view after restart: " + e.getMessage());
                 }
@@ -393,7 +392,6 @@ public class MainApp {
                     primaryStage.show();
                     primaryStage.requestFocus();
                     primaryStage.toFront();
-                    System.out.println("DEBUG: Switched to game view after pause menu restart");
                 } catch (Exception e) {
                     System.err.println("Failed to switch to game view after pause menu restart: " + e.getMessage());
                 }

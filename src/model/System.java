@@ -9,12 +9,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Objects;
 
-/**
- * Abstract base class for all systems in the network simulation.
- * Contains input and output ports with up to 5-packet storage.
- * POJO class for serialization support.
- * Enhanced for Phase 2 with new system types and mechanics.
- */
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME,
         include = com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY, property = "type")
@@ -206,8 +200,6 @@ public abstract class System {
         for (Port inputPort : inputPorts) {
             if (inputPort.getCurrentPacket() != null) {
                 Packet packet = inputPort.releasePacket();
-                java.lang.System.out.println("DEBUG: " + this.getClass().getSimpleName() +
-                        " processing packet " + packet.getPacketType() + " from input port");
                 processPacket(packet);
             }
         }
@@ -238,15 +230,9 @@ public abstract class System {
                 boolean isCompatible = availablePort.isCompatibleWithPacket(packet);
                 if (!isCompatible && packet instanceof MessengerPacket) {
                     ((MessengerPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for stored packet incompatible port exit");
                 } else if (!isCompatible && packet instanceof ProtectedPacket) {
                     ((ProtectedPacket) packet).applyExitSpeedMultiplier(true);
-                    java.lang.System.out.println("DEBUG: Applied 2x exit speed for stored protected packet incompatible port exit");
                 }
-                
-                java.lang.System.out.println("DEBUG: " + getClass().getSimpleName() +
-                        " moved stored " + packet.getPacketType() + " packet to " + 
-                        (isCompatible ? "compatible" : "incompatible") + " output port (remaining in storage: " + storage.size() + ")");
                 // Process only one packet per update cycle to avoid overwhelming the system
                 break;
             }
@@ -322,13 +308,9 @@ public abstract class System {
         } else if (storage.size() < MAX_STORAGE) {
             // Store packet if storage is available
             storage.add(packet);
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
-                    " stored " + packet.getPacketType() + " packet (storage: " + storage.size() + "/" + MAX_STORAGE + ")");
         } else {
             // Packet is lost if no storage available
             packet.setActive(false);
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: " + getClass().getSimpleName() +
-                    " LOST " + packet.getPacketType() + " packet - no storage available");
         }
     }
 
@@ -364,7 +346,6 @@ public abstract class System {
         if (!compatibleEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = compatibleEmptyPorts.get(random.nextInt(compatibleEmptyPorts.size()));
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected compatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
@@ -372,12 +353,10 @@ public abstract class System {
         if (!anyEmptyPorts.isEmpty()) {
             Random random = new Random();
             Port selectedPort = anyEmptyPorts.get(random.nextInt(anyEmptyPorts.size()));
-            java.lang.System.out.println("PORT_SELECTION_DEBUG: Selected incompatible " + selectedPort.getShape() + " port for " + packet.getPacketType());
             return selectedPort;
         }
 
         // Priority 3: No empty ports - packet will be stored in system
-        java.lang.System.out.println("PORT_SELECTION_DEBUG: No available ports for " + packet.getPacketType() + " - will be stored");
         return null;
     }
 

@@ -126,8 +126,8 @@ public class GameView {
             }
         });
 
-        // Add to root pane
-        root.getChildren().addAll(timeSliderLabel, timeSlider);
+        // Add to root pane (hide timeSliderLabel as requested)
+        root.getChildren().addAll(timeSlider);
     }
 
     /**
@@ -205,12 +205,7 @@ public class GameView {
         // Make the root focusable so it can receive keyboard events
         root.setFocusTraversable(true);
         root.requestFocus(); // Request focus to ensure key events are received
-        java.lang.System.out.println("DEBUG: GameView - Root pane focusable: " + root.isFocusTraversable() + ", focused: " + root.isFocused());
 
-        // Add focus change listener to debug focus issues
-        root.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-            java.lang.System.out.println("DEBUG: GameView - Root pane focus changed from " + wasFocused + " to " + isNowFocused);
-        });
 
         // Make canvas focusable for mouse events but don't duplicate key handlers
         canvas.setFocusTraversable(true);

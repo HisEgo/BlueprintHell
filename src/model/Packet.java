@@ -3,11 +3,6 @@ package model;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Abstract base class for all packets in the network simulation.
- * POJO class for serialization support.
- * Enhanced for Phase 2 with new packet types and mechanics.
- */
 public abstract class Packet {
     private int size;
     private double noiseLevel;
@@ -18,6 +13,7 @@ public abstract class Packet {
     // Tracks explicit loss events (e.g., off-wire) to differentiate from deliveries
     private boolean wasLost;
     private PacketType packetType;
+    private PacketType originalPacketType; // Store original type before protection
     private double travelTime;
 
     // Path-based movement tracking for wire movement
@@ -128,6 +124,14 @@ public abstract class Packet {
 
     public void setPacketType(PacketType packetType) {
         this.packetType = packetType;
+    }
+
+    public PacketType getOriginalPacketType() {
+        return originalPacketType;
+    }
+
+    public void setOriginalPacketType(PacketType originalPacketType) {
+        this.originalPacketType = originalPacketType;
     }
 
     public double getTravelTime() {
@@ -453,9 +457,11 @@ public abstract class Packet {
      */
     public void convertToProtected() {
         if (packetType != null && packetType.isMessenger()) {
+            originalPacketType = packetType; // Store original type
             packetType = PacketType.PROTECTED;
             size = size * 2; // Protected packets are twice the size
         } else if (packetType != null && packetType.isConfidential()) {
+            originalPacketType = packetType; // Store original type
             packetType = PacketType.CONFIDENTIAL_PROTECTED;
             size = packetType.getBaseSize();
         }
@@ -466,9 +472,16 @@ public abstract class Packet {
      */
     public void convertFromProtected() {
         if (packetType != null && packetType.isProtected()) {
-            // For protected packets, we need to restore the original size
-            size = size / 2; // Restore original size
-            packetType = PacketType.SQUARE_MESSENGER; // Default back to square messenger
+            if (originalPacketType != null) {
+                // Restore to the original type that was stored
+                packetType = originalPacketType;
+                size = originalPacketType.getBaseSize(); // Restore original size
+                originalPacketType = null; // Clear the stored original type
+            } else {
+                // Fallback if original type wasn't stored
+                size = size / 2; // Restore original size
+                packetType = PacketType.SQUARE_MESSENGER; // Default back to square messenger
+            }
         }
     }
 

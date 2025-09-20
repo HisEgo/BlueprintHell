@@ -172,7 +172,6 @@ public class InputHandler {
                 selectedWire = null;
                 firstSelectedWireForMerge = null;
                 selectedBendIndex = -1;
-                java.lang.System.out.println("DEBUG: Bend creation mode toggled: " + (isBendCreationMode ? "ON" : "OFF"));
                 break;
             case "wire_merge_mode":
                 // Toggle wire merge mode

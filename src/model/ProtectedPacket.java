@@ -39,6 +39,11 @@ public class ProtectedPacket extends Packet {
         this.setNoiseLevel(originalPacket.getNoiseLevel());
         this.setTravelTime(originalPacket.getTravelTime());
         this.setMaxTravelTime(originalPacket.getMaxTravelTime());
+        
+        // Protected packets are twice the size of original
+        if (originalPacket.getPacketType() != null) {
+            setSize(originalPacket.getPacketType().getBaseSize() * 2);
+        }
     }
 
     /**
@@ -162,11 +167,29 @@ public class ProtectedPacket extends Packet {
      * Converts back to original type (used when VPN system fails).
      */
     public Packet revertToOriginal() {
-        MessengerPacket reverted = new MessengerPacket(originalType, getCurrentPosition(), getMovementVector());
+        if (originalType.isMessenger()) {
+            MessengerPacket reverted = new MessengerPacket(originalType, getCurrentPosition(), getMovementVector());
+            reverted.setNoiseLevel(getNoiseLevel());
+            reverted.setTravelTime(getTravelTime());
+            reverted.setMaxTravelTime(getMaxTravelTime());
+            reverted.setSize(originalType.getBaseSize()); // Restore original size
+            return reverted;
+        } else if (originalType.isConfidential()) {
+            // For confidential packets, create a new confidential packet
+            ConfidentialPacket reverted = new ConfidentialPacket(getCurrentPosition(), getMovementVector());
+            reverted.setNoiseLevel(getNoiseLevel());
+            reverted.setTravelTime(getTravelTime());
+            reverted.setMaxTravelTime(getMaxTravelTime());
+            reverted.setSize(originalType.getBaseSize()); // Restore original size
+            return reverted;
+        }
+        
+        // Fallback to messenger packet
+        MessengerPacket reverted = new MessengerPacket(PacketType.SQUARE_MESSENGER, getCurrentPosition(), getMovementVector());
         reverted.setNoiseLevel(getNoiseLevel());
         reverted.setTravelTime(getTravelTime());
         reverted.setMaxTravelTime(getMaxTravelTime());
-        reverted.setSize(originalType.getBaseSize()); // Restore original size
+        reverted.setSize(2); // Default size
         return reverted;
     }
 

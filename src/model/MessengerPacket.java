@@ -154,8 +154,6 @@ public class MessengerPacket extends Packet {
 
         // Set flag to attempt reaching destination again after returning to source
         setRetryDestination(true);
-
-        java.lang.System.out.println("DEBUG: Size 1 messenger packet initiating collision reversal - returning to source");
     }
 
     /**

@@ -104,13 +104,9 @@ public class ReferenceSystem extends System {
         Port availablePort = findAvailableOutputPort(packet);
         if (availablePort != null) {
             availablePort.acceptPacket(packet);
-            java.lang.System.out.println("DEBUG: ReferenceSystem injected " + packet.getPacketType() + 
-                    " packet to " + availablePort.getShape() + " port");
         } else {
             // If no port available, call processPacket to handle storage (though reference systems usually have available ports)
             processPacket(packet);
-            java.lang.System.out.println("DEBUG: ReferenceSystem processed " + packet.getPacketType() + 
-                    " packet through normal system logic (no available output ports)");
         }
     }
 
@@ -135,8 +131,6 @@ public class ReferenceSystem extends System {
         if (!packet.isProcessedByReferenceSystem()) {
             deliveredPacketCount++;
             packet.setProcessedByReferenceSystem(true);
-            java.lang.System.out.println("*** PACKET DELIVERED *** " + packet.getPacketType() +
-                    " (" + packet.getClass().getSimpleName() + ") to ReferenceSystem (total delivered: " + deliveredPacketCount + ")");
         }
     }
 

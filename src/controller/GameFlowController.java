@@ -84,7 +84,6 @@ public class GameFlowController {
             if (nextLevelId != null) {
                 // Always start with no connections (fresh mode)
                 gameController.loadLevel(nextLevelId);
-                java.lang.System.out.println("DEBUG: Loading next level with fresh start");
 
                 gameController.startGame();
 

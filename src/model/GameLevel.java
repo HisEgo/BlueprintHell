@@ -270,28 +270,18 @@ public class GameLevel {
      * Handles both direct list format and legacy map format.
      */
     public void convertPacketScheduleFromJSON() {
-        java.lang.System.out.println("DEBUG: convertPacketScheduleFromJSON called");
-        java.lang.System.out.println("DEBUG: packetSchedule size: " + (packetSchedule != null ? packetSchedule.size() : "null"));
-        java.lang.System.out.println("DEBUG: packetInjectionSchedule size: " + (packetInjectionSchedule != null ? packetInjectionSchedule.size() : "null"));
-
         boolean usedDirectList = false;
 
         // Preferred path: if packetSchedule already populated via JSON list, just resolve sources
         if (this.packetSchedule != null && !this.packetSchedule.isEmpty()) {
-            java.lang.System.out.println("DEBUG: Using direct packetSchedule list with " + packetSchedule.size() + " items");
             resolvePacketInjectionSources();
             usedDirectList = true;
-        } else {
-            java.lang.System.out.println("DEBUG: packetSchedule is null or empty, will use legacy conversion");
         }
 
         // Backward-compatible path: convert legacy map<Double, List<Packet>> into PacketInjection list
         if (!usedDirectList) {
             List<PacketInjection> converted = new ArrayList<>();
-            if (packetInjectionSchedule == null || packetInjectionSchedule.isEmpty()) {
-                java.lang.System.out.println("DEBUG: No packet injection schedule found in JSON");
-            } else {
-                java.lang.System.out.println("DEBUG: Converting " + packetInjectionSchedule.size() + " packet injection entries from legacy JSON format");
+            if (packetInjectionSchedule != null && !packetInjectionSchedule.isEmpty()) {
                 for (Map.Entry<Double, List<Packet>> entry : packetInjectionSchedule.entrySet()) {
                     double time = entry.getKey();
                     List<Packet> packets = entry.getValue();
@@ -311,15 +301,6 @@ public class GameLevel {
         // Sort by time
         if (packetSchedule != null) {
             packetSchedule.sort((a, b) -> Double.compare(a.getTime(), b.getTime()));
-            java.lang.System.out.println("DEBUG: Final packet schedule has " + packetSchedule.size() + " injections");
-
-            // Debug: print first few injections
-            for (int i = 0; i < Math.min(3, packetSchedule.size()); i++) {
-                PacketInjection inj = packetSchedule.get(i);
-                java.lang.System.out.println("DEBUG: Injection " + i + ": time=" + inj.getTime() +
-                        ", type=" + inj.getPacketType() + ", sourceId=" + inj.getSourceId() +
-                        ", sourceSystem=" + (inj.getSourceSystem() != null ? inj.getSourceSystem().getId() : "null"));
-            }
         }
     }
 

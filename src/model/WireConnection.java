@@ -255,9 +255,6 @@ public class WireConnection {
                         packet.setCoinAwardPending(true);
                         String systemType = wireOutputPort.getParentSystem() != null ?
                                 wireOutputPort.getParentSystem().getClass().getSimpleName() : "Unknown";
-                        java.lang.System.out.println("DEBUG: Packet " + packet.getClass().getSimpleName() +
-                                " transferred from wire " + id.substring(0,8) + " to " + systemType +
-                                " input port (remaining packets: " + packetsOnWire.size() + ")");
 
                         // If destination is a ReferenceSystem, finalize delivery immediately
                         model.System destSystem = wireOutputPort.getParentSystem();
@@ -510,7 +507,6 @@ public class WireConnection {
                 // Mark packet as lost per Phase 1 spec: "A packet goes off the wire path"
                 packet.setLost(true);
                 packet.setActive(false);
-                java.lang.System.out.println("DEBUG: Packet went off-wire (deviation=" + deviation + ") and is marked lost");
                 return;
             }
             // Snap gently to the path when within tolerance
@@ -902,10 +898,6 @@ public class WireConnection {
                 
                 // Check if this segment intersects with system bounds
                 if (lineIntersectsRectangle(segmentStart, segmentEnd, systemBounds)) {
-                    // Debug: Print collision detection details
-                    java.lang.System.out.println("DEBUG: Wire " + id.substring(0,8) + " segment intersects with " + 
-                        system.getClass().getSimpleName() + " at (" + segmentStart.getX() + "," + segmentStart.getY() + 
-                        ") to (" + segmentEnd.getX() + "," + segmentEnd.getY() + ")");
                     return true;
                 }
             }
@@ -1484,7 +1476,6 @@ public class WireConnection {
      */
     public void clearAllPackets() {
         packetsOnWire.clear();
-        java.lang.System.out.println("DEBUG: Cleared all packets from wire " + getId().substring(0, 8));
     }
 
     /**
