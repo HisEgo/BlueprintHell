@@ -2,7 +2,7 @@ package view;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Label;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 public class GameView {
     private GameController gameController;
-    private StackPane root;
+    private Pane root;
     private Canvas canvas;
     private GraphicsContext gc;
     private GameLevel currentLevel;
@@ -68,7 +68,7 @@ public class GameView {
     }
 
     private void initializeUI() {
-        root = new StackPane();
+        root = new Pane();
 
         // Make canvas size dynamic based on available space
         canvas = new Canvas();
@@ -95,17 +95,19 @@ public class GameView {
         timeSliderLabel = new Label("Time: 0.0s / 60.0s");
         timeSliderLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         timeSliderLabel.setTextFill(Color.WHITE);
-        timeSliderLabel.setLayoutX(20);
-        timeSliderLabel.setLayoutY(20);
+        // Position will be set dynamically
+        timeSliderLabel.setLayoutX(0);
+        timeSliderLabel.setLayoutY(0);
 
         // Create slider
         timeSlider = new Slider();
         timeSlider.setMin(0.0);
         timeSlider.setMax(60.0);
         timeSlider.setValue(0.0);
-        timeSlider.setPrefWidth(300);
-        timeSlider.setLayoutX(20);
-        timeSlider.setLayoutY(50);
+        timeSlider.setPrefWidth(400);
+        // Position will be set dynamically
+        timeSlider.setLayoutX(0);
+        timeSlider.setLayoutY(0);
         timeSlider.setDisable(true);
         timeSlider.setVisible(false);
 
@@ -116,8 +118,59 @@ public class GameView {
             }
         });
 
-        // Add to root pane (hide timeSliderLabel as requested)
-        root.getChildren().addAll(timeSlider);
+        // Add to root pane
+        root.getChildren().addAll(timeSlider, timeSliderLabel);
+        
+        // Update position when window size changes
+        root.heightProperty().addListener((obs, oldVal, newVal) -> {
+            updateTimeSliderPosition();
+        });
+        root.widthProperty().addListener((obs, oldVal, newVal) -> {
+            updateTimeSliderPosition();
+        });
+        
+        // Initial position update
+        updateTimeSliderPosition();
+    }
+    
+    private void updateTimeSliderPosition() {
+        if (timeSlider != null && timeSliderLabel != null && root != null) {
+            double windowHeight = root.getHeight();
+            double windowWidth = root.getWidth();
+            if (windowHeight > 0 && windowWidth > 0) {
+                // Position at bottom with some margin
+                double centerX = (windowWidth - timeSlider.getPrefWidth()) / 2.0;
+                timeSlider.setLayoutX(centerX);
+                timeSlider.setLayoutY(windowHeight - 50);
+                
+                timeSliderLabel.setLayoutX(centerX);
+                timeSliderLabel.setLayoutY(windowHeight - 75);
+            }
+        }
+    }
+    
+    private void centerOverlay(javafx.scene.layout.Pane overlay) {
+        if (overlay != null && root != null) {
+            double windowWidth = root.getWidth();
+            double windowHeight = root.getHeight();
+            
+            if (windowWidth > 0 && windowHeight > 0) {
+                // Get overlay preferred size
+                double overlayWidth = overlay.getPrefWidth();
+                double overlayHeight = overlay.getPrefHeight();
+                
+                // If no preferred size set, use default values
+                if (overlayWidth <= 0) overlayWidth = 300;
+                if (overlayHeight <= 0) overlayHeight = 200;
+                
+                // Center the overlay
+                double centerX = (windowWidth - overlayWidth) / 2.0;
+                double centerY = (windowHeight - overlayHeight) / 2.0;
+                
+                overlay.setLayoutX(centerX);
+                overlay.setLayoutY(centerY);
+            }
+        }
     }
 
     private void setupInputHandlers() {
@@ -475,6 +528,7 @@ public class GameView {
         // Update slider visibility and state
         timeSlider.setVisible(isSimulating);
         timeSlider.setDisable(!isSimulating);
+        timeSliderLabel.setVisible(isSimulating);
         
         if (isSimulating) {
             // Update slider values
@@ -672,6 +726,17 @@ public class GameView {
         gc.setStroke(Color.WHITE);
         gc.setLineWidth(2);
         gc.strokeRect(pos.getX() - halfWidth, pos.getY() - halfHeight, halfWidth * 2, halfHeight * 2);
+
+        // Draw storage count for non-reference systems
+        if (!(system instanceof ReferenceSystem)) {
+            int storageCount = system.getStorage().size();
+            // Always show storage count (even if 0) for debugging
+            gc.setFill(storageCount > 0 ? Color.YELLOW : Color.LIGHTGRAY);
+            gc.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 12));
+            // Position above the system, more visible
+            String countText = String.valueOf(storageCount);
+            gc.fillText(countText, pos.getX() - 3, pos.getY() - halfHeight - 10);
+        }
 
         // Draw a compact label to indicate type
         if (!label.isEmpty()) {
@@ -891,7 +956,9 @@ public class GameView {
         // Check if wire passes over systems - if so, make it red
         boolean passesOverSystems = false;
         if (gameController != null && gameController.getGameState() != null && currentLevel != null) {
-            passesOverSystems = connection.passesOverSystems(currentLevel.getSystems());
+            // Use the current game setting for collision detection
+            boolean collisionSmoothCurves = gameController.isSmoothWires();
+            passesOverSystems = connection.passesOverSystems(currentLevel.getSystems(), collisionSmoothCurves);
             
         }
         
@@ -1529,11 +1596,9 @@ public class GameView {
                     "Click & Drag Ports - Connect Wires",
                     "Right-Click Wire - Remove Wire",
                     "B - Bend Creation Mode",
-                    "M - Wire Merge Mode",
                     "C - Toggle Smooth Wire Curves",
                     "S - Shop",
                     "P - Menu (Pause/Exit)",
-                    "ESC - Exit Current Mode",
                     "",
                     "VIEWPORT CONTROLS:",
                     "Mouse Wheel - Zoom In/Out",
@@ -1543,11 +1608,8 @@ public class GameView {
             };
         } else {
             instructions = new String[]{
-                    "SIMULATION MODE:",
-                    "Arrow Keys - Temporal Navigation",
+                    "RUNNING MODE:",
                     "P - Pause/Resume",
-                    "C - Wire Curves (LOCKED during simulation)",
-                    "ESC - Return to Editing",
                     "S - Shop",
                     "",
                     "VIEWPORT CONTROLS:",
@@ -1575,9 +1637,12 @@ public class GameView {
             } else if (gameController.getInputHandler().isBendCreationMode()) {
                 gc.setFill(Color.ORANGE);
                 gc.fillText("BEND CREATION MODE - Click on wires to add bends (1 coin each)", 10, y + 10);
+            // Wire merge mode removed per user request
+            /*
             } else if (gameController.getInputHandler().isWireMergeMode()) {
                 gc.setFill(Color.CYAN);
                 gc.fillText("WIRE MERGE MODE - Click two wires to merge them", 10, y + 10);
+            */
             } else {
                 // Show connection status when not in special modes
                 showConnectionStatus(y + 10);
@@ -1598,11 +1663,13 @@ public class GameView {
         // Show wire curve mode indicator in top-right corner
         showWireCurveModeIndicator(smoothWires);
 
-        // Show viewport information
-        showViewportInfo(y + 80);
+        // Show viewport information - disabled per user request
+        // showViewportInfo(y + 80);
     }
 
     private void showConnectionStatus(int y) {
+        // Connection status display disabled per user request
+        /*
         if (currentLevel == null) return;
 
         int totalSystems = currentLevel.getSystems().size();
@@ -1645,9 +1712,12 @@ public class GameView {
             gc.setFill(Color.ORANGE);
             gc.fillText("Wire Occupancy: " + occupiedWires + "/" + totalWires + " wires occupied", 10, y + 60);
         }
+        */
     }
 
     private void showViewportInfo(int y) {
+        // Viewport info display disabled per user request
+        /*
         gc.setFill(Color.LIGHTGRAY);
         gc.setFont(javafx.scene.text.Font.font("Arial", 10));
 
@@ -1663,6 +1733,7 @@ public class GameView {
         // Show auto-scale status
         gc.setFill(autoScaleEnabled ? Color.LIME : Color.ORANGE);
         gc.fillText("Auto-scale: " + (autoScaleEnabled ? "ON" : "OFF"), 10, y + 45);
+        */
     }
 
     public void showToast(String message, Color color) {
@@ -1689,7 +1760,7 @@ public class GameView {
         
     }
 
-    public StackPane getRoot() {
+    public Pane getRoot() {
         return root;
     }
 
@@ -1701,21 +1772,39 @@ public class GameView {
         return new javafx.geometry.Dimension2D(canvas.getWidth(), canvas.getHeight());
     }
 
-    public StackPane getRootPane() {
+    public Pane getRootPane() {
         return root;
     }
 
     public void addPauseOverlay(javafx.scene.layout.Pane pauseOverlay) {
         if (!root.getChildren().contains(pauseOverlay)) {
+            // Center the pause overlay
+            centerOverlay(pauseOverlay);
             root.getChildren().add(pauseOverlay);
             
+            // Update position when window size changes
+            root.widthProperty().addListener((obs, oldVal, newVal) -> {
+                centerOverlay(pauseOverlay);
+            });
+            root.heightProperty().addListener((obs, oldVal, newVal) -> {
+                centerOverlay(pauseOverlay);
+            });
         }
     }
 
     public void addShopOverlay(javafx.scene.layout.Pane shopOverlay) {
         if (!root.getChildren().contains(shopOverlay)) {
+            // Center the shop overlay
+            centerOverlay(shopOverlay);
             root.getChildren().add(shopOverlay);
             
+            // Update position when window size changes
+            root.widthProperty().addListener((obs, oldVal, newVal) -> {
+                centerOverlay(shopOverlay);
+            });
+            root.heightProperty().addListener((obs, oldVal, newVal) -> {
+                centerOverlay(shopOverlay);
+            });
         }
     }
 

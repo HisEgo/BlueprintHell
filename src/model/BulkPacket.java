@@ -43,7 +43,8 @@ public class BulkPacket extends Packet {
         return wirePassageCount >= MAX_WIRE_PASSAGES;
     }
 
-    public void destroyOtherPackets(List<Packet> systemPackets) {
+    public void destroyStoredPackets(List<Packet> systemPackets) {
+        // Bulk packets destroy all other packets stored in the system
         for (Packet packet : systemPackets) {
             if (packet != this && packet.isActive()) {
                 packet.setActive(false);
@@ -54,16 +55,15 @@ public class BulkPacket extends Packet {
     public List<Packet> splitIntoBitPackets() {
         List<Packet> bitPackets = new ArrayList<>();
         String bulkId = UUID.randomUUID().toString();
-        int color = (int)(Math.random() * 0xFFFFFF); // Random color
+        int colorIndex = (int)(Math.random() * 8); // Random color index (0-7)
 
         for (int i = 0; i < getSize(); i++) {
-            MessengerPacket bitPacket = new MessengerPacket(
-                    PacketType.BIT_PACKET,
-                    getCurrentPosition(),
-                    getMovementVector()
+            BitPacket bitPacket = new BitPacket(
+                    bulkId,
+                    colorIndex,
+                    new Point2D(getCurrentPosition().getX(), getCurrentPosition().getY()),
+                    new Vec2D(getMovementVector().getX(), getMovementVector().getY())
             );
-            bitPacket.setBulkPacketId(bulkId);
-            bitPacket.setBulkPacketColor(color);
             bitPackets.add(bitPacket);
         }
 
@@ -100,7 +100,12 @@ public class BulkPacket extends Packet {
     }
 
     public PortShape changePortType(PortShape currentPortType) {
-        PortShape[] availableTypes = {PortShape.SQUARE, PortShape.TRIANGLE};
-        return availableTypes[(int)(Math.random() * availableTypes.length)];
+        // Bulk packets randomly change port types when entering systems
+        PortShape[] availableTypes = {PortShape.SQUARE, PortShape.TRIANGLE, PortShape.HEXAGON};
+        PortShape newType;
+        do {
+            newType = availableTypes[(int)(Math.random() * availableTypes.length)];
+        } while (newType == currentPortType); // Ensure it's different from current type
+        return newType;
     }
 }

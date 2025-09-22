@@ -599,6 +599,9 @@ public class GameController {
             // Clear active packets
             gameState.setActivePackets(new ArrayList<>());
             
+            // Reset packet injection states for new level
+            resetPacketInjectionStates();
+            
             // Save the initial state for restart functionality (after resetting lost packets)
             gameState.saveLevelStartState();
 
@@ -1268,103 +1271,72 @@ public class GameController {
     }
 
     private GameLevel createLevel4() {
-        // Expert Level - Add anti-trojan systems and bulk packets
+        // Expert Level - Redesigned with specific system layout
         GameLevel level = new GameLevel();
         level.setLevelId("level4");
         level.setName("Expert - Anti-Trojan & Bulk");
-        level.setInitialWireLength(3900.0);
-        level.setDuration(150.0);
+        level.setInitialWireLength(2500.0);
+        level.setDuration(120.0);
 
-        // Build on previous levels
+        // Create systems according to specifications
+        // Reference System 1 (source) with 1 output port
         ReferenceSystem source = new ReferenceSystem(new Point2D(100, 300), true);
-
+        
+        // Distribution System with 1 input + 2 output ports
+        DistributorSystem distributor = new DistributorSystem(new Point2D(250, 300));
+        
+        // Normal System between distributor and merger with 2 input + 2 output ports
+        NormalSystem normalSystem = new NormalSystem(new Point2D(400, 300), SystemType.NORMAL);
+        
+        // Merger System with 2 input + 1 output port
+        MergerSystem merger = new MergerSystem(new Point2D(550, 300));
+        
+        // Reference System 2 (destination) with 1 input port
         ReferenceSystem destination = new ReferenceSystem(new Point2D(700, 300), false);
 
-        model.System normalSystem1 = new NormalSystem(new Point2D(400, 200), SystemType.NORMAL);
-        model.System normalSystem2 = new NormalSystem(new Point2D(400, 400), SystemType.NORMAL);
-        SpySystem spySystem1 = new SpySystem(new Point2D(300, 150));
-        SpySystem spySystem2 = new SpySystem(new Point2D(500, 450));
-        SaboteurSystem saboteur = new SaboteurSystem(new Point2D(600, 200));
-        VPNSystem vpnSystem = new VPNSystem(new Point2D(200, 450));
+        // Add ports to systems
+        // Source system - 1 output port (Hexagon shape)
+        source.addOutputPort(new Port(PortShape.HEXAGON, source, new Point2D(120, 300), false));
 
-        // Add new systems
-        AntiTrojanSystem antiTrojan = new AntiTrojanSystem(new Point2D(350, 350));
-        DistributorSystem distributor = new DistributorSystem(new Point2D(150, 200));
-        MergerSystem merger = new MergerSystem(new Point2D(650, 400));
+        // Distributor system - 1 input + 2 output ports
+        distributor.addInputPort(new Port(PortShape.HEXAGON, distributor, new Point2D(230, 300), true));
+        distributor.addOutputPort(new Port(PortShape.TRIANGLE, distributor, new Point2D(270, 290), false));
+        distributor.addOutputPort(new Port(PortShape.SQUARE, distributor, new Point2D(270, 310), false));
 
-        // Add ports
-        source.addOutputPort(new Port(PortShape.SQUARE, source, new Point2D(120, 300), false));
-        source.addOutputPort(new Port(PortShape.TRIANGLE, source, new Point2D(120, 320), false));
+        // Normal system - 2 input + 2 output ports (different shapes)
+        normalSystem.addInputPort(new Port(PortShape.TRIANGLE, normalSystem, new Point2D(380, 290), true));
+        normalSystem.addInputPort(new Port(PortShape.SQUARE, normalSystem, new Point2D(380, 310), true));
+        normalSystem.addOutputPort(new Port(PortShape.HEXAGON, normalSystem, new Point2D(420, 290), false));
+        normalSystem.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem, new Point2D(420, 310), false));
 
-        distributor.addInputPort(new Port(PortShape.SQUARE, distributor, new Point2D(130, 200), true));
-        distributor.addOutputPort(new Port(PortShape.TRIANGLE, distributor, new Point2D(170, 200), false));
+        // Merger system - 2 input + 1 output port
+        merger.addInputPort(new Port(PortShape.HEXAGON, merger, new Point2D(530, 290), true));
+        merger.addInputPort(new Port(PortShape.TRIANGLE, merger, new Point2D(530, 310), true));
+        merger.addOutputPort(new Port(PortShape.SQUARE, merger, new Point2D(570, 300), false));
 
-        vpnSystem.addInputPort(new Port(PortShape.SQUARE, vpnSystem, new Point2D(180, 450), true));
-        vpnSystem.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(220, 450), false));
+        // Destination system - 1 input port (Square shape)
+        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 300), true));
 
-        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(280, 150), true));
-        spySystem1.addOutputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(320, 150), false));
+        // Add systems to level
+        level.getSystems().addAll(Arrays.asList(source, distributor, normalSystem, merger, destination));
 
-        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(380, 200), true));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 200), false));
-        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(420, 190), false));
-
-        antiTrojan.addInputPort(new Port(PortShape.SQUARE, antiTrojan, new Point2D(330, 350), true));
-        antiTrojan.addOutputPort(new Port(PortShape.TRIANGLE, antiTrojan, new Point2D(370, 350), false));
-
-        saboteur.addInputPort(new Port(PortShape.TRIANGLE, saboteur, new Point2D(580, 200), true));
-        saboteur.addOutputPort(new Port(PortShape.SQUARE, saboteur, new Point2D(620, 200), false));
-
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(380, 400), true));
-        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(420, 400), false));
-
-        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(480, 450), true));
-        spySystem2.addOutputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(520, 450), false));
-
-        merger.addInputPort(new Port(PortShape.SQUARE, merger, new Point2D(630, 400), true));
-        merger.addOutputPort(new Port(PortShape.TRIANGLE, merger, new Point2D(670, 400), false));
-
-        destination.addInputPort(new Port(PortShape.TRIANGLE, destination, new Point2D(680, 300), true));
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 320), true));
-        // Additional input port to balance the level (fixes the 21-port issue)
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 340), true));
-
-        level.getSystems().addAll(Arrays.asList(source, destination, normalSystem1, normalSystem2,
-                spySystem1, spySystem2, saboteur, vpnSystem));
-
-        // Manually set parent level for all systems since addAll doesn't trigger setSystems
+        // Set parent level for all systems
         for (model.System system : level.getSystems()) {
             system.setParentLevel(level);
         }
 
-
-        // Early injections for immediate visual activity
-        level.getPacketSchedule().add(new PacketInjection(0.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(1.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(2.5, PacketType.SQUARE_MESSENGER, source));
-
-        // Enhanced packet schedule with bulk packets (20 packets total)
-        level.getPacketSchedule().add(new PacketInjection(5.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(10.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(15.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(20.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(25.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(30.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(35.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(40.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(45.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(50.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(55.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(60.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(65.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(70.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(75.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(80.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(85.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(90.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(95.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(100.0, PacketType.CONFIDENTIAL, source));
-
+        // Packet injection schedule - 4 messenger packets + 4 bulk packets (2 size 8, 2 size 10)
+        // 4 Messenger packets with different types
+        level.getPacketSchedule().add(new PacketInjection(2.0, PacketType.SMALL_MESSENGER, source));
+        level.getPacketSchedule().add(new PacketInjection(8.0, PacketType.SQUARE_MESSENGER, source));
+        level.getPacketSchedule().add(new PacketInjection(14.0, PacketType.TRIANGLE_MESSENGER, source));
+        level.getPacketSchedule().add(new PacketInjection(20.0, PacketType.SMALL_MESSENGER, source));
+        
+        // 4 Bulk packets - 2 with size 8 (BULK_SMALL) and 2 with size 10 (BULK_LARGE)
+        level.getPacketSchedule().add(new PacketInjection(26.0, PacketType.BULK_SMALL, source));   // Size 8
+        level.getPacketSchedule().add(new PacketInjection(32.0, PacketType.BULK_LARGE, source));   // Size 10
+        level.getPacketSchedule().add(new PacketInjection(38.0, PacketType.BULK_SMALL, source));   // Size 8
+        level.getPacketSchedule().add(new PacketInjection(44.0, PacketType.BULK_LARGE, source));   // Size 10
 
         return level;
     }
@@ -1663,7 +1635,6 @@ public class GameController {
         isEditingMode = false;
         isSimulationMode = true;
         isRunning = true;
-        lastUpdateTime = java.lang.System.nanoTime();
 
         // Stop editing render loop
         editingRenderLoop.stop();
@@ -1672,6 +1643,9 @@ public class GameController {
         // Start the main simulation game loop
         gameLoop.start();
         soundManager.playBackgroundMusic();
+        
+        // Reset lastUpdateTime AFTER starting the loop to ensure proper deltaTime calculation
+        lastUpdateTime = java.lang.System.nanoTime();
 
     }
 
@@ -2664,7 +2638,7 @@ public class GameController {
         List<model.System> systems = gameState.getCurrentLevel().getSystems();
 
         for (WireConnection wire : wireConnections) {
-            if (wire.isActive() && wire.passesOverSystems(systems)) {
+            if (wire.isActive() && wire.passesOverSystems(systems, isSmoothWires())) {
                 return true;
             }
         }

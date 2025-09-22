@@ -223,6 +223,16 @@ public class WireConnection {
             for (Packet packet : packetsOnWire) {
                 if (hasPacketReachedDestination(packet)) {
                     packetsOnWire.remove(packet);
+                    
+                    // Check if this is a bulk packet completing its passage - destroy wire if needed
+                    if (packet.getPacketType() != null && packet.getPacketType().isBulk()) {
+                        if (bulkPacketPassages >= MAX_BULK_PASSAGES) {
+                            isDestroyed = true;
+                            isActive = false;
+                            java.lang.System.out.println("*** WIRE DESTROYED *** After bulk packet " + bulkPacketPassages + " completed passage");
+                        }
+                    }
+                    
                     boolean accepted = wireOutputPort.acceptPacket(packet);
                     if (accepted) {
                         // Mark coin award as pending for system entry (one-shot)
@@ -274,6 +284,12 @@ public class WireConnection {
 
         this.packetsOnWire.add(packet);
 
+        // Handle bulk packet passage counting (but don't destroy wire yet)
+        if (packet.getPacketType() != null && packet.getPacketType().isBulk()) {
+            bulkPacketPassages++;
+            java.lang.System.out.println("*** BULK PACKET PASSAGE *** Count: " + bulkPacketPassages + "/" + MAX_BULK_PASSAGES + " on wire");
+            // Wire destruction will happen when the packet exits the wire, not when it enters
+        }
 
         // Initialize packet for path-based movement on this wire
         initializePacketOnWire(packet);
@@ -748,13 +764,17 @@ public class WireConnection {
     }
 
     public boolean passesOverSystems(List<System> systems) {
+        return passesOverSystems(systems, true); // Default to smooth curves
+    }
+
+    public boolean passesOverSystems(List<System> systems, boolean useSmoothCurves) {
         if (sourcePort == null || destinationPort == null) {
             return false;
         }
 
         // Get all path points for the wire (including bends)
-        // Use rigid path to get actual wire segments, not interpolated curves
-        List<Point2D> pathPoints = getPathPoints(false); // Use rigid path for accurate collision detection
+        // Use the specified curve mode for accurate collision detection
+        List<Point2D> pathPoints = getPathPoints(useSmoothCurves);
         
         // Check each system for intersection
         for (System system : systems) {
@@ -850,13 +870,14 @@ public class WireConnection {
     }
 
     public boolean incrementBulkPacketPassage() {
+        // This method is deprecated - bulk packet counting now happens in acceptPacket()
+        // and wire destruction happens when packet exits in transferPackets()
         bulkPacketPassages++;
-        if (bulkPacketPassages >= MAX_BULK_PASSAGES) {
-            isDestroyed = true;
-            isActive = false;
-            return true;
-        }
-        return false;
+        return bulkPacketPassages >= MAX_BULK_PASSAGES;
+    }
+    
+    public int getMaxBulkPassages() {
+        return MAX_BULK_PASSAGES;
     }
 
     public List<Point2D> getPathPoints() {

@@ -39,17 +39,20 @@ public class InputHandler {
     // Default key bindings
     private static final Map<String, KeyCode> DEFAULT_BINDINGS = new HashMap<>();
     static {
-        DEFAULT_BINDINGS.put("temporal_backward", KeyCode.LEFT);
-        DEFAULT_BINDINGS.put("temporal_forward", KeyCode.RIGHT);
+        // Temporal navigation removed per user request
+        // DEFAULT_BINDINGS.put("temporal_backward", KeyCode.LEFT);
+        // DEFAULT_BINDINGS.put("temporal_forward", KeyCode.RIGHT);
         DEFAULT_BINDINGS.put("wiring_mode", KeyCode.SHIFT);
         DEFAULT_BINDINGS.put("bend_creation_mode", KeyCode.B);
-        DEFAULT_BINDINGS.put("wire_merge_mode", KeyCode.M);
+        // Wire merge mode removed per user request
+        // DEFAULT_BINDINGS.put("wire_merge_mode", KeyCode.M);
         DEFAULT_BINDINGS.put("system_movement_mode", KeyCode.G);
         DEFAULT_BINDINGS.put("toggle_indicators", KeyCode.I);
         DEFAULT_BINDINGS.put("shop_toggle", KeyCode.S);
         DEFAULT_BINDINGS.put("pause_resume", KeyCode.P);
         DEFAULT_BINDINGS.put("start_simulation", KeyCode.R);
-        DEFAULT_BINDINGS.put("escape", KeyCode.ESCAPE);
+        // ESC functionality removed per user request
+        // DEFAULT_BINDINGS.put("escape", KeyCode.ESCAPE);
         DEFAULT_BINDINGS.put("toggle_smooth_wires", KeyCode.C); // C for Curves
     }
 
@@ -132,6 +135,8 @@ public class InputHandler {
         }
 
         switch (action) {
+            // Temporal navigation removed per user request
+            /*
             case "temporal_backward":
                 // Temporal navigation disabled - use time slider instead
                 // handleTemporalNavigation(-1);
@@ -140,6 +145,7 @@ public class InputHandler {
                 // Temporal navigation disabled - use time slider instead
                 // handleTemporalNavigation(1);
                 break;
+            */
             case "wiring_mode":
                 // Enter wiring mode
                 isWiringMode = true;
@@ -154,6 +160,8 @@ public class InputHandler {
                 firstSelectedWireForMerge = null;
                 selectedBendIndex = -1;
                 break;
+            // Wire merge mode removed per user request
+            /*
             case "wire_merge_mode":
                 // Toggle wire merge mode
                 isWireMergeMode = !isWireMergeMode;
@@ -165,6 +173,7 @@ public class InputHandler {
                 selectedBendIndex = -1;
                 
                 break;
+            */
             case "system_movement_mode":
                 // Toggle system movement mode (requires Scroll of Sisyphus)
                 if (gameController.isAbilityActive(model.AbilityType.SCROLL_OF_SISYPHUS)) {
@@ -198,6 +207,8 @@ public class InputHandler {
                 // Simulation is now started via Run button in UI
                 
                 break;
+            // ESC functionality removed per user request
+            /*
             case "escape":
                 // Exit current mode
                 if (isWiringMode) {
@@ -220,6 +231,7 @@ public class InputHandler {
                     gameController.enterEditingMode();
                 }
                 break;
+            */
             case "toggle_smooth_wires":
                 // Toggle smooth wire curves - only allowed in editing mode
                 if (gameController.isEditingMode()) {

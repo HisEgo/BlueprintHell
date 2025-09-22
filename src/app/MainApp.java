@@ -117,6 +117,7 @@ public class MainApp {
         }
     }
 
+
     public void startFreshGame(String levelId) {
         try {
             java.lang.System.out.println("MainApp.startFreshGame called with levelId: " + levelId);

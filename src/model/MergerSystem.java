@@ -31,7 +31,9 @@ public class MergerSystem extends System {
     }
 
     private void processBitPacket(Packet bitPacket) {
-        String bulkId = bitPacket.getBulkPacketId();
+        // Cast to BitPacket to access specific methods
+        BitPacket bp = (BitPacket) bitPacket;
+        String bulkId = bp.getParentBulkPacketId();
         if (bulkId == null) {
             // Not a valid bit packet, process normally
             super.processPacket(bitPacket);
@@ -43,13 +45,13 @@ public class MergerSystem extends System {
 
         // Check if group is complete (all bit packets collected)
         List<Packet> group = bitPacketGroups.get(bulkId);
-        if (isGroupComplete(group)) {
+        if (isGroupComplete(group, bulkId)) {
             reassembleBulkPacket(group, bulkId);
             bitPacketGroups.remove(bulkId);
         }
     }
 
-    private boolean isGroupComplete(List<Packet> group) {
+    private boolean isGroupComplete(List<Packet> group, String bulkId) {
         if (group == null || group.isEmpty()) return false;
 
         // Count active bit packets
@@ -60,33 +62,54 @@ public class MergerSystem extends System {
             }
         }
 
-        // Group is complete if we have enough active bit packets
-        // (assuming the original bulk packet size)
-        return activeCount >= 8; // Minimum bulk packet size
+        // We need to determine the original bulk packet size
+        // For now, we'll assume a group is complete when we have at least 8 bit packets
+        // This could be improved by storing the original size in the bit packets
+        return activeCount >= 8; // Minimum bulk packet size (BULK_SMALL)
     }
 
     private void reassembleBulkPacket(List<Packet> group, String bulkId) {
-        // Create a new bulk packet
-        BulkPacket bulkPacket = new BulkPacket(
-                PacketType.BULK_SMALL,
-                getPosition(),
-                new Vec2D(1, 0) // Default movement vector
-        );
-
-        // Try to send the reassembled bulk packet
-        boolean sent = false;
-        for (Port port : getOutputPorts()) {
-            if (port.isEmpty()) {
-                port.acceptPacket(bulkPacket);
-                sent = true;
-                break;
+        // Count active bit packets to determine bulk packet type
+        int activeCount = 0;
+        Vec2D movementVector = new Vec2D(1, 0); // Default
+        Point2D position = getPosition();
+        
+        for (Packet packet : group) {
+            if (packet.isActive()) {
+                activeCount++;
+                // Use the movement vector and position from the first active bit packet
+                if (activeCount == 1) {
+                    movementVector = packet.getMovementVector();
+                    position = packet.getCurrentPosition();
+                }
             }
         }
 
-        if (!sent && hasStorageSpace()) {
+        // Determine bulk packet type based on bit packet count
+        PacketType bulkType = (activeCount >= 10) ? PacketType.BULK_LARGE : PacketType.BULK_SMALL;
+
+        // Create a new bulk packet
+        BulkPacket bulkPacket = new BulkPacket(bulkType, position, movementVector);
+
+        // Try to send the reassembled bulk packet using proper port selection
+        Port availablePort = findAvailableOutputPort(bulkPacket);
+        boolean sent = false;
+        
+        if (availablePort != null) {
+            availablePort.acceptPacket(bulkPacket);
+            sent = true;
+            
+            // Apply exit speed doubling if packet is exiting through incompatible port
+            boolean isCompatible = availablePort.isCompatibleWithPacket(bulkPacket);
+            if (!isCompatible) {
+                // BulkPackets don't have exit speed multiplier methods
+                // This is handled by their own movement logic
+            }
+        }
+
+        if (!sent) {
+            // Store in unlimited storage if no output port available
             getStorage().add(bulkPacket);
-        } else if (!sent) {
-            bulkPacket.setActive(false);
         }
 
         // Remove bit packets from the group
