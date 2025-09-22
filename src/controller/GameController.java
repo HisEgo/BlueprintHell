@@ -21,8 +21,6 @@ import model.SpySystem;
 import model.SaboteurSystem;
 import model.VPNSystem;
 import model.AntiTrojanSystem;
-import model.DistributorSystem;
-import model.MergerSystem;
 import view.GameView;
 import view.HUDView;
 import view.LevelSelectView;
@@ -1362,118 +1360,97 @@ public class GameController {
     }
 
     private GameLevel createLevel5() {
-        // Master Level - All systems and complex packet types
+        // مرحله 5 - دقیقاً مثل مرحله 4 + یک سیستم آنتی تروجان اضافی
         GameLevel level = new GameLevel();
         level.setLevelId("level5");
-        level.setName("Master - Complete Network");
+        level.setName("شبکه پیچیده - با سیستم آنتی تروجان");
         level.setInitialWireLength(4500.0);
-        level.setDuration(180.0);
+        level.setDuration(150.0);
 
-        // Build on all previous levels
-        ReferenceSystem source = new ReferenceSystem(new Point2D(100, 300), true);
+        // 1. سیستم مرجع با 3 پورت خروجی (از هر نوع یکی)
+        ReferenceSystem refSource = new ReferenceSystem(new Point2D(100, 300), true);
+        refSource.addOutputPort(new Port(PortShape.SQUARE, refSource, new Point2D(130, 280), false));
+        refSource.addOutputPort(new Port(PortShape.TRIANGLE, refSource, new Point2D(130, 300), false));
+        refSource.addOutputPort(new Port(PortShape.HEXAGON, refSource, new Point2D(130, 320), false));
 
-        ReferenceSystem destination = new ReferenceSystem(new Point2D(700, 300), false);
+        // 2. سیستم VPN با یک پورت ورودی و یک پورت خروجی
+        VPNSystem vpnSystem = new VPNSystem(new Point2D(280, 200));
+        vpnSystem.addInputPort(new Port(PortShape.SQUARE, vpnSystem, new Point2D(260, 200), true));
+        vpnSystem.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(300, 200), false));
 
-        model.System normalSystem1 = new NormalSystem(new Point2D(400, 200), SystemType.NORMAL);
-        model.System normalSystem2 = new NormalSystem(new Point2D(400, 400), SystemType.NORMAL);
-        SpySystem spySystem1 = new SpySystem(new Point2D(300, 150));
-        SpySystem spySystem2 = new SpySystem(new Point2D(500, 450));
-        SaboteurSystem saboteur = new SaboteurSystem(new Point2D(600, 200));
-        VPNSystem vpnSystem = new VPNSystem(new Point2D(200, 450));
-        AntiTrojanSystem antiTrojan = new AntiTrojanSystem(new Point2D(350, 350));
-        DistributorSystem distributor = new DistributorSystem(new Point2D(150, 200));
-        MergerSystem merger = new MergerSystem(new Point2D(650, 400));
+        // 3. دو سیستم جاسوسی با یک پورت ورودی و یک پورت خروجی
+        SpySystem spySystem1 = new SpySystem(new Point2D(280, 350));
+        spySystem1.addInputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(260, 350), true));
+        spySystem1.addOutputPort(new Port(PortShape.HEXAGON, spySystem1, new Point2D(300, 350), false));
 
-        // Early injections for immediate visual activity
-        level.getPacketSchedule().add(new PacketInjection(0.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(1.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(2.5, PacketType.SQUARE_MESSENGER, source));
+        SpySystem spySystem2 = new SpySystem(new Point2D(600, 200));
+        spySystem2.addInputPort(new Port(PortShape.HEXAGON, spySystem2, new Point2D(580, 200), true));
+        spySystem2.addOutputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(620, 200), false));
 
-        // Add additional systems for complexity
-        model.System normalSystem3 = new NormalSystem(new Point2D(250, 250), SystemType.NORMAL);
-        model.System normalSystem4 = new NormalSystem(new Point2D(550, 350), SystemType.NORMAL);
-        VPNSystem vpnSystem2 = new VPNSystem(new Point2D(450, 100));
-        AntiTrojanSystem antiTrojan2 = new AntiTrojanSystem(new Point2D(300, 500));
+        // 4. سیستم خرابکار با یک پورت ورودی و یک پورت خروجی
+        SaboteurSystem saboteurSystem = new SaboteurSystem(new Point2D(450, 400));
+        saboteurSystem.addInputPort(new Port(PortShape.TRIANGLE, saboteurSystem, new Point2D(430, 400), true));
+        saboteurSystem.addOutputPort(new Port(PortShape.HEXAGON, saboteurSystem, new Point2D(470, 400), false));
 
-        // Add all ports
-        source.addOutputPort(new Port(PortShape.SQUARE, source, new Point2D(120, 300), false));
-        source.addOutputPort(new Port(PortShape.TRIANGLE, source, new Point2D(120, 320), false));
+        // 5. سیستم نرمال با 2 پورت ورودی متفاوت و 3 پورت خروجی متفاوت
+        NormalSystem normalSystem1 = new NormalSystem(new Point2D(450, 150), SystemType.NORMAL);
+        normalSystem1.addInputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(430, 140), true));
+        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(430, 160), true));
+        normalSystem1.addOutputPort(new Port(PortShape.HEXAGON, normalSystem1, new Point2D(470, 130), false));
+        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(470, 150), false));
+        normalSystem1.addOutputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(470, 170), false));
 
-        distributor.addInputPort(new Port(PortShape.SQUARE, distributor, new Point2D(130, 200), true));
-        distributor.addOutputPort(new Port(PortShape.TRIANGLE, distributor, new Point2D(170, 200), false));
+        // 6. سیستم نرمال با 3 پورت ورودی و 1 پورت خروجی
+        NormalSystem normalSystem2 = new NormalSystem(new Point2D(600, 350), SystemType.NORMAL);
+        normalSystem2.addInputPort(new Port(PortShape.HEXAGON, normalSystem2, new Point2D(580, 330), true));
+        normalSystem2.addInputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(580, 350), true));
+        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(580, 370), true));
+        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(620, 350), false));
 
-        vpnSystem.addInputPort(new Port(PortShape.SQUARE, vpnSystem, new Point2D(180, 450), true));
-        vpnSystem.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem, new Point2D(220, 450), false));
+        // 7. سیستم آنتی تروجان اضافی (تنها تفاوت با مرحله 4)
+        AntiTrojanSystem antiTrojanSystem = new AntiTrojanSystem(new Point2D(380, 280));
+        antiTrojanSystem.addInputPort(new Port(PortShape.HEXAGON, antiTrojanSystem, new Point2D(360, 280), true));
+        antiTrojanSystem.addOutputPort(new Port(PortShape.TRIANGLE, antiTrojanSystem, new Point2D(400, 280), false));
 
-        vpnSystem2.addInputPort(new Port(PortShape.SQUARE, vpnSystem2, new Point2D(430, 100), true));
-        vpnSystem2.addOutputPort(new Port(PortShape.TRIANGLE, vpnSystem2, new Point2D(470, 100), false));
+        // 8. سیستم مرجع با 2 پورت ورودی متفاوت (مقصد)
+        ReferenceSystem refDestination = new ReferenceSystem(new Point2D(750, 275), false);
+        refDestination.addInputPort(new Port(PortShape.HEXAGON, refDestination, new Point2D(730, 265), true));
+        refDestination.addInputPort(new Port(PortShape.SQUARE, refDestination, new Point2D(730, 285), true));
 
-        spySystem1.addInputPort(new Port(PortShape.SQUARE, spySystem1, new Point2D(280, 150), true));
-        spySystem1.addOutputPort(new Port(PortShape.TRIANGLE, spySystem1, new Point2D(320, 150), false));
+        // اضافه کردن سیستم‌ها به مرحله
+        level.getSystems().addAll(Arrays.asList(
+            refSource, vpnSystem, spySystem1, spySystem2, 
+            saboteurSystem, normalSystem1, normalSystem2, antiTrojanSystem, refDestination
+        ));
 
-        normalSystem3.addInputPort(new Port(PortShape.SQUARE, normalSystem3, new Point2D(230, 250), true));
-        normalSystem3.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem3, new Point2D(270, 250), false));
+        // تنظیم سطح والد برای همه سیستم‌ها
+        for (model.System system : level.getSystems()) {
+            system.setParentLevel(level);
+        }
 
-        normalSystem1.addInputPort(new Port(PortShape.SQUARE, normalSystem1, new Point2D(380, 200), true));
-        normalSystem1.addOutputPort(new Port(PortShape.TRIANGLE, normalSystem1, new Point2D(420, 200), false));
-
-        antiTrojan.addInputPort(new Port(PortShape.SQUARE, antiTrojan, new Point2D(330, 350), true));
-        antiTrojan.addOutputPort(new Port(PortShape.TRIANGLE, antiTrojan, new Point2D(370, 350), false));
-
-        antiTrojan2.addInputPort(new Port(PortShape.SQUARE, antiTrojan2, new Point2D(280, 500), true));
-        antiTrojan2.addOutputPort(new Port(PortShape.TRIANGLE, antiTrojan2, new Point2D(320, 500), false));
-
-        saboteur.addInputPort(new Port(PortShape.TRIANGLE, saboteur, new Point2D(580, 200), true));
-        saboteur.addOutputPort(new Port(PortShape.SQUARE, saboteur, new Point2D(620, 200), false));
-
-        normalSystem4.addInputPort(new Port(PortShape.TRIANGLE, normalSystem4, new Point2D(530, 350), true));
-        normalSystem4.addOutputPort(new Port(PortShape.SQUARE, normalSystem4, new Point2D(570, 350), false));
-
-        normalSystem2.addInputPort(new Port(PortShape.TRIANGLE, normalSystem2, new Point2D(380, 400), true));
-        normalSystem2.addOutputPort(new Port(PortShape.SQUARE, normalSystem2, new Point2D(420, 400), false));
-
-        spySystem2.addInputPort(new Port(PortShape.TRIANGLE, spySystem2, new Point2D(480, 450), true));
-        spySystem2.addOutputPort(new Port(PortShape.SQUARE, spySystem2, new Point2D(520, 450), false));
-
-        merger.addInputPort(new Port(PortShape.SQUARE, merger, new Point2D(630, 400), true));
-        merger.addOutputPort(new Port(PortShape.TRIANGLE, merger, new Point2D(670, 400), false));
-
-        destination.addInputPort(new Port(PortShape.TRIANGLE, destination, new Point2D(680, 300), true));
-        destination.addInputPort(new Port(PortShape.SQUARE, destination, new Point2D(680, 320), true));
-
-        level.getSystems().addAll(Arrays.asList(source, destination, normalSystem1, normalSystem2, normalSystem3, normalSystem4,
-                spySystem1, spySystem2, saboteur, vpnSystem, vpnSystem2,
-                antiTrojan, antiTrojan2, distributor, merger));
-
-
-        // Complex packet schedule with all packet types (25 packets total)
-        level.getPacketSchedule().add(new PacketInjection(5.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(10.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(15.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(20.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(25.0, PacketType.CONFIDENTIAL_PROTECTED, source));
-        level.getPacketSchedule().add(new PacketInjection(30.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(35.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(40.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(45.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(50.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(55.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(60.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(65.0, PacketType.CONFIDENTIAL_PROTECTED, source));
-        level.getPacketSchedule().add(new PacketInjection(70.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(75.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(80.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(85.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(90.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(95.0, PacketType.BULK_SMALL, source));
-        level.getPacketSchedule().add(new PacketInjection(100.0, PacketType.SQUARE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(105.0, PacketType.CONFIDENTIAL_PROTECTED, source));
-        level.getPacketSchedule().add(new PacketInjection(110.0, PacketType.BULK_LARGE, source));
-        level.getPacketSchedule().add(new PacketInjection(115.0, PacketType.TRIANGLE_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(120.0, PacketType.CONFIDENTIAL, source));
-        level.getPacketSchedule().add(new PacketInjection(125.0, PacketType.SMALL_MESSENGER, source));
-        level.getPacketSchedule().add(new PacketInjection(130.0, PacketType.CONFIDENTIAL, source));
-
+        // برنامه تزریق پکت - دقیقاً مثل مرحله 4
+        double time = 2.0;
+        
+        // 4 تا پکت مثلثی، 4 تا مربعی، 4 تا کوچک 6ضلعی، 3 تا محرمانه، 4 تا حجیم (به ترتیب مخلوط)
+        level.getPacketSchedule().add(new PacketInjection(time, PacketType.TRIANGLE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.BULK_SMALL, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 4.0, PacketType.SQUARE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 6.0, PacketType.SMALL_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 8.0, PacketType.CONFIDENTIAL, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 10.0, PacketType.TRIANGLE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 12.0, PacketType.BULK_LARGE, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 14.0, PacketType.SQUARE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 16.0, PacketType.SMALL_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 18.0, PacketType.TRIANGLE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 20.0, PacketType.CONFIDENTIAL, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 22.0, PacketType.SQUARE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 24.0, PacketType.BULK_SMALL, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 26.0, PacketType.SMALL_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 28.0, PacketType.TRIANGLE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 30.0, PacketType.SQUARE_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 32.0, PacketType.CONFIDENTIAL, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 34.0, PacketType.SMALL_MESSENGER, refSource));
+        level.getPacketSchedule().add(new PacketInjection(time + 36.0, PacketType.BULK_LARGE, refSource));
 
         return level;
     }

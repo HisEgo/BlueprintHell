@@ -2,124 +2,119 @@ package model;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 
 public class MergerSystem extends System {
-    private Map<String, List<Packet>> bitPacketGroups;
 
     public MergerSystem() {
         super();
         setSystemType(SystemType.MERGER);
-        this.bitPacketGroups = new HashMap<>();
     }
 
     public MergerSystem(Point2D position) {
         super(position, SystemType.MERGER);
-        this.bitPacketGroups = new HashMap<>();
     }
 
     @Override
     public void processPacket(Packet packet) {
-        // Check if it's a bit packet
-        if (packet.getPacketType() != null && packet.getPacketType().isBitPacket()) {
-            processBitPacket(packet);
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
+        // Merger systems convert bit packets to messenger packets
+        if (packet instanceof BitPacket) {
+            BitPacket bitPacket = (BitPacket) packet;
+            // Convert bit packet to appropriate messenger packet based on color
+            PacketType targetType = getMessengerTypeFromColor(bitPacket.getColorIndex());
+            if (targetType != null) {
+                // Create new messenger packet of the target type
+                Packet messengerPacket = createMessengerPacket(targetType, bitPacket);
+                // Process the converted packet
+                super.processPacket(messengerPacket, entryPort);
+            } else {
+                // If no target type, process normally
+                super.processPacket(packet, entryPort);
+            }
         } else {
             // Process normally for non-bit packets
-            super.processPacket(packet, null); // No entry port info for MergerSystem
+            super.processPacket(packet, entryPort);
         }
     }
 
-    private void processBitPacket(Packet bitPacket) {
-        // Cast to BitPacket to access specific methods
-        BitPacket bp = (BitPacket) bitPacket;
-        String bulkId = bp.getParentBulkPacketId();
-        if (bulkId == null) {
-            // Not a valid bit packet, process normally
-            super.processPacket(bitPacket);
-            return;
+    private Packet createMessengerPacket(PacketType targetType, BitPacket bitPacket) {
+        Packet messengerPacket;
+        switch (targetType) {
+            case SMALL_MESSENGER:
+                messengerPacket = new MessengerPacket(PacketType.SMALL_MESSENGER, 
+                    bitPacket.getCurrentPosition(), bitPacket.getMovementVector());
+                break;
+            case SQUARE_MESSENGER:
+                messengerPacket = new MessengerPacket(PacketType.SQUARE_MESSENGER, 
+                    bitPacket.getCurrentPosition(), bitPacket.getMovementVector());
+                break;
+            case TRIANGLE_MESSENGER:
+                messengerPacket = new MessengerPacket(PacketType.TRIANGLE_MESSENGER, 
+                    bitPacket.getCurrentPosition(), bitPacket.getMovementVector());
+                break;
+            default:
+                // Default to small messenger
+                messengerPacket = new MessengerPacket(PacketType.SMALL_MESSENGER, 
+                    bitPacket.getCurrentPosition(), bitPacket.getMovementVector());
+                break;
         }
+        return messengerPacket;
+    }
 
-        // Add to group
-        bitPacketGroups.computeIfAbsent(bulkId, k -> new ArrayList<>()).add(bitPacket);
-
-        // Check if group is complete (all bit packets collected)
-        List<Packet> group = bitPacketGroups.get(bulkId);
-        if (isGroupComplete(group, bulkId)) {
-            reassembleBulkPacket(group, bulkId);
-            bitPacketGroups.remove(bulkId);
+    private PacketType getMessengerTypeFromColor(int colorIndex) {
+        // Map color indices to messenger packet types
+        switch (colorIndex % 3) {
+            case 0: return PacketType.SMALL_MESSENGER;
+            case 1: return PacketType.SQUARE_MESSENGER;
+            case 2: return PacketType.TRIANGLE_MESSENGER;
+            default: return PacketType.SMALL_MESSENGER;
         }
     }
 
-    private boolean isGroupComplete(List<Packet> group, String bulkId) {
-        if (group == null || group.isEmpty()) return false;
+    @Override
+    public int getCoinValue() {
+        // Merger systems give standard coin value based on stored packets
+        int totalValue = 0;
+        for (Packet packet : getStorage()) {
+            totalValue += packet.getCoinValue();
+        }
+        return totalValue;
+    }
 
-        // Count active bit packets
-        int activeCount = 0;
-        for (Packet packet : group) {
-            if (packet.isActive()) {
-                activeCount++;
+    public List<Packet> mergeBitPackets(List<BitPacket> bitPackets) {
+        List<Packet> mergedPackets = new ArrayList<>();
+        
+        // Group bit packets by their target messenger type
+        java.util.Map<PacketType, List<BitPacket>> groupedBits = new java.util.HashMap<>();
+        
+        for (BitPacket bitPacket : bitPackets) {
+            PacketType targetType = getMessengerTypeFromColor(bitPacket.getColorIndex());
+            if (targetType != null) {
+                groupedBits.computeIfAbsent(targetType, k -> new ArrayList<>()).add(bitPacket);
             }
         }
-
-        // We need to determine the original bulk packet size
-        // For now, we'll assume a group is complete when we have at least 8 bit packets
-        // This could be improved by storing the original size in the bit packets
-        return activeCount >= 8; // Minimum bulk packet size (BULK_SMALL)
-    }
-
-    private void reassembleBulkPacket(List<Packet> group, String bulkId) {
-        // Count active bit packets to determine bulk packet type
-        int activeCount = 0;
-        Vec2D movementVector = new Vec2D(1, 0); // Default
-        Point2D position = getPosition();
         
-        for (Packet packet : group) {
-            if (packet.isActive()) {
-                activeCount++;
-                // Use the movement vector and position from the first active bit packet
-                if (activeCount == 1) {
-                    movementVector = packet.getMovementVector();
-                    position = packet.getCurrentPosition();
-                }
-            }
-        }
-
-        // Determine bulk packet type based on bit packet count
-        PacketType bulkType = (activeCount >= 10) ? PacketType.BULK_LARGE : PacketType.BULK_SMALL;
-
-        // Create a new bulk packet
-        BulkPacket bulkPacket = new BulkPacket(bulkType, position, movementVector);
-
-        // Try to send the reassembled bulk packet using proper port selection
-        Port availablePort = findAvailableOutputPort(bulkPacket);
-        boolean sent = false;
-        
-        if (availablePort != null) {
-            availablePort.acceptPacket(bulkPacket);
-            sent = true;
+        // Create messenger packets from grouped bit packets
+        for (java.util.Map.Entry<PacketType, List<BitPacket>> entry : groupedBits.entrySet()) {
+            PacketType targetType = entry.getKey();
+            List<BitPacket> bits = entry.getValue();
             
-            // Apply exit speed doubling if packet is exiting through incompatible port
-            boolean isCompatible = availablePort.isCompatibleWithPacket(bulkPacket);
-            if (!isCompatible) {
-                // BulkPackets don't have exit speed multiplier methods
-                // This is handled by their own movement logic
+            if (!bits.isEmpty()) {
+                // Use the first bit packet's position and movement
+                BitPacket firstBit = bits.get(0);
+                Packet messengerPacket = createMessengerPacket(targetType, firstBit);
+                
+                // Set the size based on the number of bit packets
+                messengerPacket.setSize(bits.size());
+                
+                mergedPackets.add(messengerPacket);
             }
         }
-
-        if (!sent) {
-            // Store in unlimited storage if no output port available
-            getStorage().add(bulkPacket);
-        }
-
-        // Remove bit packets from the group
-        for (Packet bitPacket : group) {
-            bitPacket.setActive(false);
-        }
-    }
-
-    public int getBitPacketGroupCount() {
-        return bitPacketGroups.size();
+        
+        return mergedPackets;
     }
 }
-
