@@ -94,6 +94,11 @@ public class ReferenceSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         // Bit packets should not reach reference systems - they are considered lost
         if (packet.getPacketType() != null && packet.getPacketType().isBitPacket()) {
             java.lang.System.out.println("*** BIT PACKET LOSS *** Bit packet reached reference system: " + packet.getPacketType());

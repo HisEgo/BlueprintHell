@@ -187,7 +187,7 @@ public abstract class System {
         for (Port inputPort : inputPorts) {
             if (inputPort.getCurrentPacket() != null) {
                 Packet packet = inputPort.releasePacket();
-                processPacket(packet);
+                processPacket(packet, inputPort); // Pass the input port
             }
         }
         
@@ -223,6 +223,10 @@ public abstract class System {
     }
 
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    public void processPacket(Packet packet, Port entryPort) {
         // Phase 2: Check if packet speed exceeds damage threshold
         // Disable the damage rule for Level 1 as requested
         boolean disableDamageForLevel1 = parentLevel != null &&
@@ -278,9 +282,9 @@ public abstract class System {
                 }
             }
             
-            // Bulk packets randomly change port types when entering systems
-            if (packet instanceof BulkPacket) {
-                randomlyChangePortTypes();
+            // Bulk packets change the entry port type when entering systems
+            if (packet instanceof BulkPacket && entryPort != null) {
+                changeEntryPortType(entryPort);
             }
         }
 
@@ -406,19 +410,10 @@ public abstract class System {
         return pa.distanceTo(pb) < 1.0;
     }
 
-    private void randomlyChangePortTypes() {
-        List<Port> allPorts = new ArrayList<>();
-        allPorts.addAll(inputPorts);
-        allPorts.addAll(outputPorts);
-        
-        if (allPorts.isEmpty()) return;
-        
-        // Select a random port to change
-        Random random = new Random();
-        Port portToChange = allPorts.get(random.nextInt(allPorts.size()));
-        
-        // Change to a different random port type
-        PortShape currentShape = portToChange.getShape();
+    private void changeEntryPortType(Port entryPort) {
+        // Change the entry port type randomly
+        java.util.Random random = new java.util.Random();
+        PortShape currentShape = entryPort.getShape();
         PortShape[] availableShapes = {PortShape.SQUARE, PortShape.TRIANGLE, PortShape.HEXAGON};
         PortShape newShape;
         
@@ -426,7 +421,9 @@ public abstract class System {
             newShape = availableShapes[random.nextInt(availableShapes.length)];
         } while (newShape == currentShape);
         
-        portToChange.setShape(newShape);
+        entryPort.setShape(newShape);
+        java.lang.System.out.println("*** BULK PACKET PORT CHANGE *** Entry port " + 
+                entryPort.getPosition() + " changed from " + currentShape + " to " + newShape);
     }
 
     private boolean isDestinationSystemActive(Port port) {

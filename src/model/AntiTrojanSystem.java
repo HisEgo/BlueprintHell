@@ -15,8 +15,13 @@ public class AntiTrojanSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         // Process normally first
-        super.processPacket(packet);
+        super.processPacket(packet, entryPort);
 
         // Check for trojan packets in detection radius
         if (!isDeactivated()) {

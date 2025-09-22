@@ -154,10 +154,6 @@ public class CollisionController {
         // Handle special collision behaviors based on packet size and type
         handleSpecialCollisionBehaviors(packet1, packet2);
 
-        // Increase noise levels - each collision adds 1 unit of noise
-        packet1.setNoiseLevel(packet1.getNoiseLevel() + 1.0);
-        packet2.setNoiseLevel(packet2.getNoiseLevel() + 1.0);
-
         // Create shockwave effect (unless disabled by ability)
         if (gameController == null || !gameController.isAbilityActive(AbilityType.O_ATAR)) {
             createShockwave(packet1, packet2, allPackets);
@@ -200,14 +196,26 @@ public class CollisionController {
             packet2.reverseDirection();
         }
 
-        // Handle bulk packet destruction of smaller packets
-        if (packet1.getPacketType() != null && packet1.getPacketType().isBulk() && packet1.getSize() > packet2.getSize()) {
-            // Bulk packet destroys smaller packet
-            packet2.setActive(false);
-        } else if (packet2.getPacketType() != null && packet2.getPacketType().isBulk() && packet2.getSize() > packet1.getSize()) {
-            // Bulk packet destroys smaller packet
+        // Handle packet collision - both packets increase noise when colliding
+        // Both packets get +1 noise, and are destroyed if noise >= size
+        double newNoise1 = packet1.getNoiseLevel() + 1.0;
+        packet1.setNoiseLevel(newNoise1);
+        if (newNoise1 >= packet1.getSize()) {
             packet1.setActive(false);
+            packet1.setLost(true);
         }
+        
+        double newNoise2 = packet2.getNoiseLevel() + 1.0;
+        packet2.setNoiseLevel(newNoise2);
+        if (newNoise2 >= packet2.getSize()) {
+            packet2.setActive(false);
+            packet2.setLost(true);
+        }
+        
+        java.lang.System.out.println("*** COLLISION *** Both packets noise increased: " + 
+                packet1.getPacketType() + " noise " + (newNoise1 - 1) + " -> " + newNoise1 + 
+                " (size " + packet1.getSize() + "), " + packet2.getPacketType() + " noise " + 
+                (newNoise2 - 1) + " -> " + newNoise2 + " (size " + packet2.getSize() + ")");
     }
 
     private void createShockwave(Packet packet1, Packet packet2, List<Packet> allPackets) {

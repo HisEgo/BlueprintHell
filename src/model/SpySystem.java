@@ -16,6 +16,11 @@ public class SpySystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         java.lang.System.out.println("SPY SYSTEM: Processing packet " + packet.getPacketType() + " in Spy" + java.lang.System.identityHashCode(this));
         
         // Destroy confidential packets immediately per spec
@@ -34,12 +39,12 @@ public class SpySystem extends System {
             replacePacketInSystem(packet, revertedPacket);
             packet = revertedPacket;
             // After reverting, continue normal processing in this system
-            super.processPacket(packet);
+            super.processPacket(packet, entryPort);
             return;
         } else if (packet.getPacketType() != null && packet.getPacketType().isProtected()) {
             packet.convertFromProtected();
             // After reverting, continue normal processing in this system
-            super.processPacket(packet);
+            super.processPacket(packet, entryPort);
             return;
         }
 

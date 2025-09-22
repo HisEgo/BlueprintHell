@@ -38,7 +38,7 @@ public class DistributorSystem extends System {
         } else {
             // Process normally for non-bulk packets (messenger, confidential, etc.)
             // This behaves exactly like a normal system for non-bulk packets
-            super.processPacket(packet);
+            super.processPacket(packet, null); // No entry port info for DistributorSystem
         }
     }
 
@@ -79,8 +79,9 @@ public class DistributorSystem extends System {
             }
         }
         
-        // Bulk packets randomly change port types when entering systems
+        // Bulk packets change the entry port type when entering systems
         if (packet instanceof BulkPacket) {
+            // For DistributorSystem, we don't have entry port info, so use random selection
             randomlyChangePortTypes();
         }
     }

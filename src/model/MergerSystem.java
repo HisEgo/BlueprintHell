@@ -26,7 +26,7 @@ public class MergerSystem extends System {
             processBitPacket(packet);
         } else {
             // Process normally for non-bit packets
-            super.processPacket(packet);
+            super.processPacket(packet, null); // No entry port info for MergerSystem
         }
     }
 

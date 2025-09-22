@@ -17,9 +17,14 @@ public class NormalSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         // Normal systems process packets without special effects or type conversion
         // Packets maintain their original type when passing through normal systems
-        super.processPacket(packet);
+        super.processPacket(packet, entryPort);
     }
 
     @Override

@@ -21,11 +21,16 @@ public class SaboteurSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         // Protected packets are NOT affected by saboteur systems - they pass through unchanged
         if (packet instanceof ProtectedPacket || 
             (packet.getPacketType() != null && packet.getPacketType().isProtected())) {
             // Send protected packets to compatible ports like normal systems
-            super.processPacket(packet);
+            super.processPacket(packet, entryPort);
             return;
         }
 

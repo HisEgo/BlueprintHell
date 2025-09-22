@@ -13,6 +13,11 @@ public class VPNSystem extends System {
 
     @Override
     public void processPacket(Packet packet) {
+        processPacket(packet, null);
+    }
+    
+    @Override
+    public void processPacket(Packet packet, Port entryPort) {
         // VPN systems ONLY affect messenger packets (پیام‌رسان)
         // They act like normal systems for confidential and bulk packets
         if (packet.getPacketType() != null && packet.getPacketType().isMessenger()) {
@@ -21,7 +26,7 @@ public class VPNSystem extends System {
         }
 
         // Process normally after conversion (or for non-messenger packets)
-        super.processPacket(packet);
+        super.processPacket(packet, entryPort);
     }
 
 
