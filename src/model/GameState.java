@@ -257,6 +257,18 @@ public class GameState {
         return (double) totalLost / totalInjected * 100.0;
     }
 
+    // Final loss calculation based on delivered vs injected, used at end of level/game
+    public double calculateFinalPacketLossPercentage() {
+        if (currentLevel == null) return 0.0;
+
+        int totalInjected = getTotalInjectedPackets();
+        int totalDelivered = getTotalDeliveredPackets();
+        if (totalInjected == 0) return 0.0;
+
+        int notDelivered = Math.max(0, totalInjected - totalDelivered);
+        return (notDelivered * 100.0) / totalInjected;
+    }
+
     public int getTotalInjectedPackets() {
         if (currentLevel == null) return 0;
         // Prefer new direct packetSchedule list when present

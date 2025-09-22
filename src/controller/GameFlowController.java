@@ -27,6 +27,8 @@ public class GameFlowController {
 
     private void handleGameOver() {
         GameState gameState = gameController.getGameState();
+        // Lock in final packet loss based on delivered vs injected when game ends
+        gameState.setPacketLoss(gameState.calculateFinalPacketLossPercentage());
         gameState.setGameOver(true);
         gameController.stopGame();
 
@@ -41,6 +43,8 @@ public class GameFlowController {
 
     private void handleLevelComplete() {
         GameState gameState = gameController.getGameState();
+        // Lock in final packet loss based on delivered vs injected when level completes
+        gameState.setPacketLoss(gameState.calculateFinalPacketLossPercentage());
         gameState.setLevelComplete(true);
         gameController.stopGame();
 

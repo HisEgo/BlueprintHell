@@ -1274,7 +1274,7 @@ public class GameController {
         level.setLevelId("level4");
         level.setName("Bulk Packets");
         level.setInitialWireLength(4500.0);
-        level.setDuration(150.0);
+        level.setDuration(90.0);
 
         // 1. سیستم مرجع با 3 پورت خروجی (از هر نوع یکی)
         ReferenceSystem refSource = new ReferenceSystem(new Point2D(100, 300), true);
@@ -1364,7 +1364,7 @@ public class GameController {
         level.setLevelId("level5");
         level.setName("Anti Trojan Systems");
         level.setInitialWireLength(4500.0);
-        level.setDuration(150.0);
+        level.setDuration(90.0);
 
         ReferenceSystem refSource = new ReferenceSystem(new Point2D(100, 300), true);
         refSource.addOutputPort(new Port(PortShape.SQUARE, refSource, new Point2D(130, 280), false));

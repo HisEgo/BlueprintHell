@@ -53,7 +53,6 @@
     <build>
         <sourceDirectory>src</sourceDirectory>
         <plugins>
-            <!-- تنظیم کامپایلر روی جاوا 21 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -63,7 +62,6 @@
                 </configuration>
             </plugin>
 
-            <!-- پلاگین JavaFX برای اجرا -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -73,7 +71,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Exec plugin for running with mvn exec:java -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>

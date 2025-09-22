@@ -327,7 +327,7 @@ public abstract class System {
             boolean canAccept = port.canAcceptPacket(packet);
             boolean destActive = isDestinationSystemActive(port);
             boolean isCompatible = port.isCompatibleWithPacket(packet);
-            
+
             if (canAccept && destActive) {
                 if (isCompatible) {
                     // Priority 1: Compatible and empty
