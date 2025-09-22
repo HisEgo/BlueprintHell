@@ -2,7 +2,7 @@ package model;
 
 public class AntiTrojanSystem extends System {
     private static final double DETECTION_RADIUS = 100.0; // Detection radius in pixels
-    private static final double DEACTIVATION_TIME = 5.0; // Deactivation time in seconds
+    private static final double DEACTIVATION_TIME = 2.0; // Deactivation time in seconds
 
     public AntiTrojanSystem() {
         super();
