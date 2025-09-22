@@ -56,12 +56,12 @@ public class LevelSelectView {
                 "Adds saboteur systems and VPN protection", "level3", Color.ORANGE);
 
         // Level 4 - Expert
-        Button level4Button = createLevelButton("Level 4: Expert - Anti-Trojan & Bulk",
-                "Features anti-trojan systems and bulk packets", "level4", Color.RED);
+        Button level4Button = createLevelButton("Level 4: Expert - Bulk Packets",
+                "Adds bulk packets", "level4", Color.RED);
 
         // Level 5 - Master
-        Button level5Button = createLevelButton("Level 5: Master - Complete Network",
-                "All systems and complex packet types", "level5", Color.PURPLE);
+        Button level5Button = createLevelButton("Level 5: Master - Anti-Trojan",
+                "Adds anti-trojan systems", "level5", Color.PURPLE);
 
         levelButtons.getChildren().addAll(
                 level1Button, level2Button, level3Button, level4Button, level5Button

@@ -1272,7 +1272,7 @@ public class GameController {
         // مرحله 4 بازطراحی شده - شبکه پیچیده با سیستم‌های متنوع
         GameLevel level = new GameLevel();
         level.setLevelId("level4");
-        level.setName("شبکه پیچیده - سیستم‌های متنوع");
+        level.setName("Bulk Packets");
         level.setInitialWireLength(4500.0);
         level.setDuration(150.0);
 
@@ -1360,14 +1360,12 @@ public class GameController {
     }
 
     private GameLevel createLevel5() {
-        // مرحله 5 - دقیقاً مثل مرحله 4 + یک سیستم آنتی تروجان اضافی
         GameLevel level = new GameLevel();
         level.setLevelId("level5");
-        level.setName("شبکه پیچیده - با سیستم آنتی تروجان");
+        level.setName("Anti Trojan Systems");
         level.setInitialWireLength(4500.0);
         level.setDuration(150.0);
 
-        // 1. سیستم مرجع با 3 پورت خروجی (از هر نوع یکی)
         ReferenceSystem refSource = new ReferenceSystem(new Point2D(100, 300), true);
         refSource.addOutputPort(new Port(PortShape.SQUARE, refSource, new Point2D(130, 280), false));
         refSource.addOutputPort(new Port(PortShape.TRIANGLE, refSource, new Point2D(130, 300), false));
@@ -1423,15 +1421,12 @@ public class GameController {
             saboteurSystem, normalSystem1, normalSystem2, antiTrojanSystem, refDestination
         ));
 
-        // تنظیم سطح والد برای همه سیستم‌ها
         for (model.System system : level.getSystems()) {
             system.setParentLevel(level);
         }
 
-        // برنامه تزریق پکت - دقیقاً مثل مرحله 4
         double time = 2.0;
         
-        // 4 تا پکت مثلثی، 4 تا مربعی، 4 تا کوچک 6ضلعی، 3 تا محرمانه، 4 تا حجیم (به ترتیب مخلوط)
         level.getPacketSchedule().add(new PacketInjection(time, PacketType.TRIANGLE_MESSENGER, refSource));
         level.getPacketSchedule().add(new PacketInjection(time + 2.0, PacketType.BULK_SMALL, refSource));
         level.getPacketSchedule().add(new PacketInjection(time + 4.0, PacketType.SQUARE_MESSENGER, refSource));
