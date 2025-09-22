@@ -44,18 +44,39 @@ public class DistributorSystem extends System {
 
     private void handleBulkPacketEffects(Packet packet) {
         // Handle bulk packet effects like destroying stored packets and changing port types
-        // (copied from System.processPacket logic)
+        // (updated from System.processPacket logic)
         
         // Destroy other packets in storage
         List<Packet> toRemove = new ArrayList<>();
         for (Packet stored : getStorage()) {
             if (stored != packet && stored.isActive()) {
                 stored.setActive(false);
+                stored.setLost(true); // Mark as lost for statistics
                 toRemove.add(stored);
             }
         }
         if (!toRemove.isEmpty()) {
             getStorage().removeAll(toRemove);
+        }
+        
+        // Also destroy packets in input ports
+        for (Port inputPort : getInputPorts()) {
+            Packet portPacket = inputPort.getCurrentPacket();
+            if (portPacket != null && portPacket != packet && portPacket.isActive()) {
+                portPacket.setActive(false);
+                portPacket.setLost(true); // Mark as lost for statistics
+                inputPort.setCurrentPacket(null);
+            }
+        }
+        
+        // Also destroy packets in output ports
+        for (Port outputPort : getOutputPorts()) {
+            Packet portPacket = outputPort.getCurrentPacket();
+            if (portPacket != null && portPacket != packet && portPacket.isActive()) {
+                portPacket.setActive(false);
+                portPacket.setLost(true); // Mark as lost for statistics
+                outputPort.setCurrentPacket(null);
+            }
         }
         
         // Bulk packets randomly change port types when entering systems

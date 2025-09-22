@@ -1323,7 +1323,7 @@ public class GameController {
         refDestination.addInputPort(new Port(PortShape.HEXAGON, refDestination, new Point2D(730, 265), true));
         refDestination.addInputPort(new Port(PortShape.SQUARE, refDestination, new Point2D(730, 285), true));
 
-        // اضافه کردن سیستم‌ها به مرحله
+        // اضافه کردن سیستم‌ها به مرحله (بدون سیستم‌های مرج و توزیع)
         level.getSystems().addAll(Arrays.asList(
             refSource, vpnSystem, spySystem1, spySystem2, 
             saboteurSystem, normalSystem1, normalSystem2, refDestination

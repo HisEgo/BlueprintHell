@@ -320,12 +320,25 @@ public class GameState {
         // Primary rule: excessive loss triggers Game Over
         boolean tooManyLost = calculatePacketLossPercentage() > 50.0;
 
-        // Time limit rule: if level duration exceeded and packets are still active, Game Over
+        // Time limit rule: if level duration exceeded, check delivery rate
         boolean timeExceeded = false;
         if (currentLevel != null && levelTimer > currentLevel.getLevelDuration()) {
-            // Only trigger Game Over if there are still active packets or ongoing simulation
-            if (!activePackets.isEmpty() || levelTimer > currentLevel.getLevelDuration() + 5.0) {
-                timeExceeded = true;
+            // Calculate delivery success rate
+            int totalInjected = getTotalInjectedPackets();
+            int totalDelivered = getTotalDeliveredPackets();
+            
+            if (totalInjected > 0) {
+                double deliveryRate = (double) totalDelivered / totalInjected;
+                // Game Over only if less than 50% of packets were delivered
+                if (deliveryRate < 0.5) {
+                    timeExceeded = true;
+                }
+                // If 50% or more packets were delivered, let level complete instead
+            } else {
+                // No packets injected, consider it a failure after grace period
+                if (levelTimer > currentLevel.getLevelDuration() + 5.0) {
+                    timeExceeded = true;
+                }
             }
         }
 

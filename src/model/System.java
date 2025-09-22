@@ -250,11 +250,32 @@ public abstract class System {
             for (Packet stored : storage) {
                 if (stored != packet && stored.isActive()) {
                     stored.setActive(false);
+                    stored.setLost(true); // Mark as lost for statistics
                     toRemove.add(stored);
                 }
             }
             if (!toRemove.isEmpty()) {
                 storage.removeAll(toRemove);
+            }
+            
+            // Also destroy packets in input ports
+            for (Port inputPort : inputPorts) {
+                Packet portPacket = inputPort.getCurrentPacket();
+                if (portPacket != null && portPacket != packet && portPacket.isActive()) {
+                    portPacket.setActive(false);
+                    portPacket.setLost(true); // Mark as lost for statistics
+                    inputPort.setCurrentPacket(null);
+                }
+            }
+            
+            // Also destroy packets in output ports
+            for (Port outputPort : outputPorts) {
+                Packet portPacket = outputPort.getCurrentPacket();
+                if (portPacket != null && portPacket != packet && portPacket.isActive()) {
+                    portPacket.setActive(false);
+                    portPacket.setLost(true); // Mark as lost for statistics
+                    outputPort.setCurrentPacket(null);
+                }
             }
             
             // Bulk packets randomly change port types when entering systems

@@ -729,7 +729,23 @@ public class GameView {
 
         // Draw storage count for non-reference systems
         if (!(system instanceof ReferenceSystem)) {
+            // Count packets in storage + packets in all ports
             int storageCount = system.getStorage().size();
+            
+            // Add packets currently in input ports
+            for (Port inputPort : system.getInputPorts()) {
+                if (inputPort.getCurrentPacket() != null && inputPort.getCurrentPacket().isActive()) {
+                    storageCount++;
+                }
+            }
+            
+            // Add packets currently in output ports (waiting to leave)
+            for (Port outputPort : system.getOutputPorts()) {
+                if (outputPort.getCurrentPacket() != null && outputPort.getCurrentPacket().isActive()) {
+                    storageCount++;
+                }
+            }
+            
             // Always show storage count (even if 0) for debugging
             gc.setFill(storageCount > 0 ? Color.YELLOW : Color.LIGHTGRAY);
             gc.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 12));
