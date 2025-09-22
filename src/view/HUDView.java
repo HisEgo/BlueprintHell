@@ -151,7 +151,7 @@ public class HUDView {
         Label modeLabel = (Label) root.lookup("#modeLabel");
         if (modeLabel != null) {
             if (gameController.isEditingMode()) {
-                modeLabel.setText("Mode: Editing (Press R to Run)");
+                modeLabel.setText("Mode: Editing");
                 modeLabel.setTextFill(Color.GREEN);
             } else {
                 modeLabel.setText("Mode: Simulation (Time: " + String.format("%.1f", currentTime) + "s/" + String.format("%.1f", maxTime) + "s)");
